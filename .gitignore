@@ -1,0 +1,13 @@
+# Java
+*.class
+*.jar
+*.war
+*.ear
+hs_err_pid*
+
+# Directories
+target/
+
+# OS generating files
+.DS_Store
+Thumbs.db
