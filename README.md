@@ -1,4 +1,4 @@
-# [Sabi][repo-url] [![MIT License][mit-img]][mit-url]
+# [Sabi][repo-url] [![GitHub.io][io-img]][io-url] [![CI Status][ci-img]][ci-url] [![MIT License][mit-img]][mit-url]
 
 A small framework for Java applications.
 
@@ -48,5 +48,9 @@ See the file LICENSE in this distribution for more details.
 
 
 [repo-url]: https://github.com/sttk-java/sabi
+[io-img]: https://img.shields.io/badge/github.io-Javadoc-4d7a97.svg
+[io-url]: https://sttk-java.github.io/sabi/
+[ci-img]: https://github.com/sttk-java/sabi/actions/workflows/java-ci.yml/badge.svg?branch=main
+[ci-url]: https://github.com/sttk-java/sabi/actions
 [mit-img]: https://img.shields.io/badge/license-MIT-green.svg
 [mit-url]: https://opensource.org/licenses/MIT
