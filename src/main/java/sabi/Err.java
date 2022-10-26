@@ -4,6 +4,8 @@
  */
 package sabi;
 
+import sabi.notify.ErrNotifier;
+
 import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.HashMap;
@@ -33,8 +35,11 @@ public final class Err extends Exception {
   /** The reason by which this exception is caused. */
   private final Record reason;
 
-  /* The stack trace for the location of occurrence. */
+  /** The stack trace for the location of occurrence. */
   private final StackTraceElement trace;
+
+  /** The notifier of this instance creation. */
+  private static final ErrNotifier notifier = new ErrNotifier();
 
 
   /**
@@ -50,6 +55,8 @@ public final class Err extends Exception {
 
     var traces = getStackTrace();
     this.trace = traces[0];
+
+    notifier.notify(this);
   }
 
 
@@ -70,6 +77,8 @@ public final class Err extends Exception {
 
     var traces = getStackTrace();
     this.trace = traces[0];
+
+    notifier.notify(this);
   }
 
 
@@ -206,5 +215,45 @@ public final class Err extends Exception {
    */
   public int getLineNumber() {
     return trace.getLineNumber();
+  }
+
+
+  /**
+   * Adds an {@link ErrHandler} object which is executed synchronously just
+   * after an {@link Err} is created.
+   *
+   * Handlers added with this method are executed in the order of addition
+   * and stop if one of the handlers throws a {@link RuntimeException} or
+   * an {@link Error}.
+   *
+   * @param handler  An {@link ErrHandler} object.
+   */
+  public static void addSyncHandler(final ErrHandler handler) {
+    notifier.addSyncHandler(handler);
+  }
+
+
+  /**
+   * Adds an {@link ErrHandler} object which is executed asynchronously just
+   * after an {@link Err} is created.
+   *
+   * Handlers don't stop even if one of the handlers throw a
+   * {@link RuntimeException} or an {@link Error}.
+   *
+   * @param handler  An {@link ErrHandler} object.
+   */
+  public static void addAsyncHandler(final ErrHandler handler) {
+    notifier.addAsyncHandler(handler);
+  }
+
+
+  /**
+   * Seals configurations for {@link Err}.
+   *
+   * After calling this method, any more {@link ErrHandler}s cannot be
+   * registered and notification of {@link Err} creations becomes effective.
+   */
+  public static void sealErrCfgs() {
+    notifier.seal();
   }
 }

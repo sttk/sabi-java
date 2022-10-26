@@ -1,11 +1,19 @@
 #!/usr/bin/env bash
 
+clean() {
+  mvn clean
+}
+
 compile() {
   mvn compile
 }
 
 test() {
   mvn test
+}
+
+jar() {
+  mvn package
 }
 
 javadoc() {
@@ -21,11 +29,17 @@ sver() {
 }
 
 case "$1" in
+clean)
+  clean
+  ;;
 compile)
   compile
   ;;
 test)
   test
+  ;;
+jar)
+  jar
   ;;
 javadoc)
   javadoc
@@ -35,6 +49,13 @@ deps)
   ;;
 sver)
   sver $2
+  ;;
+'')
+  clean
+  compile
+  test
+  jar
+  javadoc
   ;;
 esac
 
