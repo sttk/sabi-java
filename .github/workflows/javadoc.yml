@@ -18,6 +18,9 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
+    - name: Compile
+      run: mvn compile
+
     - name: Javadoc
       run: mvn javadoc:javadoc
 
