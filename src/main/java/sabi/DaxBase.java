@@ -10,13 +10,13 @@ import java.util.LinkedHashMap;
 
 /**
  * DaxBase manages multiple {@link DaxSrc} and those {@link DaxConn}, and also
- * work as an implementation of 'Dax' interface.
+ * works as an implementation of 'Dax' interface.
  */
 public abstract class DaxBase {
 
   /**
-   * An error reason which indicates that a specified data source instance is
-   * not found.
+   * An error reason which indicates that a specified {@link DaxSrc} instance
+   * is not found.
    *
    * @param name  A registered name of a {@link DaxSrc} is not found.
    */
@@ -26,17 +26,16 @@ public abstract class DaxBase {
    * An error reason which indicates that it failed to create a new connection
    * to a data source.
    *
-   * @param name  A registered name of a {@link DaxSrc} which failed to create
-   *   a {@link DaxConn}.
+   * @param name  A registered name of a {@link DaxSrc} which failed to create *   a {@link DaxConn}.
    */
   public record FailToCreateDaxConn(String name) {};
 
   /**
-   * An error reason which indicates that some connections failed th commit.
+   * An error reason which indicates that some connections failed to commit.
    * 
    * @param errors  A map of which keys are registered names of {@link DaxConn}
-   *   which failed to commit, and of which values are {@link Throwable} thrown
-   *   by {@link DaxConn#commit} methods..
+   *   which failed to commit, and of which values are {@link Err} thrown by
+   *   {@link DaxConn#commit} methods.
    */
   public record FailToCommitDaxConn(Map<String, Err> errors) {}
 
