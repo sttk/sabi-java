@@ -52,8 +52,6 @@ sver)
   ;;
 '')
   clean
-  compile
-  test
   jar
   javadoc
   ;;
