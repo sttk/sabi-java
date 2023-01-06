@@ -28,6 +28,10 @@ sver() {
   serialver -classpath target/classes $1
 }
 
+native_test() {
+  mvn -Pnative test
+}
+
 case "$1" in
 clean)
   clean
@@ -49,6 +53,9 @@ deps)
   ;;
 sver)
   sver $2
+  ;;
+'native-test')
+  native_test
   ;;
 '')
   clean
