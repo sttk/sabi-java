@@ -56,7 +56,8 @@ public class Proc<D> {
    * @param logics  Logic functional interfaces.
    * @throws Err  If an exception occurs in a logic.
    */
-  public void runTxn(final Logic<D> ...logics) throws Err {
+  @SafeVarargs
+  public final void runTxn(final Logic<D> ...logics) throws Err {
     var base = DaxBase.class.cast(dax);
 
     try {
@@ -83,7 +84,8 @@ public class Proc<D> {
    * @param logics  {@link Logic} objects.
    * @return A {@link Runner} object which processes a transaction.
    */
-  public Runner txn(final Logic<D> ...logics) {
+  @SafeVarargs
+  public final Runner txn(final Logic<D> ...logics) {
     return new Runner() {
       @Override
       public void run() throws Err {
