@@ -13,7 +13,7 @@
 # perf: a code change that improves performance
 # deps: bump deps used on compiling or runtime
 # test: update test files
-# ci: update github actions config files, etc.
+# cicd: update CI/CD confguration files.
 # doc: documentation only changes
 # wip: work in progress
 # chore: bump test deps, modify build files, etc
