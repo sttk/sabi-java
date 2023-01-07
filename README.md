@@ -3,6 +3,7 @@
 A small framework for Java applications.
 
 - [What is this?](#what-is-this)
+- [Install](#intall)
 - [Usage](#usage)
 - [Native build](#native-build)
 - [Supporting JDK versions](#support-jdk-versions)
@@ -20,6 +21,47 @@ Therefore, a program consists of logics, data accesses and data.
 This package is an application framework which explicitly separates procedures into logics and data accesses as layers.
 By using this framework, we can remove codes for data accesses from logic parts, and write only specific codes for each data source (e.g. database, messaging services, files, and so on)  in data access  parts. 
 Moreover, by separating as layers, applications using this framework can change data sources easily by switching data access parts.
+
+<a name="install"></a>
+## Install
+
+This package can be installed from [local-m2-repository][local-m2-repo-url] which is the Maven repository located on your local environment.
+
+The examples of declaring that repository and the dependency on this package in Maven `pom.xml` and Gradle `build.gradle` are as follows:
+
+### for Maven
+
+```
+<project ...>
+  <repositories>
+    <repository>
+      <id>local-m2-repository</id>
+      <url>file://${user.dir}/../local-m2-repository</url>
+    </repository>
+  </repositories>
+  <dependencies>
+    <dependency>
+      <groupId>sttk-java</groupId>
+      <artifactId>sabi</artifactId>
+      <version>0.1.0</version>
+    </dependency>
+  </dependencies>
+</project>
+```
+
+### for Gradle
+
+```
+repositories {
+  maven {
+    url "${rootDir}/../local-m2-repository"
+  }
+}
+dependencies {
+  implementation 'sttk-java:sabi:0.1.0'
+}
+```
+
 
 <a name="usage"></a>
 ## Usage
@@ -222,3 +264,5 @@ See the file LICENSE in this distribution for more details.
 [ci-url]: https://github.com/sttk-java/sabi/actions
 [mit-img]: https://img.shields.io/badge/license-MIT-green.svg
 [mit-url]: https://opensource.org/licenses/MIT
+
+[local-m2-repo-url]: https://github.com/sttk-java/local-m2-repository
