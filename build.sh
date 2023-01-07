@@ -32,6 +32,10 @@ native_test() {
   mvn -Pnative test
 }
 
+deploy() {
+  mvn deploy
+}
+
 case "$1" in
 clean)
   clean
@@ -56,6 +60,9 @@ sver)
   ;;
 'native-test')
   native_test
+  ;;
+deploy)
+  deploy
   ;;
 '')
   clean
