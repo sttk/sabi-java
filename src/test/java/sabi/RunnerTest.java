@@ -44,7 +44,7 @@ public class RunnerTest {
     void should_run_argument_runners_in_parallel() throws Exception {
       var logs = new ArrayList<String>();
       Runner.runPara(() -> {
-        try { Thread.sleep(100); } catch (InterruptedException e) {}
+        try { Thread.sleep(200); } catch (InterruptedException e) {}
         logs.add("1");
       }, () -> {
         try { Thread.sleep(20); } catch (InterruptedException e) {}
@@ -114,7 +114,7 @@ public class RunnerTest {
     void should_run_holding_runners_in_parallel() throws Exception {
       var logs = new ArrayList<String>();
       var runner = Runner.para(() -> {
-        try { Thread.sleep(100); } catch (InterruptedException e) {}
+        try { Thread.sleep(200); } catch (InterruptedException e) {}
         logs.add("1");
       }, () -> {
         try { Thread.sleep(20); } catch (InterruptedException e) {}
