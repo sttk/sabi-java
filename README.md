@@ -200,6 +200,9 @@ This framework supports JDK 17 or later.
 
 ### Actually checked JDK versions:
 
+- GraalVM CE 22.3.0 (OpenJDK 19.0.1)
+- GraalVM CE 22.3.0 (OpenJDK 17.0.5)
+- GraalVM CE 22.2.0 (OpenJDK 17.0.4)
 - GraalVM CE 22.1.0 (OpenJDK 17.0.3)
 
 

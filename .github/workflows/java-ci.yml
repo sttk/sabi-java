@@ -7,18 +7,27 @@ on:
 jobs:
 
   build:
-    runs-on: ubuntu-latest
+    name: Build for GraalVM 22.3 (OpenJDK ${{ matrix.javaver }}) on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
-        javaver: [17]
+        javaver: [17, 19]
+        os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
     - uses: actions/checkout@v2
 
-    - name: Set up JDK
-      uses: actions/setup-java@v2
+    - name: Set up GraalVM
+      uses: graalvm/setup-graalvm@v1
       with:
+        version: '22.3.0'
         java-version: ${{ matrix.javaver }}
-        distribution: 'temurin'
+        components: 'native-image'
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        native-image-job-reports: 'true'
 
-    - name: Build
+    - name: Build and test
       run: mvn package
+
+    - name: Native test
+      run: mvn -Pnative test
