@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-end() {
+errcheck() {
   exitcd=$1
   if [[ "$exitcd" != "0" ]]; then
     exit $exitcd
@@ -9,47 +9,47 @@ end() {
 
 clean() {
   mvn clean
-  end $?
+  errcheck $?
 }
 
 compile() {
   mvn compile
-  end $?
+  errcheck $?
 }
 
 test() {
   mvn test
-  end $?
+  errcheck $?
 }
 
 jar() {
   mvn package
-  end $?
+  errcheck $?
 }
 
 javadoc() {
   mvn javadoc:javadoc
-  end $?
+  errcheck $?
 }
 
 deps() {
   mvn versions:display-dependency-updates
-  end $?
+  errcheck $?
 }
 
 sver() {
   serialver -classpath target/classes $1
-  end $?
+  errcheck $?
 }
 
 native_test() {
   mvn -Pnative test
-  end $?
+  errcheck $?
 }
 
 deploy() {
   mvn deploy
-  end $?
+  errcheck $?
 }
 
 
