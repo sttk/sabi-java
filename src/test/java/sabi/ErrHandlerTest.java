@@ -16,19 +16,19 @@ public class ErrHandlerTest {
 
   @Test
   public void should_notify_that_errs_are_created() {
-    Err.addSyncHandler((err, odt) -> {
+    Err.addSyncErrHandler((err, odt) -> {
       syncLogger.add("1. " + err.getReason().toString());
     });
-    Err.addSyncHandler((err, odt) -> {
+    Err.addSyncErrHandler((err, odt) -> {
       syncLogger.add("2. " + err.getReason().toString());
     });
-    Err.addAsyncHandler((err, odt) -> {
+    Err.addAsyncErrHandler((err, odt) -> {
       asyncLogger.add("3. " + err.getReason().toString());
     });
-    Err.addAsyncHandler((err, odt) -> {
+    Err.addAsyncErrHandler((err, odt) -> {
       asyncLogger.add("4. " + err.getReason().toString());
     });
-    Err.sealErrCfgs();
+    Err.fixErrCfgs();
 
     try {
       throw new Err(new FailToDoSomething("abc"));
