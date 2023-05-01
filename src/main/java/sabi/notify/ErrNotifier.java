@@ -1,15 +1,15 @@
 /*
  * ErrNotifier class.
- * Copyright (C) 2022 Takayuki Sato. All Rights Reserved.
+ * Copyright (C) 2022-2023 Takayuki Sato. All Rights Reserved.
  */
 package sabi.notify;
 
 import sabi.Err;
 import sabi.ErrHandler;
+import sabi.ErrOccasion;
 
 import java.util.List;
 import java.util.LinkedList;
-import java.time.OffsetDateTime;
 
 /**
  * This class notifies {@link Err} object creations to {@link ErrHandler}.
@@ -21,21 +21,21 @@ import java.time.OffsetDateTime;
  */
 public final class ErrNotifier {
 
-  /** The flag meaning whether this instance is sealed or not. */
-  private boolean isSealed = false;
+  /** The flag meaning whether this instance is fixed or not. */
+  private boolean isFixed = false;
 
   /**
    * The list which holds {@link ErrHandler} objects which is executed
    * synchronously.
    */
-  protected final List<ErrHandler> syncHandlers = new LinkedList<>();
+  protected final List<ErrHandler> syncErrHandlers = new LinkedList<>();
 
 
   /**
    * The list which holds {@link ErrHandler} objects which is executed
    * asynchronously.
    */
-  protected final List<ErrHandler> asyncHandlers = new LinkedList<>();
+  protected final List<ErrHandler> asyncErrHandlers = new LinkedList<>();
 
 
   /**
@@ -45,72 +45,72 @@ public final class ErrNotifier {
 
 
   /**
-   * Checks whether this object is sealed or not.
+   * Checks whether this object is fixed or not.
    */
-  public boolean isSealed() {
-    return this.isSealed;
+  public boolean isFixed() {
+    return this.isFixed;
   }
 
 
   /**
    * Registers an {@link ErrHandler} object which is processed synchronously.
-   * After calling {@link #seal}, this method registers no more.
+   * After calling {@link #fix}, this method registers no more.
    *
    * @param handler  An {@link ErrHandler} object.
    */
-  public synchronized void addSyncHandler(final ErrHandler handler) {
-    if (this.isSealed) {
+  public synchronized void addSyncErrHandler(final ErrHandler handler) {
+    if (this.isFixed) {
       return;
     }
-    this.syncHandlers.add(handler);
+    this.syncErrHandlers.add(handler);
   }
 
 
   /**
    * Registers an {@link ErrHandler} object which is processed asynchronously.
-   * After calling {@link #seal}, this method registers no more.
+   * After calling {@link #fix}, this method registers no more.
    *
    * @param handler  An {@link ErrHandler} object.
    */
-  public synchronized void addAsyncHandler(final ErrHandler handler) {
-    if (this.isSealed) {
+  public synchronized void addAsyncErrHandler(final ErrHandler handler) {
+    if (this.isFixed) {
       return;
     }
-    this.asyncHandlers.add(handler);
+    this.asyncErrHandlers.add(handler);
   }
 
 
   /**
-   * Seals this object.
+   * Fixes this object.
    * This method makes it impossible to add more {@link ErrHandler}s to this
    * object, and possible to notify that an {@link Err} object is created.
    */
-  public synchronized void seal() {
-    this.isSealed = true;
+  public synchronized void fix() {
+    this.isFixed = true;
   }
 
 
   /**
    * Notifies that an {@link Err} object is created.
-   * However, this method does nothing until this object is sealed.
+   * However, this method does nothing until this object is fixed.
    */
   public void notify(final Err err) {
-    if (!this.isSealed) {
+    if (!this.isFixed) {
       return;
     }
 
-    final var now = OffsetDateTime.now();
+    final var errOcc = new ErrOccasion(err);
 
-    for (var handler : this.syncHandlers) {
-      handler.handle(err, now);
+    for (var handler : this.syncErrHandlers) {
+      handler.handle(err, errOcc);
     }
 
-    if (!this.asyncHandlers.isEmpty()) {
-      final var handlers = this.asyncHandlers;
+    if (!this.asyncErrHandlers.isEmpty()) {
+      final var handlers = this.asyncErrHandlers;
       new Thread(() -> {
         for (var handler : handlers) {
           try {
-            handler.handle(err, now);
+            handler.handle(err, errOcc);
           } catch (Throwable t) {}
         }
       }).start();

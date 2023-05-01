@@ -1,6 +1,6 @@
 /*
  * Err class.
- * Copyright (C) 2022 Takayuki Sato. All Rights Reserved.
+ * Copyright (C) 2022-2023 Takayuki Sato. All Rights Reserved.
  */
 package sabi;
 
@@ -201,9 +201,11 @@ public final class Err extends Exception {
   /**
    * Returns the name of the source file of this error occurrence.
    *
+   * This method returns null if this information is unavailable.
+   *
    * @return  The name of the source file of this error occurrence.
    */
-  public String getFileName() {
+  protected String getFileName() {
     return trace.getFileName();
   }
 
@@ -211,9 +213,11 @@ public final class Err extends Exception {
   /**
    * Returns the name of the source file of this error occurrence.
    *
+   * This method returns a negative number if this information is unavailable.
+   *
    * @return  The name of the source file of this error occurrence.
    */
-  public int getLineNumber() {
+  protected int getLineNumber() {
     return trace.getLineNumber();
   }
 
@@ -228,8 +232,8 @@ public final class Err extends Exception {
    *
    * @param handler  An {@link ErrHandler} object.
    */
-  public static void addSyncHandler(final ErrHandler handler) {
-    notifier.addSyncHandler(handler);
+  public static void addSyncErrHandler(final ErrHandler handler) {
+    notifier.addSyncErrHandler(handler);
   }
 
 
@@ -242,18 +246,18 @@ public final class Err extends Exception {
    *
    * @param handler  An {@link ErrHandler} object.
    */
-  public static void addAsyncHandler(final ErrHandler handler) {
-    notifier.addAsyncHandler(handler);
+  public static void addAsyncErrHandler(final ErrHandler handler) {
+    notifier.addAsyncErrHandler(handler);
   }
 
 
   /**
-   * Seals configurations for {@link Err}.
+   * Fixes configuration for {@link Err}s.
    *
    * After calling this method, any more {@link ErrHandler}s cannot be
    * registered and notification of {@link Err} creations becomes effective.
    */
-  public static void sealErrCfgs() {
-    notifier.seal();
+  public static void fixErrCfgs() {
+    notifier.fix();
   }
 }

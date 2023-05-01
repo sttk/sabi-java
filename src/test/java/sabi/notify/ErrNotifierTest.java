@@ -13,49 +13,49 @@ import java.util.ArrayList;
 public class ErrNotifierTest {
 
   @Test
-  void should_add_handlers_and_seal() {
+  void should_add_err_handlers_and_fix() {
     final var notifier = new ErrNotifier();
-    assertThat(notifier.isSealed()).isFalse();
-    assertThat(notifier.syncHandlers).isEmpty();
-    assertThat(notifier.asyncHandlers).isEmpty();
+    assertThat(notifier.isFixed()).isFalse();
+    assertThat(notifier.syncErrHandlers).isEmpty();
+    assertThat(notifier.asyncErrHandlers).isEmpty();
 
     final ErrHandler h1 = (err, odt) -> {};
-    notifier.addSyncHandler(h1);
-    assertThat(notifier.isSealed()).isFalse();
-    assertThat(notifier.syncHandlers).containsExactly(h1);
-    assertThat(notifier.asyncHandlers).isEmpty();
+    notifier.addSyncErrHandler(h1);
+    assertThat(notifier.isFixed()).isFalse();
+    assertThat(notifier.syncErrHandlers).containsExactly(h1);
+    assertThat(notifier.asyncErrHandlers).isEmpty();
 
     final ErrHandler h2 = (err, odt) -> {};
-    notifier.addSyncHandler(h2);
-    assertThat(notifier.isSealed()).isFalse();
-    assertThat(notifier.syncHandlers).containsExactly(h1, h2);
-    assertThat(notifier.asyncHandlers).isEmpty();
+    notifier.addSyncErrHandler(h2);
+    assertThat(notifier.isFixed()).isFalse();
+    assertThat(notifier.syncErrHandlers).containsExactly(h1, h2);
+    assertThat(notifier.asyncErrHandlers).isEmpty();
 
     final ErrHandler h3 = (err, odt) -> {};
-    notifier.addAsyncHandler(h3);
-    assertThat(notifier.isSealed()).isFalse();
-    assertThat(notifier.syncHandlers).containsExactly(h1, h2);
-    assertThat(notifier.asyncHandlers).containsExactly(h3);
+    notifier.addAsyncErrHandler(h3);
+    assertThat(notifier.isFixed()).isFalse();
+    assertThat(notifier.syncErrHandlers).containsExactly(h1, h2);
+    assertThat(notifier.asyncErrHandlers).containsExactly(h3);
 
     final ErrHandler h4 = (err, odt) -> {};
-    notifier.addAsyncHandler(h4);
-    assertThat(notifier.isSealed()).isFalse();
-    assertThat(notifier.syncHandlers).containsExactly(h1, h2);
-    assertThat(notifier.asyncHandlers).containsExactly(h3, h4);
+    notifier.addAsyncErrHandler(h4);
+    assertThat(notifier.isFixed()).isFalse();
+    assertThat(notifier.syncErrHandlers).containsExactly(h1, h2);
+    assertThat(notifier.asyncErrHandlers).containsExactly(h3, h4);
 
-    notifier.seal();
+    notifier.fix();
 
     final ErrHandler h5 = (err, odt) -> {};
-    notifier.addSyncHandler(h5);
-    assertThat(notifier.isSealed()).isTrue();
-    assertThat(notifier.syncHandlers).containsExactly(h1, h2);
-    assertThat(notifier.asyncHandlers).containsExactly(h3, h4);
+    notifier.addSyncErrHandler(h5);
+    assertThat(notifier.isFixed()).isTrue();
+    assertThat(notifier.syncErrHandlers).containsExactly(h1, h2);
+    assertThat(notifier.asyncErrHandlers).containsExactly(h3, h4);
 
     final ErrHandler h6 = (err, odt) -> {};
-    notifier.addAsyncHandler(h6);
-    assertThat(notifier.isSealed()).isTrue();
-    assertThat(notifier.syncHandlers).containsExactly(h1, h2);
-    assertThat(notifier.asyncHandlers).containsExactly(h3, h4);
+    notifier.addAsyncErrHandler(h6);
+    assertThat(notifier.isFixed()).isTrue();
+    assertThat(notifier.syncErrHandlers).containsExactly(h1, h2);
+    assertThat(notifier.asyncErrHandlers).containsExactly(h3, h4);
   }
 
   // error reason
@@ -83,7 +83,7 @@ public class ErrNotifierTest {
       final var logs = new ArrayList<String>();
 
       final var notifier = new ErrNotifier();
-      notifier.addSyncHandler((err, odt) -> {
+      notifier.addSyncErrHandler((err, odt) -> {
         logs.add(err.getReason().toString());
       });
 
@@ -99,7 +99,7 @@ public class ErrNotifierTest {
 
       assertThat(logs).isEmpty();
 
-      notifier.seal();
+      notifier.fix();
 
       try {
         throw new Err(new FailToDoSomething("abc"));
@@ -119,7 +119,7 @@ public class ErrNotifierTest {
       final var logs = new ArrayList<String>();
 
       final var notifier = new ErrNotifier();
-      notifier.addAsyncHandler((err, odt) -> {
+      notifier.addAsyncErrHandler((err, odt) -> {
         logs.add(err.getReason().toString());
       });
 
@@ -136,7 +136,7 @@ public class ErrNotifierTest {
 
       assertThat(logs).isEmpty();
 
-      notifier.seal();
+      notifier.fix();
 
       try {
         throw new Err(new FailToDoSomething("abc"));
@@ -156,10 +156,10 @@ public class ErrNotifierTest {
     void should_execute_sync_and_async_handlers() {
       final var logs = new ArrayList<String>();
       final var notifier = new ErrNotifier();
-      notifier.addAsyncHandler((err, odt) -> {
+      notifier.addAsyncErrHandler((err, odt) -> {
         logs.add("Async: " + err.getReason());
       });
-      notifier.addSyncHandler((err, odt) -> {
+      notifier.addSyncErrHandler((err, odt) -> {
         logs.add("Sync: " + err.getReason());
       });
 
@@ -176,7 +176,7 @@ public class ErrNotifierTest {
 
       assertThat(logs).isEmpty();
 
-      notifier.seal();
+      notifier.fix();
 
       try {
         throw new Err(new FailToDoSomething("abc"));
@@ -199,16 +199,16 @@ public class ErrNotifierTest {
     void should_stop_executing_sync_handlers_if_one_of_handlers_failed() {
       final var logs = new ArrayList<String>();
       final var notifier = new ErrNotifier();
-      notifier.addAsyncHandler((err, odt) -> {
+      notifier.addAsyncErrHandler((err, odt) -> {
         logs.add("Async: " + err.getReason());
       });
-      notifier.addSyncHandler((err, odt) -> {
+      notifier.addSyncErrHandler((err, odt) -> {
         logs.add("Sync(1): " + err.getReason());
       });
-      notifier.addSyncHandler((err, odt) -> {
+      notifier.addSyncErrHandler((err, odt) -> {
         throw new RuntimeException();
       });
-      notifier.addSyncHandler((err, odt) -> {
+      notifier.addSyncErrHandler((err, odt) -> {
         logs.add("Sync(3): " + err.getReason());
       });
 
@@ -225,7 +225,7 @@ public class ErrNotifierTest {
 
       assertThat(logs).isEmpty();
 
-      notifier.seal();
+      notifier.fix();
 
       try {
         throw new Err(new FailToDoSomething("abc"));
@@ -250,16 +250,16 @@ public class ErrNotifierTest {
     void should_execute_all_async_handlers_even_if_one_of_handlers_failed() {
       final var logs = new ArrayList<String>();
       final var notifier = new ErrNotifier();
-      notifier.addAsyncHandler((err, odt) -> {
+      notifier.addAsyncErrHandler((err, odt) -> {
         logs.add("Async(1): " + err.getReason());
       });
-      notifier.addAsyncHandler((err, odt) -> {
+      notifier.addAsyncErrHandler((err, odt) -> {
         throw new RuntimeException();
       });
-      notifier.addAsyncHandler((err, odt) -> {
+      notifier.addAsyncErrHandler((err, odt) -> {
         logs.add("Async(3): " + err.getReason());
       });
-      notifier.addSyncHandler((err, odt) -> {
+      notifier.addSyncErrHandler((err, odt) -> {
         logs.add("Sync: " + err.getReason());
       });
 
@@ -276,7 +276,7 @@ public class ErrNotifierTest {
 
       assertThat(logs).isEmpty();
 
-      notifier.seal();
+      notifier.fix();
 
       try {
         throw new Err(new FailToDoSomething("abc"));

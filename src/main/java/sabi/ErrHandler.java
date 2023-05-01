@@ -16,7 +16,8 @@ public interface ErrHandler {
    * Handles an {@link Err} object which will be created rigth after.
    *
    * @param err  An {@link Err} object.
-   * @param odt  {@link OffsetDateTime} object which is the current time.
+   * @param errOcc  An {@link ErrOccasion} object which holds when and where
+   *   an Err occured.
    */
-  void handle(Err err, OffsetDateTime odt);
+  void handle(Err err, ErrOccasion errOcc);
 }
