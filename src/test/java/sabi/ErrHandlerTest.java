@@ -16,17 +16,21 @@ public class ErrHandlerTest {
 
   @Test
   public void should_notify_that_errs_are_created() {
-    Err.addSyncErrHandler((err, odt) -> {
-      syncLogger.add("1. " + err.getReason().toString());
+    Err.addSyncErrHandler((err, occ) -> {
+      syncLogger.add(String.format("1. %s %s",
+        err.getReason().toString(), occ.toString()));
     });
-    Err.addSyncErrHandler((err, odt) -> {
-      syncLogger.add("2. " + err.getReason().toString());
+    Err.addSyncErrHandler((err, occ) -> {
+      syncLogger.add(String.format("2. %s %s",
+        err.getReason().toString(), occ.toString()));
     });
-    Err.addAsyncErrHandler((err, odt) -> {
-      asyncLogger.add("3. " + err.getReason().toString());
+    Err.addAsyncErrHandler((err, occ) -> {
+      asyncLogger.add(String.format("3. %s %s",
+        err.getReason().toString(), occ.toString()));
     });
-    Err.addAsyncErrHandler((err, odt) -> {
-      asyncLogger.add("4. " + err.getReason().toString());
+    Err.addAsyncErrHandler((err, occ) -> {
+      asyncLogger.add(String.format("4. %s %s",
+        err.getReason().toString(), occ.toString()));
     });
     Err.fixErrCfgs();
 
@@ -39,13 +43,17 @@ public class ErrHandlerTest {
         Thread.sleep(100);
       } catch (Exception e2) {}
 
-      assertThat(syncLogger).containsExactly(
-        "1. FailToDoSomething[name=abc]",
-        "2. FailToDoSomething[name=abc]");
+      assertThat(syncLogger).hasSize(2);
+      assertThat(syncLogger.get(0)).startsWith(
+        "1. FailToDoSomething[name=abc] (ErrHandlerTest.java:38) ");
+      assertThat(syncLogger.get(1)).startsWith(
+        "2. FailToDoSomething[name=abc] (ErrHandlerTest.java:38) ");
 
-      assertThat(asyncLogger).containsExactly(
-        "3. FailToDoSomething[name=abc]",
-        "4. FailToDoSomething[name=abc]");
+      assertThat(asyncLogger).hasSize(2);
+      assertThat(asyncLogger.get(0)).startsWith(
+        "3. FailToDoSomething[name=abc] (ErrHandlerTest.java:38) ");
+      assertThat(asyncLogger.get(1)).startsWith(
+        "4. FailToDoSomething[name=abc] (ErrHandlerTest.java:38) ");
     }
   }
 }

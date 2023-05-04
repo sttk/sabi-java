@@ -1,6 +1,6 @@
 /*
  * DaxBase class.
- * Copyright (C) 2022 Takayuki Sato. All Rights Reserved.
+ * Copyright (C) 2022-2023 Takayuki Sato. All Rights Reserved.
  */
 package sabi;
 
@@ -13,6 +13,17 @@ import java.util.LinkedHashMap;
  * works as an implementation of 'Dax' interface.
  */
 public abstract class DaxBase {
+
+  /**
+   * An error reason which indicates that some dax sources failed to start up.
+   * 
+   * @param errors  A map of which keys are the registered names of {@link
+   * DaxSrc}(s) which failed to start up, and of which values are {@link Err}
+   * having their error reasons.
+   *
+   * @param errors  A map of {@link DaxSrc} names and {@link Err}(s).
+   */
+  public record FailToStartUpGlobalDaxSrcs(Map<String, Err> errors) {}
 
   /**
    * An error reason which indicates that a specified {@link DaxSrc} instance
@@ -80,10 +91,44 @@ public abstract class DaxBase {
   }
 
   /**
-   * Makes unable to register any further global {@link DaxSrc}.
+   * Forbids adding global dax sources and makes available the registered
+   * global dax sources by calling {@link DaxSrc#setUp} method.
+   * If even one {@link DaxSrc} fail to execute its {@link DaxSrc#setUp}
+   * method, this function executes Free methods of all global {@link
+   * DaxSrc}(s) and throws an {@link Err} object.
+   *
+   * @throws Err  If even one {@link DaxSrc} failed to execute {@link
+   *   DaxSrc#setUp} method.
    */
-  public static synchronized void fixGlobalDaxSrcs() {
+  public static synchronized void startUpGlobalDaxSrcs() throws Err {
     isGlobalDaxSrcsFixed = true;
+
+    var errors = new HashMap<String, Err>();
+
+    for (var entry : globalDaxSrcMap.entrySet()) {
+      var name = entry.getKey();
+      var ds = entry.getValue();
+      try {
+        ds.setUp();
+      } catch (Err err) {
+        errors.put(name, err);
+      }
+    }
+
+    if (!errors.isEmpty()) {
+      shutdownGlobalDaxSrcs();
+      throw new Err(new FailToStartUpGlobalDaxSrcs(errors));
+    }
+  }
+
+  /**
+   * Terminates all global dax sources and frees resources of all global dax
+   * sources.
+   */
+  public static synchronized void shutdownGlobalDaxSrcs() {
+    for (var ds : globalDaxSrcMap.values()) {
+      ds.end();
+    }
   }
 
   /**
@@ -92,7 +137,7 @@ public abstract class DaxBase {
   public DaxBase() {}
 
   /**
-   * Registers a local {@link DaxSrc} with a specified name.
+   * Registers a local {@link DaxSrc} with a specified name and sets up it.
    *
    * @param name  The name for the argument {@link DaxSrc} and also for a 
    *   {@link DaxConn} created by the argument {@link DaxSrc}.
@@ -100,10 +145,45 @@ public abstract class DaxBase {
    *   method.
    * @param ds  A {@link DaxSrc} object to be registered locally to enable to
    *   be used in only specific transactions.
+   * @throws Err  If the specified {@link DaxSrc} failed to execute {@link
+   *   DaxSrc#setUp} method.
    */
-  public void addLocalDaxSrc(final String name, final DaxSrc ds) {
-    if (!isLocalDaxSrcsFixed) {
-      localDaxSrcMap.put(name, ds);
+  public synchronized void setUpLocalDaxSrc(final String name, final DaxSrc ds) throws Err {
+    if (!this.isLocalDaxSrcsFixed) {
+      try {
+        ds.setUp();
+      } catch (Err err) {
+        throw err;
+      }
+      this.localDaxSrcMap.put(name, ds);
+    }
+  }
+
+  /**
+   * Removes a local {@link DaxSrc} of the specified name from this {@link
+   * DaxBase} and frees the resource of it.
+   *
+   * @param name  A {@link DaxSrc} name.
+   */
+  public synchronized void freeLocalDaxSrc(final String name) {
+    if (!this.isLocalDaxSrcsFixed) {
+      var ds = this.localDaxSrcMap.remove(name);
+      if (ds != null) {
+        ds.end();
+      }
+    }
+  }
+
+  /**
+   * Removes all local {@link DaxSrc}(s) from this {@link DaxBase} and frees
+   * the resources of them.
+   */
+  public synchronized void freeAllLocalDaxSrcs() {
+    if (!this.isLocalDaxSrcsFixed) {
+      for (var ds : this.localDaxSrcMap.values()) {
+        ds.end();
+      }
+      this.localDaxSrcMap.clear();
     }
   }
 
@@ -191,12 +271,14 @@ public abstract class DaxBase {
     }
   }
 
-  void close() {
+  void end() {
     for (var conn : this.daxConnMap.values()) {
       try {
         conn.close();
       } catch (Throwable t) {}
     }
+
+    this.daxConnMap.clear();
 
     this.isLocalDaxSrcsFixed = false;
   }

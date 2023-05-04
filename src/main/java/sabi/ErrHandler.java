@@ -16,8 +16,8 @@ public interface ErrHandler {
    * Handles an {@link Err} object which will be created rigth after.
    *
    * @param err  An {@link Err} object.
-   * @param errOcc  An {@link ErrOccasion} object which holds when and where
+   * @param occ  An {@link ErrOccasion} object which holds when and where
    *   an Err occured.
    */
-  void handle(Err err, ErrOccasion errOcc);
+  void handle(Err err, ErrOccasion occ);
 }

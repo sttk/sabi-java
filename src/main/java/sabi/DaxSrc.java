@@ -1,6 +1,6 @@
 /*
  * DaxSrc claass.
- * Copyright (C) 2022 Takayuki Sato. All Rights Reserved.
+ * Copyright (C) 2022-2023 Takayuki Sato. All Rights Reserved.
  */
 package sabi;
 
@@ -20,4 +20,19 @@ public interface DaxSrc {
    * @throws Err  If this instance failed to create a {@link DaxConn} object.
    */
   DaxConn createDaxConn() throws Err;
+
+  /**
+   * Makes available this data source.
+   *
+   * For example, connecting to the data store, setting up connection pooling,
+   * and so on.
+   *
+   * @throws Err  If this instance failed to set up.
+   */
+  void setUp() throws Err;
+
+  /**
+   * Frees the resources of this data source.
+   */
+  void end();
 }
