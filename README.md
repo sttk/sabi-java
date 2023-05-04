@@ -1,28 +1,38 @@
 # [Sabi][repo-url] [![GitHub.io][io-img]][io-url] [![CI Status][ci-img]][ci-url] [![MIT License][mit-img]][mit-url]
 
-A small framework for Java applications.
+A small framework to separate logics and data accesses for Java application.
 
-- [What is this?](#what-is-this)
-- [Install](#intall)
-- [Usage](#usage)
-- [Native build](#native-build)
-- [Supporting JDK versions](#support-jdk-versions)
-- [License](#license)
+## Concept
 
-<a name="what-is-this"></a>
-## What is this?
+Sabi is a small framework for Java applications. This framework separates an application to logic parts and data access parts, and enables to implement each of them independently, then to combine them.
 
-Sabi is a small framework to separate logics and data accesses for Java applications.
+### Separation of logics and data accesses
 
-A program consists of procedures and data.
-And to operate data, procedures includes data accesses, then the rest of procedures except data accesses are logics.
-Therefore, a program consists of logics, data accesses and data.
+In general, a program consists of procedures and data.
+And procedures include data accesses for operating data, and the rest of procedures are logics.
+So we can say that a program consists of logics, data accesses and data.
 
-This package is an application framework which explicitly separates procedures into logics and data accesses as layers.
-By using this framework, we can remove codes for data accesses from logic parts, and write only specific codes for each data source (e.g. database, messaging services, files, and so on)  in data access  parts. 
-Moreover, by separating as layers, applications using this framework can change data sources easily by switching data access parts.
+Furthermore, we often think to separate an application to multiple layers, for example, controller layer, application logic layer, and data access layer.
+The logic and data access mentioned in this framework are partially matched those layers, but are not matched in another part.
+For example, in the controller layer, there are input data and output data.
+(In a web application there are request data and response data, and in a command line application there are console input and output.)
+Even though all logical processes are moved into the application logic layer, it is remained to transform input data of the controller layer into input data of the application logic layer, and to transform output data of the application logic layer into the output data of the controller layer.
+The data accesses mentioned in this framework also includes those data accesses.
 
-<a name="install"></a>
+### Changes composition of data access methods by concerns
+
+Dax is a collection of data access methods.
+These methods will be collected/divided by data source from an implementation perspective.
+On the other hand, they will be collected/divided by logic from a usage perspective
+
+In general programming, a developer chooses the necessary methods for their logic from among all available methods.
+And after programming, those methods will be buried in the program code of the logic, and it will become unclear which methods are used without tracing the logic.
+
+In applications using the Sabi framework, a logic is implemented as a function that takes only one argument, a dax interface.
+And this interface can define only the methods required by the logic.
+Therefore, a dax interface can make clear which methods are used in a logic.
+And also, a dax interface can constraint methods available for a logic.
+
 ## Install
 
 This package can be installed from [local-m2-repository][local-m2-repo-url] which is the Maven repository located on your local environment.
@@ -63,60 +73,61 @@ dependencies {
 ```
 
 
-<a name="usage"></a>
 ## Usage
 
 This framework enables to write codes and unit tests of logic parts and data access parts separately.
 
-### Writing logic
+### Logic
 
 A logic part is implemented as an instance of `Logic` functional interface.
-This `execute` method takes a dax, which is an abbreviation of 'data access', as an argument.
-A dax has all methods to be used in a logic, and each method is associated with each data access procedure to target data sources.
-Since a dax conceals its data access procedures, only logical procedure appears in a logic part.
-In a logic part, these are no concern where a data comes from and a data goes to.
+This interface has `run` method which performs this operation, and this method has only an argument, `dax` which is an interface and collects data access methods used in this logic.
+Since the dax hides details of data access procedures, only logical procedure appears in this logic.
+In this logic part, it's no concern where a data comes from or goes to.
 
-For example, `GreetLogic` a logic class and `GreetDax` is a dax interface:
+For example, in the following code, `GreetLogic` is a logic class which implements `Logic` interface, and `GreetDax` is a dax interfacce.
 
 ```
 public interface GreetDax {
-  String getName() throws Err;
+  String getUserName() throws Err;
   void say(String greeting) throws Err;
+
+  // possible error reasons
+  static record NoName() {}
+  static record FailToOutput(String text) {}
 }
 ```
 ```
 public class GreetLogic implements Logic<GreetDax> {
   @Override
-  public void execute(final GreetDax dax) throws Err {
-    final String name = dax.getName();
+  public void run(final GreetDax dax) throws Err {
+    final String name = dax.getUserName();
     dax.say("Hello, " + name);
   }
 }
 ```
 
-In `GreetLogic`, there are no detail codes for getting name and putting greeting.
-In this logic class, it's only concern to convert a name into a greeting.
+In `GreetLogic` class, there are no codes for getting a user name and output
+a greeting text.
+In this logic class, it's only concern to create a greeting text from a user name.
 
-### Writing dax for unit tests of logic.
+### Dax for unit tests
 
-To test a logic, the simplest dax implementation is what using a map.
-The following code is an example which implements two methods: `getName` and `say` which are same to `GreetDax` interface above.
+To test a logic class, the simplest dax implementation is what using a map.
+The following code is an example of a dax implementation using a map and having two methods: `getUserName` and `say` which are same to `GreetDax` interface above.
 
 ```
-public class MapDax extends DaxBase implements GreetDax {
-  Map<String, String> map = new HashMap<>();
-
-  public record NoName() {}; // An error reason when getting no name.
+public class MapGreetDaxBase extends GreetDax, DaxBase {
+  private Map<String, Object> map = new HashMap<>();
 
   public String getName() throws Err {
-    try {
-      return this.map.get("name");
-    } catch (Exception e) {
-      throw new Err(new NoName(), e);
+    var username = this.map.get("username");
+    if (username != null) {
+      throw new Err(new NoName());
     }
+    return String.class.cast(username);
   }
 
-  public void say(final String greeting) throws Err {
+  public void say(String greeting) throw Err {
     this.map.put("greeting", greeting);
   }
 }
@@ -125,106 +136,192 @@ public class MapDax extends DaxBase implements GreetDax {
 And the following code is an example of a test case.
 
 ```
-public class GreetLogicTest {
+public GreetLogicTest {
+
   @Test
-  void executeLogic() throws Err {
-    var dax = new MapDax();
-    dax.map.put("name", "World");
-
-    var proc = new Proc<GreetDax>(dax);
-    proc.runTxn(new GreetLogic());
-
-    assertThat(dax.map.get("greeting")).isEqualTo("Hello, World");
-  }
-}
-```
-
-### Writing dax for real data accesses
-
-An actual dax ordinarily consists of multiple sub dax by input sources and output destinations.
-
-The following code is an example of `dax` with no external data source.
-This `dax` outputs a greeting to standard output.
-
-```
-public interface SayConsoleDax extends GreetDax {
-  @Override
-  default void say(final String text) throws Err {
-    System.out.println(text);
-  }
-}
-```
-
-And the following code is an example of a `dax` with an external data source.
-This `UserJdbcDax` accesses to a dataase and provides an implementation of `getName` method of `GreetDax`.
-
-```
-public interface UserJdbcDax extends JdbcDax, GreetDax {
-  public record NoUser() {}
-  public record FailToQueryUserName() {}
-
-  default String getName() throws Err {
-    try (
-      var conn = this.getJdbcDaxConn("jdbc").getConnection();
-      var stmt = conn.prepareStatement("SELECT username FROM users LIMIT 1")
-    ) {
-      try (var rs = stmt.executeQuery()) {
-        if (rs.next()) {
-          return rs.getString("username");
-        }
-        throw new Err(new NoUser());
-      }
-    } catch (Exception e) {
-      throw new Err(new FailToQueryUserName(), e);
+  void should_run_GreetLogic_normally() throws Err {
+    var base = new MapGreetDaxBase();
+    base.map.put("username", "World");
+    try {
+      Txn.run(base, new GreetLogic());
+      assertThat(base.map.get("greeting")).isEqualTo("Hello, World");
+    } catch (Err e) {
+      fail(e);
     }
   }
 }
 ```
 
-### Mapping dax interface and implementations
+### Dax for real data access
 
-A `dax` interface can be related to multiple `dax` implementations.
+In actual case, multiple data sources are often used.
+In this example, an user name is input as command line argument, and greeting is output to standard output (console output).
+Therefore, two dax implementations are attached to the single GreetDax interface.
 
-In the following code, `getName` method of `GreetDax` interface is corresponded to the same named method of `UserJdbcDax`, and `say` method of `GreetDax` interface is corresponded to the same named method of `SayConsoleDax`.
+The following code is an example of a dax implementation which inputs an user name from command line argument.
 
 ```
-class GreetDaxImpl extends DaxBase
-  implements SayConsoleDax, UserJdbcDax {}
+import dax.clidax.ArgsDax;
+import dax.clidax.ArgsDaxConn;
 
-public class GreetProc extends Proc<GreetDax> {
-  public GreetProc() {
-    super(new GreetDaxImpl());
+public interface CliArgsUserDax extends GreetDax, ArgsDax {
+  default String getUserName() throws Err {
+    final ArgDaxConn conn = getArgDaxConn("cliargs");
+    if (conn.args.length <= 1) {
+      throw new Err(new NoName());
+    }
+    return conn.args.get(0);
   }
 }
+```
+
+In addition, the following code is an example of a dax implementation which outputs a greeting test to console.
+
+```
+public interface ConsoleOutputDax extends GreetDax {
+  default void say(final String text) throws Err {
+    try {
+      System.out.println(text);
+    } catch (Exception e) {
+      throw new Err(new FailToOutput(text), e);
+    }
+  }
+}
+```
+
+And these dax implementations are combined to a `DaxBase` as follows:
+
+```
+public class GreetDaxBase extends DaxBase
+  implements CliArgsUserDax, ConsoleOutputDax {}
 ```
 
 ### Executing logic
 
 The following code implements a `main` function which execute a `GreetLogic`.
-`GreetLogic` is executed in a transaction process by `Proc#RunTxn`, so the database update can be rollbacked if an error is occured.
-
-The static block registers a `JdbcDaxSrc` which creates a `JdbcDaxConn` which connects to a database.
-The `JdbcDaxConn` is registered with a name `"jdbc"` and is obtained by `getJdbcDaxConn("sql")` in `UserJdbcDax#getName`.
+`Txn.run` executes the `GreetLogic` function in a transaction process.
 
 ```
-public class GreetApp {
-  static {
-    DaxBase.addGlobalDaxSrc("jdbc", new JdbcDaxSrc("database-url"));
-    DaxBase.fixGlobalDaxSrcs();
-  }
+import sabi.*;
+import sabi.DaxBase.*;
+import dax.clidax.ArgsDaxSrc;
 
+public class GreetApp {
   public static void main(String[] args) {
-    var proc = new GreetProc();
     try {
-      proc.runTxn(new GreetLogic());
-    } catch (Exception e) {
+      addGlobalDaxSrc("cliargs", new ArgsDaxSrc(args));
+      startUpGlobalDaxSrcs();
+
+      var base = new GreetDaxBase();
+      Txn.run(base, new GreetLogic());
+
+    } catch (Err e) {
       System.exit(1);
+    } finally {
+      shutownGlobalDaxSrcs();
     }
   }
 }
 ```
 
-<a name="native-build"></a>
+### Moving outputs to another transaction process
+
+`Txn.run` executes operations of logic classes in a transaction.
+If an logic operation updates database and causes an error in the transaction, its update is rollbacked.
+If console output is executed in the same transaction with database update, the rollbacked result is possible to be output to console.
+Therefore, console output is wanted to execute after the transaction of database update in successfully completed.
+
+What should be done to achieve it are to add a dax interface for next transaction, to change `ConsoleOutputDax` to hold a greeting text in `say` method, add a new method to output it in next transaction, and to execute the next transaction in the `main` function.
+
+```
+public interface PrintDax {
+  void print() throws Err;
+}
+```
+```
+import dax.mapdax.MapDax;
+import dax.mapdax.MapDaxConn;
+
+public interface ConsoleOutputDax extends GreetDax, MapDax {
+  default void say(final String text) throws Err {
+    final MapDaxConn conn = getMapDaxConn("map");
+    conn.map.put("text", text);
+  }
+  default void print() throws Err {
+    try {
+      final MapDaxConn conn = getMapDaxConn("map");
+      var text = String.class.cast(conn.map.put("text");
+      System.out.println(text);
+    } catch (Exception e) {
+      throw new Err(new FailToOutput(text), e);
+    }
+  }
+}
+```
+
+And the `main` function is modified as follows:
+
+```
+import sabi.*;
+import sabi.DaxBase.*;
+import dax.clidax.CliDaxSrc;
+import dax.mapdax.MapDaxSrc;
+
+public class GreetApp {
+  public static void main(String[] args) {
+    try {
+      addGlobalDaxSrc("cliargs", new CliDaxSrc(args));
+      addGlobalDaxSrc("map", new MapDaxSrc());
+      startUpGlobalDaxSrcs();
+
+      var base = new GreetDaxBase();
+      Txn.run(base, new GreetLogic());
+      Txn.run(base, (PrintDax dax) -> {
+        return dax.Print();
+      });
+
+    } catch (Err e) {
+      System.exit(1);
+    } finally {
+      shutownGlobalDaxSrcs();
+    }
+  }
+}
+```
+
+Or, the `main` function is able to rewrite as follows:
+
+```
+import sabi.*;
+import sabi.DaxBase.*;
+import dax.clidax.CliDaxSrc;
+import dax.mapdax.MapDaxSrc;
+
+public class GreetApp {
+  public static void main(String[] args) {
+    try {
+      addGlobalDaxSrc("cliargs", new CliDaxSrc(args));
+      addGlobalDaxSrc("map", new MapDaxSrc());
+      startUpGlobalDaxSrcs();
+
+      var base = new GreetDaxBase();
+      var txn0 = new Txn(base, new GreetLogic());
+      var txn1 = new Txn(base, (PrintDax dax) -> {
+        return dax.Print();
+      });
+      Seq.run(txn0, txn1);
+
+    } catch (Err e) {
+      System.exit(1);
+    } finally {
+      shutownGlobalDaxSrcs();
+    }
+  }
+}
+```
+
+The important point is that the `GreetLogic` class is not changed. Since this change is not related to the application logic, it is confined to the data access part only.
+
 ## Native build
 
 This framework intends to support native build with GraalVM.
@@ -235,7 +332,6 @@ See the following pages to build native image with Maven or Gradle.
 - [Native image building with Maven plugin](https://www.graalvm.org/dev/reference-manual/native-image/guides/use-native-image-maven-plugin/)
 - [Native image building with Gradle plugin](https://graalvm.github.io/native-build-tools/latest/gradle-plugin.html)
 
-<a name="support-jdk-versions"></a>
 ## Supporting JDK versions
 
 This framework supports JDK 17 or later.
@@ -248,7 +344,6 @@ This framework supports JDK 17 or later.
 - GraalVM CE 22.1.0 (OpenJDK 17.0.3)
 
 
-<a name="license"></a>
 ## License
 
 Copyright (C) 2022-2023 Takayuki Sato
