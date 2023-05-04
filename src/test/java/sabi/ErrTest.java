@@ -7,7 +7,7 @@ import java.io.IOException;
 
 public class ErrTest {
 
-  // error reason
+  // error reasons
   record FailToDoSomething() {}
   record InvalidState(String name1) {}
   record InvalidValue(String name2, int name3) {}

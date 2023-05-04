@@ -64,4 +64,13 @@ public final class ErrOccasion {
   public int getLine() {
     return line;
   }
+
+  /**
+   * Returns a string representing the content of this object.
+   *
+   * @return  A string representation of this object.
+   */
+  public String toString() {
+    return "(" + file + ":" + line + ") " + time;
+  }
 }
