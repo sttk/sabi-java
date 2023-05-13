@@ -4,6 +4,6 @@
  * Sabi is a small framework to separate logics and data accesses for Java
  * applications.
  *
- * @version 0.2
+ * @version 0.3
  */
 package sabi;

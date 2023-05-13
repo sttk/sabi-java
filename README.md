@@ -53,7 +53,7 @@ The examples of declaring that repository and the dependency on this package in 
     <dependency>
       <groupId>sttk-java</groupId>
       <artifactId>sabi</artifactId>
-      <version>0.2.0</version>
+      <version>0.3.0</version>
     </dependency>
   </dependencies>
 </project>
@@ -68,7 +68,7 @@ repositories {
   }
 }
 dependencies {
-  implementation 'sttk-java:sabi:0.2.0'
+  implementation 'sttk-java:sabi:0.3.0'
 }
 ```
 
