@@ -169,13 +169,6 @@ public class DaxDummyForTest {
     }
   }
 
-  static interface MapDax extends Dax {
-    default MapDaxConn getMapDaxConn(String name) throws Err {
-      var conn = getDaxConn(name);
-      return MapDaxConn.class.cast(conn);
-    }
-  }
-
   static interface HogeFugaDax extends Dax {
     String getHogeData() throws Err;
     void setFugaData(String data) throws Err;
@@ -202,41 +195,41 @@ public class DaxDummyForTest {
     }
   }
 
-  static interface HogeDax extends MapDax, HogeFugaDax {
+  static interface HogeDax extends Dax, HogeFugaDax {
     default String getHogeData() throws Err {
-      var conn = getMapDaxConn("hoge");
+      var conn = getDaxConn("hoge", MapDaxConn.class);
       var data = conn.dataMap.get("hogehoge");
       return data;
     }
 
     default void SetHogeData(String data) throws Err {
-      var conn = getMapDaxConn("hoge");
+      var conn = getDaxConn("hoge", MapDaxConn.class);
       conn.dataMap.put("hogehoge", data);
     }
   }
 
-  static interface FugaDax extends MapDax, HogeFugaDax, FugaPiyoDax {
+  static interface FugaDax extends Dax, HogeFugaDax, FugaPiyoDax {
     default String getFugaData() throws Err {
-      var conn = getMapDaxConn("fuga");
+      var conn = getDaxConn("fuga", MapDaxConn.class);
       var data = conn.dataMap.get("fugafuga");
       return data;
     }
 
     default void setFugaData(String data) throws Err {
-      var conn = getMapDaxConn("fuga");
+      var conn = getDaxConn("fuga", MapDaxConn.class);
       conn.dataMap.put("fugafuga", data);
     }
   }
 
-  static interface PiyoDax extends MapDax, FugaPiyoDax  {
+  static interface PiyoDax extends Dax, FugaPiyoDax  {
     default String getPiyoData() throws Err {
-      var conn = getMapDaxConn("piyo");
+      var conn = getDaxConn("piyo", MapDaxConn.class);
       var data = conn.dataMap.get("piyopiyo");
       return data;
     }
 
     default void setPiyoData(String data) throws Err {
-      var conn = getMapDaxConn("piyo");
+      var conn = getDaxConn("piyo", MapDaxConn.class);
       conn.dataMap.put("piyopiyo", data);
     }
   }
@@ -282,13 +275,6 @@ public class DaxDummyForTest {
     @Override
     public void close() {
       logs.add("ADaxConn#close");
-    }
-  }
-
-  static interface ADax extends Dax {
-    default ADaxConn getADaxConn(String name) throws Err {
-      var conn = getDaxConn(name);
-      return ADaxConn.class.cast(conn);
     }
   }
 
@@ -338,13 +324,6 @@ public class DaxDummyForTest {
     }
   }
 
-  static interface BDax extends Dax {
-    default BDaxConn getBDaxConn(String name) throws Err {
-      var conn = getDaxConn(name);
-      return BDaxConn.class.cast(conn);
-    }
-  }
-
   static class CDaxSrc implements DaxSrc {
     final Map<String, String> cMap = new HashMap<>();
 
@@ -382,13 +361,6 @@ public class DaxDummyForTest {
     @Override
     public void close() {
       logs.add("CDaxConn#close");
-    }
-  }
-
-  static interface CDax extends Dax {
-    default CDaxConn getCDaxConn(String name) throws Err {
-      var conn = getDaxConn(name);
-      return CDaxConn.class.cast(conn);
     }
   }
 }

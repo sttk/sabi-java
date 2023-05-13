@@ -42,6 +42,16 @@ public abstract class DaxBase {
   public record FailToCreateDaxConn(String name) {};
 
   /**
+   * An error reason which indicates that it is failed to cast type of a
+   * DaxConn.
+   * The field: name is a registered name of a DaxSrc which created the target
+   * DaxConn.
+   * And the fields: fromType and toType are the types of the source DaxConn
+   * and the destination DaxConn.
+   */
+  public record FailToCastDaxConn(String name, String fromType, String toType) {};
+
+  /**
    * An error reason which indicates that some connections failed to commit.
    * 
    * @param errors  A map of which keys are registered names of {@link DaxConn}
@@ -204,7 +214,18 @@ public abstract class DaxBase {
    *      If {@link DaxSrc} with the specified name is not found.</li>
    *   </ul>
    */
-  public DaxConn getDaxConn(final String name) throws Err {
+  public <C extends DaxConn> C getDaxConn(final String name, final Class<C> cls) throws Err {
+    var conn = _getDaxConn(name);
+    try {
+      return cls.cast(conn);
+    } catch (Exception e) {
+      var from = conn != null ? conn.getClass().getName() : null;
+      var to = cls.getName();
+      throw new Err(new FailToCastDaxConn(name, from, to), e);
+    }
+  }
+
+  private DaxConn _getDaxConn(final String name) throws Err {
     var conn = this.daxConnMap.get(name);
     if (conn != null) {
       return conn;

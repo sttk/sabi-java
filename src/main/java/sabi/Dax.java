@@ -15,8 +15,9 @@ public interface Dax {
    * name.
    *
    * @param name  The name of {@link DaxConn} or {@link DaxSrc}.
+   * @param cls  The class object of cast destination.
    * @return  A {@link DaxConn} object.
    * @throws Err  If failing to get {@link DaxConn}.
    */
-  DaxConn getDaxConn(final String name) throws Err;
+  <C extends DaxConn> C getDaxConn(String name, Class<C> cls) throws Err;
 }
