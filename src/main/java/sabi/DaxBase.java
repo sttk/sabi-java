@@ -44,10 +44,11 @@ public abstract class DaxBase {
   /**
    * An error reason which indicates that it is failed to cast type of a
    * DaxConn.
-   * The field: name is a registered name of a DaxSrc which created the target
-   * DaxConn.
-   * And the fields: fromType and toType are the types of the source DaxConn
-   * and the destination DaxConn.
+   *
+   * @param name  A registered name of a {@link DaxSrc} which created the
+   *   target {@link DaxConn}.
+   * @param fromType  The type of the source {@link DaxConn}
+   * @param toType    The type of the destination {@link DaxConn}
    */
   public record FailToCastDaxConn(String name, String fromType, String toType) {};
 
