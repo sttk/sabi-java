@@ -21,30 +21,30 @@ public class TxnTest {
     void setBData(String data) throws Err;
   }
 
-  static interface AGetDax extends ABDax, ADax {
+  static interface AGetDax extends ABDax, Dax {
     default String getAData() throws Err {
-      var conn = getADaxConn("aaa");
+      var conn = getDaxConn("aaa", ADaxConn.class);
       var data = conn.aMap.get("a");
       return data;
     }
   }
 
-  static interface BGetSetDax extends ABDax, BDax {
+  static interface BGetSetDax extends ABDax, Dax {
     default String getBData() throws Err {
-      var conn = getBDaxConn("bbb");
+      var conn = getDaxConn("bbb", BDaxConn.class);
       var data = conn.bMap.get("b");
       return data;
     }
 
     default void setBData(String data) throws Err {
-      var conn = getBDaxConn("bbb");
+      var conn = getDaxConn("bbb", BDaxConn.class);
       conn.bMap.put("b", data);
     }
   }
 
-  static interface CSetDax extends ABDax, CDax {
+  static interface CSetDax extends ABDax, Dax {
     default void setCData(String data) throws Err {
-      var conn = getCDaxConn("ccc");
+      var conn = getDaxConn("ccc", CDaxConn.class);
       conn.cMap.put("c", data);
     }
   }

@@ -400,7 +400,7 @@ public class DaxTest {
         var base = new DaxBase() {};
 
         try {
-          var conn = base.getDaxConn("foo");
+          base.getDaxConn("foo", FooDaxConn.class);
           fail();
         } catch (Err e) {
           var r = DaxBase.DaxSrcIsNotFound.class.cast(e.getReason());
@@ -414,7 +414,7 @@ public class DaxTest {
         }
 
         try {
-          var conn = base.getDaxConn("foo");
+          base.getDaxConn("foo", FooDaxConn.class);
           fail();
         } catch (Err e) {
           var r = DaxBase.DaxSrcIsNotFound.class.cast(e.getReason());
@@ -427,9 +427,9 @@ public class DaxTest {
           fail(e);
         }
 
-        var conn = base.getDaxConn("foo");
+        var conn = base.getDaxConn("foo", FooDaxConn.class);
 
-        var conn2 = base.getDaxConn("foo");
+        var conn2 = base.getDaxConn("foo", FooDaxConn.class);
         assertThat(conn2).isEqualTo(conn);
       }
 
@@ -438,7 +438,7 @@ public class DaxTest {
         var base = new DaxBase() {};
 
         try {
-          var conn = base.getDaxConn("foo");
+          base.getDaxConn("foo", FooDaxConn.class);
           fail();
         } catch (Err e) {
           var r = DaxBase.DaxSrcIsNotFound.class.cast(e.getReason());
@@ -453,9 +453,9 @@ public class DaxTest {
           fail(e);
         }
 
-        var conn = base.getDaxConn("foo");
+        var conn = base.getDaxConn("foo", FooDaxConn.class);
 
-        var conn2 = base.getDaxConn("foo");
+        var conn2 = base.getDaxConn("foo", FooDaxConn.class);
         assertThat(conn2).isEqualTo(conn);
       }
 
@@ -464,7 +464,7 @@ public class DaxTest {
         var base = new DaxBase() {};
 
         try {
-          var conn = base.getDaxConn("foo");
+          base.getDaxConn("foo", FooDaxConn.class);
           fail();
         } catch (Err e) {
           var r = DaxBase.DaxSrcIsNotFound.class.cast(e.getReason());
@@ -485,9 +485,9 @@ public class DaxTest {
           fail(e);
         }
 
-        var conn = base.getDaxConn("foo");
+        var conn = base.getDaxConn("foo", FooDaxConn.class);
 
-        var conn2 = base.getDaxConn("foo");
+        var conn2 = base.getDaxConn("foo", FooDaxConn.class);
         assertThat(conn2).isEqualTo(conn);
       }
 
@@ -504,7 +504,7 @@ public class DaxTest {
         }
 
         try {
-          base.getDaxConn("foo");
+          base.getDaxConn("foo", FooDaxConn.class);
           fail();
         } catch (Err e) {
           var r = DaxBase.FailToCreateDaxConn.class.cast(e.getReason());
@@ -533,14 +533,14 @@ public class DaxTest {
         base.begin();
 
         try {
-          var conn = base.getDaxConn("foo");
+          var conn = base.getDaxConn("foo", FooDaxConn.class);
           assertThat(conn).isNotNull();
         } catch (Err e) {
           fail(e);
         }
 
         try {
-          var conn = base.getDaxConn("bar");
+          var conn = base.getDaxConn("bar", BarDaxConn.class);
           assertThat(conn).isNotNull();
         } catch (Err e) {
           fail(e);
@@ -587,14 +587,14 @@ public class DaxTest {
         base.begin();
 
         try {
-          var conn = base.getDaxConn("foo");
+          var conn = base.getDaxConn("foo", FooDaxConn.class);
           assertThat(conn).isNotNull();
         } catch (Err e) {
           fail(e);
         }
 
         try {
-          var conn = base.getDaxConn("bar");
+          var conn = base.getDaxConn("bar", BarDaxConn.class);
           assertThat(conn).isNotNull();
         } catch (Err e) {
           fail(e);
@@ -636,14 +636,14 @@ public class DaxTest {
         base.begin();
 
         try {
-          var conn = base.getDaxConn("foo");
+          var conn = base.getDaxConn("foo", FooDaxConn.class);
           assertThat(conn).isNotNull();
         } catch (Err e) {
           fail(e);
         }
 
         try {
-          var conn = base.getDaxConn("bar");
+          var conn = base.getDaxConn("bar", BarDaxConn.class);
           assertThat(conn).isNotNull();
         } catch (Err e) {
           fail(e);
@@ -684,14 +684,14 @@ public class DaxTest {
         base.begin();
 
         try {
-          var conn = base.getDaxConn("foo");
+          var conn = base.getDaxConn("foo", FooDaxConn.class);
           assertThat(conn).isNotNull();
         } catch (Err e) {
           fail(e);
         }
 
         try {
-          var conn = base.getDaxConn("bar");
+          var conn = base.getDaxConn("bar", BarDaxConn.class);
           assertThat(conn).isNotNull();
         } catch (Err e) {
           fail(e);
