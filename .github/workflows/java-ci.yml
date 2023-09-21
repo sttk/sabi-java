@@ -7,22 +7,21 @@ on:
 jobs:
 
   build:
-    name: Build for GraalVM 22.3 (OpenJDK ${{ matrix.javaver }}) on ${{ matrix.os }}
+    name: Build for GraalVM (OpenJDK ${{ matrix.javaver }}) on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        javaver: [17, 19]
+        javaver: [21]
         os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
     - uses: actions/checkout@v2
 
-    - name: Set up GraalVM
+    - name: GitHub Action for GraalVM
       uses: graalvm/setup-graalvm@v1
       with:
-        version: '22.3.0'
         java-version: ${{ matrix.javaver }}
-        components: 'native-image'
+        distribution: 'graalvm'
         github-token: ${{ secrets.GITHUB_TOKEN }}
         native-image-job-reports: 'true'
 

@@ -10,8 +10,8 @@
   <packaging>jar</packaging>
 
   <properties>
-    <maven.compiler.source>17</maven.compiler.source>
-    <maven.compiler.target>17</maven.compiler.target>
+    <maven.compiler.source>21</maven.compiler.source>
+    <maven.compiler.target>21</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
 
@@ -50,7 +50,7 @@
         <version>3.4.1</version>
         <configuration>
           <author>true</author>
-          <source>17</source>
+          <source>21</source>
           <show>protected</show>
           <encoding>UTF-8</encoding>
           <charset>UTF-8</charset>
