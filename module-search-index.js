@@ -1,1 +1,1 @@
-moduleSearchIndex = [{"l":"sabi"}];updateSearchResults();
+moduleSearchIndex = [{"l":"com.github.sttk.sabi"}];updateSearchResults();
