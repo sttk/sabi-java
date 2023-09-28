@@ -4,8 +4,9 @@
  */
 
 /**
- * Defines the APIs of the sabi framework.
+ * Defines the module of sabi framework.
  */
-module sabi {
-  exports sabi;
+module com.github.sttk.sabi {
+  exports com.github.sttk.sabi;
+  exports com.github.sttk.sabi.errs;
 }
