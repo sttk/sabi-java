@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.HashMap;
 
 /**
- * AsyncGroupAsync is the class to run added {@link Runner}(s) on {@link
+ * {@code AsyncGroupAsync} is the class to run added {@link Runner}(s) on {@link
  * AsyncGroup} API asynchronously.
  *
  * @param <N>  The type of a name of a runner or its error.

@@ -41,7 +41,8 @@ public final class Err extends Exception {
   private static final ErrNotifier notifier = new ErrNotifier();
 
   /**
-   * A constructor which constructs a new Err instance with a specified reason.
+   * A constructor which constructs a new {@link Err} instance with a specified
+   * reason.
    * A reason is a structore type of which name expresses what is a reason.
    *
    * @param reason  A reason of this exception.
@@ -58,8 +59,8 @@ public final class Err extends Exception {
   }
 
   /**
-   * A constructor which constructs a new Err instance with a specified reason
-   * and an cause.
+   * A constructor which constructs a new {@link Err} instance with a specified
+   * reason and an cause.
    * A reason is a structore type of which name expresses what is a reason.
    *
    * @param reason  A reason of this exception.
@@ -135,7 +136,7 @@ public final class Err extends Exception {
 
   /**
    * Gets a field value of the reason object by the specified name.
-   * If the specified named field is not found in the reason of this Err,
+   * If the specified named field is not found in the reason of this {@link Err},
    * this method finds a same named field in reasons of cause exception
    * hierarchically.
    *
@@ -160,7 +161,7 @@ public final class Err extends Exception {
   /**
    * Gets a field value of the reason object by the specified {@link Enum} 
    * name.
-   * If the specified named field is not found in the reason of this Err,
+   * If the specified named field is not found in the reason of this {@link Err},
    * this method finds a same named field in reasons of cause exception
    * hierarchically.
    *

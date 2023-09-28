@@ -7,7 +7,7 @@ package com.github.sttk.sabi;
 import com.github.sttk.sabi.errs.Err;
 
 /**
- * Logic is the functional interface that represents a logical procedure.
+ * {@code Logic} is the functional interface that represents a logical procedure.
  * The {@link #run} method of the class inheriting this interface implements
  * only logic processing.
  * Data access processing is described only by calling methods of the argument

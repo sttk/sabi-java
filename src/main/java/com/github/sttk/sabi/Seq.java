@@ -7,7 +7,7 @@ package com.github.sttk.sabi;
 import com.github.sttk.sabi.errs.Err;
 
 /**
- * Seq is a class to run {@link Runner}(s) sequencially.
+ * {@code Seq} is a class to run {@link Runner}(s) sequencially.
  */
 public class Seq implements Runner {
 

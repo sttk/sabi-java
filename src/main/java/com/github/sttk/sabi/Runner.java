@@ -7,7 +7,7 @@ package com.github.sttk.sabi;
 import com.github.sttk.sabi.errs.Err;
 
 /**
- * Runner is the interface that runs any procedure..
+ * {@code Runner} is the interface that runs any procedure..
  */
 @FunctionalInterface
 public interface Runner {

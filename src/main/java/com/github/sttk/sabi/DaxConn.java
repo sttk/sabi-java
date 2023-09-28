@@ -7,7 +7,7 @@ package com.github.sttk.sabi;
 import com.github.sttk.sabi.errs.Err;
 
 /**
- * DaxConn is the interface that represents a connection to a data store.
+ * {@code DaxConn} is the interface that represents a connection to a data store.
  * This interface declares methods: {@link #commit}, {@link rollback} and
  * {@link #close} to
  * work in a transaction

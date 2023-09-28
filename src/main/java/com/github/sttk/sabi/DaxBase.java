@@ -15,13 +15,14 @@ import com.github.sttk.sabi.async.AsyncGroupAsync;
 import com.github.sttk.sabi.async.AsyncGroupSync;
 
 /**
- * DaxBase is the class that defines the methods to manage {@link DaxSrc}(s).
+ * {@code DaxBase} is the class that defines the methods to manage
+ * {@link DaxSrc}(s).
  * And this class defines private methods to process a transaction.
  */
 public class DaxBase implements Dax, AutoCloseable {
   /**
-   * FailToSetupGlobalDaxSrcs is the error reason which indicates that some
-   * DaxSrc(s) failed to set up.
+   * {@code FailToSetupGlobalDaxSrcs} is the error reason which indicates that
+   * some {@link DaxSrc}(s) failed to set up.
    * 
    * @param errors  The map holding keys that are the registered names of
    *   {@link DaxSrc}(s) failed, and values that are {@link Err}(s) having
@@ -30,7 +31,7 @@ public class DaxBase implements Dax, AutoCloseable {
   public record FailToSetupGlobalDaxSrcs(Map<String, Err> errors) {};
 
   /**
-   * FailToSetupLocalDaxSrc is the error reason which indicates a local
+   * {@code FailToSetupLocalDaxSrc} is the error reason which indicates a local
    * {@link DaxSrc} failed to set up.
    *
    * @param name  Tthe registered name of the {@link DaxSrc} failed.
@@ -38,16 +39,16 @@ public class DaxBase implements Dax, AutoCloseable {
   public record FailToSetupLocalDaxSrc(String name) {};
 
   /**
-   * DaxSrcIsNotFound is the error reason which indicates that a specified
-   * {@link DaxSrc} is not found.
+   * {@code DaxSrcIsNotFound} is the error reason which indicates that a
+   * specified {@link DaxSrc} is not found.
    *
    * @param name  The registered name of the {@link DaxSrc} not found.
    */
   public record DaxSrcIsNotFound(String name) {}
 
   /**
-   * FailToCreateDaxConn is the error reason which indicates that it is failed
-   * to create a new connection to a data store.
+   * {@code FailToCreateDaxConn} is the error reason which indicates that it is
+   * failed to create a new connection to a data store.
    *
    * @param name  The registered name of the {@link DaxSrc} failed to create a
    *   {@link DaxConn}.
@@ -55,7 +56,7 @@ public class DaxBase implements Dax, AutoCloseable {
   public record FailToCreateDaxConn(String name) {}
 
   /**
-   * FailToCommitDaxConn is the error reason which indicates that some
+   * {@code FailToCommitDaxConn} is the error reason which indicates that some
    * connections failed to commit.
    *
    * @param errors  The map holding keys that are the names of
@@ -65,7 +66,7 @@ public class DaxBase implements Dax, AutoCloseable {
   public record FailToCommitDaxConn(Map<String, Err> errors) {}
 
   /**
-   * CreatedDaxConnIsNull is the error reason which indicates that a
+   * {@code CreatedDaxConnIsNull} is the error reason which indicates that a
    * {@link DaxSrc} created a {@link DaxConn} interface but it is null.
    *
    * @param name  The name of the {@link DaxSrc} that try to create a
@@ -74,8 +75,8 @@ public class DaxBase implements Dax, AutoCloseable {
   public record CreatedDaxConnIsNull(String name) {}
 
   /**
-   * FailToRunLogic is the error reason which indicates that a logic failed
-   * to run.
+   * {@code FailToRunLogic} is the error reason which indicates that a logic
+   * failed to run.
    *
    * @param logic  The logic class name failed.
    */
@@ -84,7 +85,7 @@ public class DaxBase implements Dax, AutoCloseable {
   /** The flag to prevent further registration of global {@link DaxSrc}(s). */
   private static boolean isGlobalDaxSrcsFixed;
 
-  /** The map for registering global DaxSrc instances. */
+  /** The map for registering global {@link DaxSrc} instances. */
   private static final Map<String, DaxSrc> globalDaxSrcMap;
 
   static {
@@ -93,7 +94,7 @@ public class DaxBase implements Dax, AutoCloseable {
 
   /**
    * Registers to enable data accesses to data store associated with the
-   * argument DaxSrc in all Dax instances.
+   * argument {@link DaxSrc} in all dax instances.
    */
   static void addGlobalDaxSrc(String name, DaxSrc ds) {
     if (isGlobalDaxSrcsFixed) {

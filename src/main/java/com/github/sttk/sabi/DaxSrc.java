@@ -7,8 +7,8 @@ package com.github.sttk.sabi;
 import com.github.sttk.sabi.errs.Err;
 
 /**
- * DaxSrc is the interface that represents a data source like database, etc.,
- * and creates a {@link DaxConn} which is a connection to the data source.
+ * {@code DaxSrc} is the interface that represents a data source like database,
+ * etc.,and creates a {@link DaxConn} which is a connection to the data source.
  * This interface declares three methods: {@link #setup}, {@link #close}, and
  * {@link #createDaxConn}.
  *

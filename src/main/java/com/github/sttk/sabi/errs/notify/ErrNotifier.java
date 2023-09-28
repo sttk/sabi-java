@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.LinkedList;
 
 /**
- * ErrNotifier is the class that notifies {@link Err} creations to {@link
+ * {@code ErrNotifier} is the class that notifies {@link Err} creations to {@link
  * ErrHandler}(s).
  * This class manages a list for handlers that process a {@link Err}
  * synchronously and another list for handlers that process it asynchronously.

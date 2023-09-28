@@ -15,7 +15,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ExecutionException;
 
 /**
- * Para is a class to runs {@link Runner}(s) in parallel.
+ * {@code Para} is a class to runs {@link Runner}(s) in parallel.
  */
 public class Para implements Runner {
 
