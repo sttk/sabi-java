@@ -78,9 +78,9 @@ public class DaxBase implements Dax, AutoCloseable {
    * {@code FailToRunLogic} is the error reason which indicates that a logic
    * failed to run.
    *
-   * @param logic  The logic class name failed.
+   * @param logicType  The logic class failed.
    */
-  public record FailToRunLogic(String logic) {}
+  public record FailToRunLogic(Class<? extends Logic> logicType) {}
 
   /** The flag to prevent further registration of global {@link DaxSrc}(s). */
   private static boolean isGlobalDaxSrcsFixed;
@@ -401,7 +401,7 @@ public class DaxBase implements Dax, AutoCloseable {
         } catch (Err e) {
           throw e;
         } catch (Exception e) {
-          throw new Err(new FailToRunLogic(logic.getClass().getName()), e);
+          throw new Err(new FailToRunLogic(logic.getClass()), e);
         }
       }
 

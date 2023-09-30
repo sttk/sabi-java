@@ -536,8 +536,7 @@ public class DaxBaseTest {
     } catch (Err e) {
       switch (e.getReason()) {
         case FailToRunLogic r: {
-          assertThat(r.logic()).isEqualTo(
-            "com.github.sttk.sabi.DaxBaseTest$1MyLogic");
+          assertThat(r.logicType()).isEqualTo(MyLogic.class);
           assertThat(e.getCause()).isInstanceOf(ClassCastException.class);
           break;
         }
@@ -587,8 +586,7 @@ public class DaxBaseTest {
     } catch (Err e) {
       switch (e.getReason()) {
         case FailToRunLogic r: {
-          assertThat(r.logic()).isEqualTo(
-            "com.github.sttk.sabi.DaxBaseTest$2MyLogic");
+          assertThat(r.logicType()).isEqualTo(MyLogic.class);
           assertThat(e.getCause()).isInstanceOf(ClassCastException.class);
           break;
         }
