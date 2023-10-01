@@ -59,7 +59,8 @@ Furthermore these `Dax` structs are integrated into a single new `DaxBase`.
 
 A `Dax` struct can be created at any unit, but it is clearer to create it at
 the unit of the data source.
-By doing so, the definition of a new DaxBase also serves as a list of the data
+By doing so, the definition of a new `DaxBase` also serves as a list of the
+data
 sources being used.
 
 
@@ -158,8 +159,6 @@ class MapGreetDax extends DaxBase implements GreetDax {
 And the following code is an example of a test case.
 
 ```
-public class ReadmeTest {
-
   @Test void testGreetLogic_morning() {
     var base = new MapGreetDaxBase();
     base.m.put("username", "everyone");
@@ -173,7 +172,6 @@ public class ReadmeTest {
 
     assertEquals(base.m.get("greeting"), "Good morning, everyone.\n");
   }
-}
 ```
 
 ### Data accesses for actual use
@@ -183,8 +181,8 @@ In this example, an user name and the hour are input as an environment
 variable, and greeting is output to console.
 Therefore, two dax struct are created and they are integrated into a new
 struct based on `DaxBase`.
-Since Golang is structural typing language, this new DaxBase can be casted to
-GreetDax.
+Since Golang is structural typing language, this new `DaxBase` can be casted
+to `GreetDax`.
 
 The following code is an example of a dax struct which inputs an user name and
 the hour from an environment variable.
@@ -239,14 +237,14 @@ The following code executes the above `GreetLogic` in a transaction process.
 public class GreetApp {
   public static void main(String[] args) {
     try (var ac = Sabi.startApp()) {
-      executeApp();
+      app();
     } catch (Err e) {
       System.err.println(e.toString());
       System.exit(1);
     }
   }
 
-  static void executeApp() throws Err {
+  static void app() throws Err {
     try (var base = new GreetDaxBase()) {
       base.txn(new GreetLogic());
     }
@@ -426,7 +424,7 @@ This framework supports JDK 21 or later.
 
 ### Actually checked JDK versions:
 
-- GraalVM CE 22.3.0 (OpenJDK 11.0.0)
+- GraalVM CE 21+35.1
 
 
 ## License
