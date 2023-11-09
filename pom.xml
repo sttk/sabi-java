@@ -145,9 +145,9 @@
 
   <distributionManagement>
     <repository>
-      <id>local-m2-repository</id>
-      <name>Local Maven Repository</name>
-      <url>file://${user.dir}/../local-m2-repository</url>
+      <id>github</id>
+      <name>GitHub Packages</name>
+      <url>https://maven.pkg.github.com/sttk/sabi-java</url>
     </repository>
   </distributionManagement>
 
