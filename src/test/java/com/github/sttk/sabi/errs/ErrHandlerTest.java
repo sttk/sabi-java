@@ -48,7 +48,7 @@ public class ErrHandlerTest {
         err.getReason().toString(), occ.getFile(), occ.getLine()));
     });
     Err.addAsyncHandler((err, occ) -> {
-      try { Thread.sleep(20); } catch (Exception e) {}
+      try { Thread.sleep(50); } catch (Exception e) {}
       asyncLogger.add(String.format("4. %s (%s:%d)",
         err.getReason().toString(), occ.getFile(), occ.getLine()));
     });
@@ -60,7 +60,7 @@ public class ErrHandlerTest {
       assertThat(e.getReason()).isInstanceOf(FailToDoSomething.class);
 
       try {
-        Thread.sleep(100);
+        Thread.sleep(200);
       } catch (Exception e2) {}
 
       assertThat(syncLogger).hasSize(2);
