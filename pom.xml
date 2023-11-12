@@ -13,25 +13,31 @@
     <maven.compiler.source>21</maven.compiler.source>
     <maven.compiler.target>21</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <!--
+     For changing environment variables in unit tests.
+     This setting is for maven-surefire-plugin but moved here for jacoco.
+     See: https://www.eclemma.org/jacoco/trunk/doc/prepare-agent-mojo.html
+    -->
+    <argLine>--add-opens java.base/java.lang=ALL-UNNAMED</argLine>
   </properties>
 
   <dependencies>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-api</artifactId>
-      <version>5.9.3</version>
+      <version>5.10.1</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-engine</artifactId>
-      <version>5.9.3</version>
+      <version>5.10.1</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.junit.platform</groupId>
       <artifactId>junit-platform-launcher</artifactId>
-      <version>1.9.3</version>
+      <version>1.10.1</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -93,10 +99,6 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <version>3.0.0-M7</version>
-        <configuration>
-          <!-- for changing environment variables in unit tests. -->
-          <argLine>--add-opens java.base/java.lang=ALL-UNNAMED</argLine>
-        </configuration>
       </plugin>
     </plugins>
   </build>
@@ -132,9 +134,11 @@
             </executions>
             <configuration>
               <fallback>false</fallback>
-              <!-- for changing environment variables in unit tests. -->
+              <!-- For changing environment variables in unit tests. -->
               <buildArgs>
-                -J--add-opens=java.base/java.lang=ALL-UNNAMED
+                <buildArg>-J--add-opens=java.base/java.lang=ALL-UNNAMED</buildArg>
+                <buildArg>--initialize-at-build-time=org.junit.platform.launcher.core.LauncherConfig</buildArg>
+                <buildArg>--initialize-at-build-time=org.junit.jupiter.engine.config.InstantiatingConfigurationParameterConverter</buildArg>
               </buildArgs>
             </configuration>
           </plugin>
