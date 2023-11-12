@@ -25,19 +25,19 @@
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-api</artifactId>
-      <version>5.9.3</version>
+      <version>5.10.1</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-engine</artifactId>
-      <version>5.9.3</version>
+      <version>5.10.1</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.junit.platform</groupId>
       <artifactId>junit-platform-launcher</artifactId>
-      <version>1.9.3</version>
+      <version>1.10.1</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -136,7 +136,9 @@
               <fallback>false</fallback>
               <!-- For changing environment variables in unit tests. -->
               <buildArgs>
-                -J--add-opens=java.base/java.lang=ALL-UNNAMED
+                <buildArg>-J--add-opens=java.base/java.lang=ALL-UNNAMED</buildArg>
+                <buildArg>--initialize-at-build-time=org.junit.platform.launcher.core.LauncherConfig</buildArg>
+                <buildArg>--initialize-at-build-time=org.junit.jupiter.engine.config.InstantiatingConfigurationParameterConverter</buildArg>
               </buildArgs>
             </configuration>
           </plugin>
