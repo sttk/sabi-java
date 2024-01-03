@@ -408,15 +408,22 @@ only.
 
 ## Native build
 
-This framework intends to support native build with GraalVM.
-This framework does not use Java reflections, and all `dax` implementations
-should not use them, too.
-However, some of client libraries provided for data sources might use them,
-and it might be needed to prepare a `reflect-config.json` file.
+This framework supports native build with GraalVM.
 
-See the following pages to build native image with Maven or Gradle.
-- [Native image building with Maven plugin](https://www.graalvm.org/dev/reference-manual/native-image/guides/use-native-image-maven-plugin/)
+See the following pages to setup native build environment on Linux/macOS or Windows.
+- [Setup native build environment on Linux/macOS](https://www.graalvm.org/latest/reference-manual/native-image/)
+- [Setup native build environment on Windows](https://www.graalvm.org/latest/docs/getting-started/windows/#prerequisites-for-native-image-on-windows)
+
+And see the following pages to build native image with Maven or Gradle.
+- [Native image building with Maven plugin](https://graalvm.github.io/native-build-tools/latest/maven-plugin.html)
 - [Native image building with Gradle plugin](https://graalvm.github.io/native-build-tools/latest/gradle-plugin.html)
+
+Since this framework does not use Java reflections, etc., any native build configuration files are not needed.
+
+And all `dax` implementations should not use them, too.
+However, some of client libraries provided for data sources might use them,
+and it might be needed those configuration files.
+
 
 ## Supporting JDK versions
 
@@ -424,7 +431,7 @@ This framework supports JDK 21 or later.
 
 ### Actually checked JDK versions:
 
-- GraalVM CE 21+35.1
+- GraalVM CE 21.0.1+12.1 (openjdk version 21.0.1)
 
 
 ## License
