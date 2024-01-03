@@ -42,6 +42,11 @@ sver() {
   errcheck $?
 }
 
+trace_test() {
+  mvn -Ptrace test
+  errcheck $?
+}
+
 native_test() {
   mvn -Pnative test
   errcheck $?
@@ -57,6 +62,7 @@ if [[ "$#" == "0" ]]; then
   clean
   jar
   javadoc
+  #trace_test
   native_test
 else
   for a in "$@"; do
@@ -81,6 +87,9 @@ else
       ;;
     sver)
       sver $2
+      ;;
+    'trace_test')
+      trace_test
       ;;
     'native-test')
       native_test
