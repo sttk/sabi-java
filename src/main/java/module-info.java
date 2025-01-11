@@ -1,12 +1,15 @@
 /*
- * module-info class.
- * Copyright (C) 2022-2023 Takayuki Sato. All Rights Reserved.
+ * module-info.
+ * Copyright (C) 2022-2025 Takayuki Sato. All Rights Reserved.
  */
 
 /**
- * Defines the module of sabi framework.
+ * Defines the APIs of Sabi framework.
+ *
+ * This module includes the interfaces that abstracts data accesses to the external data stores
+ * and the classes to execute a logic function with or without transaction operations.
  */
 module com.github.sttk.sabi {
   exports com.github.sttk.sabi;
-  exports com.github.sttk.sabi.errs;
+  requires transitive com.github.sttk.errs;
 }

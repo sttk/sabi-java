@@ -12,6 +12,3 @@ test-results-native/
 # OS generating files
 .DS_Store
 Thumbs.db
-
-# GraalVM native build configuration files
-src/main/resources/META-INF/native-image
