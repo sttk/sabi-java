@@ -2,17 +2,15 @@ package com.github.sttk.sabi.internal;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Nested;
 
 import com.github.sttk.errs.Exc;
-import com.github.sttk.sabi.Runner;
 import com.github.sttk.sabi.AsyncGroup;
 import com.github.sttk.sabi.DataConn;
 import com.github.sttk.sabi.DataSrc;
-import java.util.List;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import org.junit.jupiter.api.Test;
 
 public class DataSrcListTest {
   private DataSrcListTest() {}
@@ -63,14 +61,18 @@ public class DataSrcListTest {
 
     @Override
     public void setup(AsyncGroup ag) throws Exc {
-      ag.add(() -> {
-        try { Thread.sleep(50); } catch (Exception e) {}
-        if (this.willFail) {
-          logger.add(String.format("AsyncDataSrc %d failed to setup", this.id));
-          throw new Exc("XXX");
-        }
-        logger.add(String.format("AsyncDataSrc %d setupped", this.id));
-      });
+      ag.add(
+          () -> {
+            try {
+              Thread.sleep(50);
+            } catch (Exception e) {
+            }
+            if (this.willFail) {
+              logger.add(String.format("AsyncDataSrc %d failed to setup", this.id));
+              throw new Exc("XXX");
+            }
+            logger.add(String.format("AsyncDataSrc %d setupped", this.id));
+          });
     }
 
     @Override
@@ -87,23 +89,53 @@ public class DataSrcListTest {
   }
 
   static class SyncDataConn implements DataConn {
-    @Override public void commit(AsyncGroup ag) throws Exc {}
-    @Override public void preCommit(AsyncGroup ag) throws Exc {}
-    @Override public void postCommit(AsyncGroup ag) {}
-    @Override public boolean shouldForceBack() { return false; }
-    @Override public void rollback(AsyncGroup ag) {}
-    @Override public void forceBack(AsyncGroup ag) {}
-    @Override public void close() {}
+    @Override
+    public void commit(AsyncGroup ag) throws Exc {}
+
+    @Override
+    public void preCommit(AsyncGroup ag) throws Exc {}
+
+    @Override
+    public void postCommit(AsyncGroup ag) {}
+
+    @Override
+    public boolean shouldForceBack() {
+      return false;
+    }
+
+    @Override
+    public void rollback(AsyncGroup ag) {}
+
+    @Override
+    public void forceBack(AsyncGroup ag) {}
+
+    @Override
+    public void close() {}
   }
 
   static class AsyncDataConn implements DataConn {
-    @Override public void commit(AsyncGroup ag) throws Exc {}
-    @Override public void preCommit(AsyncGroup ag) throws Exc {}
-    @Override public void postCommit(AsyncGroup ag) {}
-    @Override public boolean shouldForceBack() { return false; }
-    @Override public void rollback(AsyncGroup ag) {}
-    @Override public void forceBack(AsyncGroup ag) {}
-    @Override public void close() {}
+    @Override
+    public void commit(AsyncGroup ag) throws Exc {}
+
+    @Override
+    public void preCommit(AsyncGroup ag) throws Exc {}
+
+    @Override
+    public void postCommit(AsyncGroup ag) {}
+
+    @Override
+    public boolean shouldForceBack() {
+      return false;
+    }
+
+    @Override
+    public void rollback(AsyncGroup ag) {}
+
+    @Override
+    public void forceBack(AsyncGroup ag) {}
+
+    @Override
+    public void close() {}
   }
 
   @Test
@@ -464,12 +496,12 @@ public class DataSrcListTest {
 
     dsList.closeDataSrcs();
 
-    assertThat(logger).containsExactly(
-      "SyncDataSrc 2 closed",
-      "SyncDataSrc 1 closed",
-      "SyncDataSrc 4 closed",
-      "SyncDataSrc 3 closed"
-    );
+    assertThat(logger)
+        .containsExactly(
+            "SyncDataSrc 2 closed",
+            "SyncDataSrc 1 closed",
+            "SyncDataSrc 4 closed",
+            "SyncDataSrc 3 closed");
   }
 
   @Test
@@ -819,12 +851,12 @@ public class DataSrcListTest {
 
     dsList.closeDataSrcs();
 
-    assertThat(logger).containsExactly(
-      "SyncDataSrc 2 closed",
-      "SyncDataSrc 1 closed",
-      "SyncDataSrc 4 closed",
-      "SyncDataSrc 3 closed"
-    );
+    assertThat(logger)
+        .containsExactly(
+            "SyncDataSrc 2 closed",
+            "SyncDataSrc 1 closed",
+            "SyncDataSrc 4 closed",
+            "SyncDataSrc 3 closed");
   }
 
   @Test
@@ -893,14 +925,14 @@ public class DataSrcListTest {
 
     dsList.closeDataSrcs();
 
-    assertThat(logger).containsExactly(
-      "SyncDataSrc 2 setupped",
-      "AsyncDataSrc 1 setupped",
-      "AsyncDataSrc 1 created DataConn",
-      "SyncDataSrc 2 created DataConn",
-      "SyncDataSrc 2 closed",
-      "AsyncDataSrc 1 closed"
-    );
+    assertThat(logger)
+        .containsExactly(
+            "SyncDataSrc 2 setupped",
+            "AsyncDataSrc 1 setupped",
+            "AsyncDataSrc 1 created DataConn",
+            "SyncDataSrc 2 created DataConn",
+            "SyncDataSrc 2 closed",
+            "AsyncDataSrc 1 closed");
   }
 
   @Test
@@ -923,11 +955,9 @@ public class DataSrcListTest {
 
     dsList.closeDataSrcs();
 
-    assertThat(logger).containsExactly(
-      "SyncDataSrc 2 failed to setup",
-      "AsyncDataSrc 1 setupped",
-      "AsyncDataSrc 1 closed"
-    );
+    assertThat(logger)
+        .containsExactly(
+            "SyncDataSrc 2 failed to setup", "AsyncDataSrc 1 setupped", "AsyncDataSrc 1 closed");
   }
 
   @Test
@@ -950,11 +980,9 @@ public class DataSrcListTest {
 
     dsList.closeDataSrcs();
 
-    assertThat(logger).containsExactly(
-      "SyncDataSrc 2 setupped",
-      "AsyncDataSrc 1 failed to setup",
-      "SyncDataSrc 2 closed"
-    );
+    assertThat(logger)
+        .containsExactly(
+            "SyncDataSrc 2 setupped", "AsyncDataSrc 1 failed to setup", "SyncDataSrc 2 closed");
   }
 
   @Test

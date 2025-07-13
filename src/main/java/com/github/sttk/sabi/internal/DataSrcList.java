@@ -19,7 +19,7 @@ public class DataSrcList {
 
   DataSrcList(boolean local) {
     this.local = local;
-  } 
+  }
 
   void appendContainerPtrNotSetup(DataSrcContainer ptr) {
     ptr.next = null;
@@ -150,7 +150,7 @@ public class DataSrcList {
     ptr = this.notSetupHead;
     while (ptr != null && ptr != firstPtrNotSetupYet) {
       var next = ptr.next;
-      if (! excMap.containsKey(ptr.name)) {
+      if (!excMap.containsKey(ptr.name)) {
         this.removeContainerPtrNotSetup(ptr);
         this.appendContainerPtrDidSetup(ptr);
       }

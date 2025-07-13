@@ -17,6 +17,11 @@ compile() {
   errcheck $?
 }
 
+format() {
+  mvn spotless:apply
+  errcheck $?
+}
+
 test() {
   mvn test
   errcheck $?
@@ -60,9 +65,9 @@ deploy() {
 
 if [[ "$#" == "0" ]]; then
   clean
+  format
   jar
   javadoc
-  #trace_test
   native_test
 else
   for a in "$@"; do
@@ -72,6 +77,9 @@ else
       ;;
     compile)
       compile
+      ;;
+    format)
+      format
       ;;
     test)
       test
@@ -88,7 +96,7 @@ else
     sver)
       sver $2
       ;;
-    'trace_test')
+    'trace-test')
       trace_test
       ;;
     'native-test')

@@ -7,9 +7,7 @@ package com.github.sttk.sabi.internal;
 import com.github.sttk.errs.Exc;
 import com.github.sttk.sabi.AsyncGroup;
 import com.github.sttk.sabi.Runner;
-
 import java.util.Map;
-import java.util.HashMap;
 
 public class AsyncGroupImpl implements AsyncGroup {
   private ExcEntry excHead;
@@ -23,13 +21,16 @@ public class AsyncGroupImpl implements AsyncGroup {
   @Override
   public void add(final Runner runner) {
     final var name = this.name;
-    var vth = Thread.ofVirtual().start(() -> {
-      try {
-        runner.run();
-      } catch (Exc | RuntimeException e) {
-        addExc(name, e);
-      }
-    });
+    var vth =
+        Thread.ofVirtual()
+            .start(
+                () -> {
+                  try {
+                    runner.run();
+                  } catch (Exc | RuntimeException e) {
+                    addExc(name, e);
+                  }
+                });
 
     var ent = new VthEntry(name, vth);
     if (this.vthLast == null) {
@@ -72,7 +73,8 @@ public class AsyncGroupImpl implements AsyncGroup {
     for (var ent = this.vthHead; ent != null; ent = ent.next) {
       try {
         ent.thread.join();
-      } catch (InterruptedException e) {}
+      } catch (InterruptedException e) {
+      }
     }
     clear();
   }

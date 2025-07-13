@@ -6,10 +6,11 @@
 /**
  * Defines the APIs of Sabi framework.
  *
- * This module includes the interfaces that abstracts data accesses to the external data stores
+ * <p>This module includes the interfaces that abstracts data accesses to the external data stores
  * and the classes to execute a logic function with or without transaction operations.
  */
 module com.github.sttk.sabi {
   exports com.github.sttk.sabi;
+
   requires transitive com.github.sttk.errs;
 }

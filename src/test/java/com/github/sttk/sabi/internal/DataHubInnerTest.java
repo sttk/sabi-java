@@ -2,27 +2,27 @@ package com.github.sttk.sabi.internal;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.AfterEach;
 
 import com.github.sttk.errs.Exc;
 import com.github.sttk.sabi.AsyncGroup;
 import com.github.sttk.sabi.DataConn;
-import com.github.sttk.sabi.DataSrc;
 import com.github.sttk.sabi.DataHub;
-import java.util.List;
+import com.github.sttk.sabi.DataSrc;
 import java.util.ArrayList;
+import java.util.List;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 
 public class DataHubInnerTest {
   private DataHubInnerTest() {}
 
-  final static int FAIL__NOT = 0;
-  final static int FAIL__SETUP = 1;
-  final static int FAIL__CREATE_DATA_CONN = 2;
-  final static int FAIL__COMMIT = 3;
-  final static int FAIL__PRE_COMMIT = 4;
+  static final int FAIL__NOT = 0;
+  static final int FAIL__SETUP = 1;
+  static final int FAIL__CREATE_DATA_CONN = 2;
+  static final int FAIL__COMMIT = 3;
+  static final int FAIL__PRE_COMMIT = 4;
 
   final void suppressWarnings_unused(Object a) {}
 
@@ -36,6 +36,7 @@ public class DataHubInnerTest {
       this.fail = fail;
       this.logger = logger;
     }
+
     @Override
     public void setup(AsyncGroup ag) throws Exc {
       if (this.fail == FAIL__SETUP) {
@@ -44,10 +45,12 @@ public class DataHubInnerTest {
       }
       this.logger.add(String.format("SyncDataSrc %d setupped", this.id));
     }
+
     @Override
     public void close() {
       this.logger.add(String.format("SyncDataSrc %d closed", this.id));
     }
+
     @Override
     public DataConn createDataConn() throws Exc {
       if (this.fail == FAIL__CREATE_DATA_CONN) {
@@ -70,21 +73,28 @@ public class DataHubInnerTest {
       this.fail = fail;
       this.logger = logger;
     }
+
     @Override
     public void setup(AsyncGroup ag) throws Exc {
-      ag.add(() -> {
-        try { Thread.sleep(50); } catch (Exception e) {}
-        if (this.fail == FAIL__SETUP) {
-          this.logger.add(String.format("AsyncDataSrc %d failed to setup", this.id));
-          throw new Exc("YYY");
-        }
-        this.logger.add(String.format("AsyncDataSrc %d setupped", this.id));
-      });
+      ag.add(
+          () -> {
+            try {
+              Thread.sleep(50);
+            } catch (Exception e) {
+            }
+            if (this.fail == FAIL__SETUP) {
+              this.logger.add(String.format("AsyncDataSrc %d failed to setup", this.id));
+              throw new Exc("YYY");
+            }
+            this.logger.add(String.format("AsyncDataSrc %d setupped", this.id));
+          });
     }
+
     @Override
     public void close() {
       this.logger.add(String.format("AsyncDataSrc %d closed", this.id));
     }
+
     @Override
     public DataConn createDataConn() throws Exc {
       if (this.fail == FAIL__CREATE_DATA_CONN) {
@@ -108,6 +118,7 @@ public class DataHubInnerTest {
       this.fail = fail;
       this.logger = logger;
     }
+
     @Override
     public void commit(AsyncGroup ag) throws Exc {
       if (this.fail == FAIL__COMMIT) {
@@ -117,6 +128,7 @@ public class DataHubInnerTest {
       this.committed = true;
       this.logger.add(String.format("SyncDataConn %d committed", this.id));
     }
+
     @Override
     public void preCommit(AsyncGroup ag) throws Exc {
       if (this.fail == FAIL__PRE_COMMIT) {
@@ -125,22 +137,27 @@ public class DataHubInnerTest {
       }
       this.logger.add(String.format("SyncDataConn %d pre committed", this.id));
     }
+
     @Override
     public void postCommit(AsyncGroup ag) {
       this.logger.add(String.format("SyncDataConn %d post committed", this.id));
     }
+
     @Override
     public boolean shouldForceBack() {
       return this.committed;
     }
+
     @Override
     public void rollback(AsyncGroup ag) {
       this.logger.add(String.format("SyncDataConn %d rollbacked", this.id));
     }
+
     @Override
     public void forceBack(AsyncGroup ag) {
       this.logger.add(String.format("SyncDataConn %d forced back", this.id));
     }
+
     @Override
     public void close() {
       this.logger.add(String.format("SyncDataConn %d closed", this.id));
@@ -158,6 +175,7 @@ public class DataHubInnerTest {
       this.fail = fail;
       this.logger = logger;
     }
+
     @Override
     public void commit(AsyncGroup ag) throws Exc {
       if (this.fail == FAIL__COMMIT) {
@@ -167,6 +185,7 @@ public class DataHubInnerTest {
       this.committed = true;
       this.logger.add(String.format("AsyncDataConn %d committed", this.id));
     }
+
     @Override
     public void preCommit(AsyncGroup ag) throws Exc {
       if (this.fail == FAIL__PRE_COMMIT) {
@@ -175,22 +194,27 @@ public class DataHubInnerTest {
       }
       this.logger.add(String.format("AsyncDataConn %d pre committed", this.id));
     }
+
     @Override
     public void postCommit(AsyncGroup ag) {
       this.logger.add(String.format("AsyncDataConn %d post committed", this.id));
     }
+
     @Override
     public boolean shouldForceBack() {
       return this.committed;
     }
+
     @Override
     public void rollback(AsyncGroup ag) {
       this.logger.add(String.format("AsyncDataConn %d rollbacked", this.id));
     }
+
     @Override
     public void forceBack(AsyncGroup ag) {
       this.logger.add(String.format("AsyncDataConn %d forced back", this.id));
     }
+
     @Override
     public void close() {
       this.logger.add(String.format("AsyncDataConn %d closed", this.id));
@@ -208,6 +232,7 @@ public class DataHubInnerTest {
     void beforeEach() {
       resetGlobalVariables();
     }
+
     @AfterEach
     void afterEach() {
       resetGlobalVariables();
@@ -253,12 +278,12 @@ public class DataHubInnerTest {
       assertThat(DataHubInner.GLOBAL_DATA_SRC_LIST.notSetupHead).isNull();
       assertThat(DataHubInner.GLOBAL_DATA_SRC_LIST.didSetupHead).isNull();
 
-      assertThat(logger).containsExactly(
-        "SyncDataSrc 2 setupped",
-        "AsyncDataSrc 1 setupped",
-        "SyncDataSrc 2 closed",
-        "AsyncDataSrc 1 closed"
-      );
+      assertThat(logger)
+          .containsExactly(
+              "SyncDataSrc 2 setupped",
+              "AsyncDataSrc 1 setupped",
+              "SyncDataSrc 2 closed",
+              "AsyncDataSrc 1 closed");
     }
 
     @Test
@@ -301,10 +326,8 @@ public class DataHubInnerTest {
       assertThat(DataHubInner.GLOBAL_DATA_SRC_LIST.notSetupHead).isNull();
       assertThat(DataHubInner.GLOBAL_DATA_SRC_LIST.didSetupHead).isNull();
 
-      assertThat(logger).containsExactly(
-        "SyncDataSrc 2 failed to setup",
-        "AsyncDataSrc 1 failed to setup"
-      );
+      assertThat(logger)
+          .containsExactly("SyncDataSrc 2 failed to setup", "AsyncDataSrc 1 failed to setup");
     }
 
     @Test
@@ -351,10 +374,7 @@ public class DataHubInnerTest {
       assertThat(DataHubInner.GLOBAL_DATA_SRC_LIST.notSetupHead).isNull();
       assertThat(DataHubInner.GLOBAL_DATA_SRC_LIST.didSetupHead).isNull();
 
-      assertThat(logger).containsExactly(
-        "AsyncDataSrc 1 setupped",
-        "AsyncDataSrc 1 closed"
-      );
+      assertThat(logger).containsExactly("AsyncDataSrc 1 setupped", "AsyncDataSrc 1 closed");
     }
 
     @Test
@@ -401,10 +421,7 @@ public class DataHubInnerTest {
       assertThat(DataHubInner.GLOBAL_DATA_SRC_LIST.notSetupHead).isNull();
       assertThat(DataHubInner.GLOBAL_DATA_SRC_LIST.didSetupHead).isNull();
 
-      assertThat(logger).containsExactly(
-        "AsyncDataSrc 1 setupped",
-        "AsyncDataSrc 1 closed"
-      );
+      assertThat(logger).containsExactly("AsyncDataSrc 1 setupped", "AsyncDataSrc 1 closed");
     }
   }
 
@@ -414,6 +431,7 @@ public class DataHubInnerTest {
     void beforeEach() {
       resetGlobalVariables();
     }
+
     @AfterEach
     void afterEach() {
       resetGlobalVariables();
@@ -481,12 +499,12 @@ public class DataHubInnerTest {
       assertThat(DataHubInner.GLOBAL_DATA_SRC_LIST.notSetupHead).isNull();
       assertThat(DataHubInner.GLOBAL_DATA_SRC_LIST.didSetupHead).isNull();
 
-      assertThat(logger).containsExactly(
-        "SyncDataSrc 2 setupped",
-        "AsyncDataSrc 1 setupped",
-        "SyncDataSrc 2 closed",
-        "AsyncDataSrc 1 closed"
-      );
+      assertThat(logger)
+          .containsExactly(
+              "SyncDataSrc 2 setupped",
+              "AsyncDataSrc 1 setupped",
+              "SyncDataSrc 2 closed",
+              "AsyncDataSrc 1 closed");
     }
 
     @Test
@@ -534,8 +552,8 @@ public class DataHubInnerTest {
         assertThat(hub.dataConnMap).hasSize(0);
         assertThat(hub.fixed).isFalse();
 
-        hub.disuses("foo");  // do nothing because of global
-        hub.disuses("bar");  // do nothing because of global
+        hub.disuses("foo"); // do nothing because of global
+        hub.disuses("bar"); // do nothing because of global
 
         ptr = hub.localDataSrcList.notSetupHead;
         assertThat(ptr).isNotNull();
@@ -582,14 +600,14 @@ public class DataHubInnerTest {
       assertThat(DataHubInner.GLOBAL_DATA_SRC_LIST.notSetupHead).isNull();
       assertThat(DataHubInner.GLOBAL_DATA_SRC_LIST.didSetupHead).isNull();
 
-      assertThat(logger).containsExactly(
-        "SyncDataSrc 2 setupped",
-        "AsyncDataSrc 1 setupped",
-        "SyncDataSrc 3 closed",
-        "AsyncDataSrc 4 closed",
-        "SyncDataSrc 2 closed",
-        "AsyncDataSrc 1 closed"
-      );
+      assertThat(logger)
+          .containsExactly(
+              "SyncDataSrc 2 setupped",
+              "AsyncDataSrc 1 setupped",
+              "SyncDataSrc 3 closed",
+              "AsyncDataSrc 4 closed",
+              "SyncDataSrc 2 closed",
+              "AsyncDataSrc 1 closed");
     }
 
     @Test
@@ -715,10 +733,7 @@ public class DataHubInnerTest {
         fail(e);
       }
 
-      assertThat(logger).containsExactly(
-        "SyncDataSrc 1 setupped",
-        "SyncDataSrc 1 closed"
-      );
+      assertThat(logger).containsExactly("SyncDataSrc 1 setupped", "SyncDataSrc 1 closed");
     }
 
     @Test
@@ -790,16 +805,16 @@ public class DataHubInnerTest {
         fail(e);
       }
 
-      assertThat(logger).containsExactly(
-        "SyncDataSrc 2 setupped",
-        "AsyncDataSrc 1 setupped",
-        "SyncDataSrc 3 setupped",
-        "AsyncDataSrc 4 setupped",
-        "AsyncDataSrc 4 closed",
-        "SyncDataSrc 3 closed",
-        "SyncDataSrc 2 closed",
-        "AsyncDataSrc 1 closed"
-      );
+      assertThat(logger)
+          .containsExactly(
+              "SyncDataSrc 2 setupped",
+              "AsyncDataSrc 1 setupped",
+              "SyncDataSrc 3 setupped",
+              "AsyncDataSrc 4 setupped",
+              "AsyncDataSrc 4 closed",
+              "SyncDataSrc 3 closed",
+              "SyncDataSrc 2 closed",
+              "AsyncDataSrc 1 closed");
     }
 
     @Test
@@ -866,15 +881,15 @@ public class DataHubInnerTest {
         fail(e);
       }
 
-      assertThat(logger).containsExactly(
-        "SyncDataSrc 2 setupped",
-        "AsyncDataSrc 1 setupped",
-        "SyncDataSrc 4 failed to setup",
-        "AsyncDataSrc 3 setupped",
-        "AsyncDataSrc 3 closed",
-        "SyncDataSrc 2 closed",
-        "AsyncDataSrc 1 closed"
-      );
+      assertThat(logger)
+          .containsExactly(
+              "SyncDataSrc 2 setupped",
+              "AsyncDataSrc 1 setupped",
+              "SyncDataSrc 4 failed to setup",
+              "AsyncDataSrc 3 setupped",
+              "AsyncDataSrc 3 closed",
+              "SyncDataSrc 2 closed",
+              "AsyncDataSrc 1 closed");
     }
 
     @Test
@@ -941,15 +956,15 @@ public class DataHubInnerTest {
         fail(e);
       }
 
-      assertThat(logger).containsExactly(
-        "SyncDataSrc 2 setupped",
-        "AsyncDataSrc 1 setupped",
-        "SyncDataSrc 4 setupped",
-        "AsyncDataSrc 3 failed to setup",
-        "SyncDataSrc 4 closed",
-        "SyncDataSrc 2 closed",
-        "AsyncDataSrc 1 closed"
-      );
+      assertThat(logger)
+          .containsExactly(
+              "SyncDataSrc 2 setupped",
+              "AsyncDataSrc 1 setupped",
+              "SyncDataSrc 4 setupped",
+              "AsyncDataSrc 3 failed to setup",
+              "SyncDataSrc 4 closed",
+              "SyncDataSrc 2 closed",
+              "AsyncDataSrc 1 closed");
     }
 
     @Test
@@ -1005,37 +1020,32 @@ public class DataHubInnerTest {
         fail(e);
       }
 
-      assertThat(logger).containsExactly(
-        "SyncDataSrc 2 setupped",
-        "AsyncDataSrc 1 setupped",
-        "SyncDataSrc 4 setupped",
-        "AsyncDataSrc 3 setupped",
-
-        "AsyncDataSrc 1 created DataConn",
-        "SyncDataSrc 2 created DataConn",
-        "AsyncDataSrc 3 created DataConn",
-        "SyncDataSrc 4 created DataConn",
-
-        "AsyncDataConn 1 pre committed",
-        "SyncDataConn 2 pre committed",
-        "AsyncDataConn 3 pre committed",
-        "SyncDataConn 4 pre committed",
-
-        "AsyncDataConn 1 committed",
-        "SyncDataConn 2 committed",
-        "AsyncDataConn 3 committed",
-        "SyncDataConn 4 committed",
-
-        "SyncDataConn 4 closed",
-        "AsyncDataConn 3 closed",
-        "SyncDataConn 2 closed",
-        "AsyncDataConn 1 closed",
-
-        "SyncDataSrc 4 closed",
-        "AsyncDataSrc 3 closed",
-        "SyncDataSrc 2 closed",
-        "AsyncDataSrc 1 closed"
-      );
+      assertThat(logger)
+          .containsExactly(
+              "SyncDataSrc 2 setupped",
+              "AsyncDataSrc 1 setupped",
+              "SyncDataSrc 4 setupped",
+              "AsyncDataSrc 3 setupped",
+              "AsyncDataSrc 1 created DataConn",
+              "SyncDataSrc 2 created DataConn",
+              "AsyncDataSrc 3 created DataConn",
+              "SyncDataSrc 4 created DataConn",
+              "AsyncDataConn 1 pre committed",
+              "SyncDataConn 2 pre committed",
+              "AsyncDataConn 3 pre committed",
+              "SyncDataConn 4 pre committed",
+              "AsyncDataConn 1 committed",
+              "SyncDataConn 2 committed",
+              "AsyncDataConn 3 committed",
+              "SyncDataConn 4 committed",
+              "SyncDataConn 4 closed",
+              "AsyncDataConn 3 closed",
+              "SyncDataConn 2 closed",
+              "AsyncDataConn 1 closed",
+              "SyncDataSrc 4 closed",
+              "AsyncDataSrc 3 closed",
+              "SyncDataSrc 2 closed",
+              "AsyncDataSrc 1 closed");
     }
 
     @Test
@@ -1064,7 +1074,7 @@ public class DataHubInnerTest {
             case DataHub.FailToCastDataConn rsn -> {
               assertThat(rsn.name()).isEqualTo("foo");
               assertThat(rsn.castToType())
-                .isEqualTo("com.github.sttk.sabi.internal.DataHubInnerTest$SyncDataConn");
+                  .isEqualTo("com.github.sttk.sabi.internal.DataHubInnerTest$SyncDataConn");
             }
             default -> fail(e);
           }
@@ -1080,7 +1090,7 @@ public class DataHubInnerTest {
             case DataHub.FailToCastDataConn rsn -> {
               assertThat(rsn.name()).isEqualTo("bar");
               assertThat(rsn.castToType())
-                .isEqualTo("com.github.sttk.sabi.internal.DataHubInnerTest$AsyncDataConn");
+                  .isEqualTo("com.github.sttk.sabi.internal.DataHubInnerTest$AsyncDataConn");
             }
             default -> fail(e);
           }
@@ -1095,14 +1105,14 @@ public class DataHubInnerTest {
         fail(e);
       }
 
-      assertThat(logger).containsExactly(
-        "AsyncDataSrc 1 setupped",
-        "SyncDataSrc 2 setupped",
-        "AsyncDataSrc 1 created DataConn",
-        "SyncDataSrc 2 created DataConn",
-        "SyncDataSrc 2 closed",
-        "AsyncDataSrc 1 closed"
-      );
+      assertThat(logger)
+          .containsExactly(
+              "AsyncDataSrc 1 setupped",
+              "SyncDataSrc 2 setupped",
+              "AsyncDataSrc 1 created DataConn",
+              "SyncDataSrc 2 created DataConn",
+              "SyncDataSrc 2 closed",
+              "AsyncDataSrc 1 closed");
     }
 
     @Test
@@ -1137,7 +1147,7 @@ public class DataHubInnerTest {
             case DataHub.FailToCastDataConn rsn -> {
               assertThat(rsn.name()).isEqualTo("foo");
               assertThat(rsn.castToType())
-                .isEqualTo("com.github.sttk.sabi.internal.DataHubInnerTest$SyncDataConn");
+                  .isEqualTo("com.github.sttk.sabi.internal.DataHubInnerTest$SyncDataConn");
             }
             default -> fail(e);
           }
@@ -1153,7 +1163,7 @@ public class DataHubInnerTest {
             case DataHub.FailToCastDataConn rsn -> {
               assertThat(rsn.name()).isEqualTo("bar");
               assertThat(rsn.castToType())
-                .isEqualTo("com.github.sttk.sabi.internal.DataHubInnerTest$AsyncDataConn");
+                  .isEqualTo("com.github.sttk.sabi.internal.DataHubInnerTest$AsyncDataConn");
             }
             default -> fail(e);
           }
@@ -1166,16 +1176,16 @@ public class DataHubInnerTest {
         fail(e);
       }
 
-      assertThat(logger).containsExactly(
-        "AsyncDataSrc 1 setupped",
-        "SyncDataSrc 2 setupped",
-        "AsyncDataSrc 1 created DataConn",
-        "SyncDataSrc 2 created DataConn",
-        "SyncDataConn 2 closed",
-        "AsyncDataConn 1 closed",
-        "SyncDataSrc 2 closed",
-        "AsyncDataSrc 1 closed"
-      );
+      assertThat(logger)
+          .containsExactly(
+              "AsyncDataSrc 1 setupped",
+              "SyncDataSrc 2 setupped",
+              "AsyncDataSrc 1 created DataConn",
+              "SyncDataSrc 2 created DataConn",
+              "SyncDataConn 2 closed",
+              "AsyncDataConn 1 closed",
+              "SyncDataSrc 2 closed",
+              "AsyncDataSrc 1 closed");
     }
 
     @Test
@@ -1207,7 +1217,7 @@ public class DataHubInnerTest {
             case DataHub.FailToCreateDataConn rsn -> {
               assertThat(rsn.name()).isEqualTo("bar");
               assertThat(rsn.dataConnType())
-                .isEqualTo("com.github.sttk.sabi.internal.DataHubInnerTest$AsyncDataConn");
+                  .isEqualTo("com.github.sttk.sabi.internal.DataHubInnerTest$AsyncDataConn");
             }
             default -> fail(e);
           }
@@ -1220,15 +1230,15 @@ public class DataHubInnerTest {
         fail(e);
       }
 
-      assertThat(logger).containsExactly(
-        "AsyncDataSrc 1 setupped",
-        "SyncDataSrc 2 setupped",
-        "AsyncDataSrc 1 created DataConn",
-        "SyncDataSrc 2 failed to create a DataConn",
-        "AsyncDataConn 1 closed",
-        "SyncDataSrc 2 closed",
-        "AsyncDataSrc 1 closed"
-      );
+      assertThat(logger)
+          .containsExactly(
+              "AsyncDataSrc 1 setupped",
+              "SyncDataSrc 2 setupped",
+              "AsyncDataSrc 1 created DataConn",
+              "SyncDataSrc 2 failed to create a DataConn",
+              "AsyncDataConn 1 closed",
+              "SyncDataSrc 2 closed",
+              "AsyncDataSrc 1 closed");
     }
 
     @Test
@@ -1257,7 +1267,7 @@ public class DataHubInnerTest {
             case DataHub.NoDataSrcToCreateDataConn rsn -> {
               assertThat(rsn.name()).isEqualTo("baz");
               assertThat(rsn.dataConnType())
-                .isEqualTo("com.github.sttk.sabi.internal.DataHubInnerTest$SyncDataConn");
+                  .isEqualTo("com.github.sttk.sabi.internal.DataHubInnerTest$SyncDataConn");
             }
             default -> fail(e);
           }
@@ -1273,7 +1283,7 @@ public class DataHubInnerTest {
             case DataHub.NoDataSrcToCreateDataConn rsn -> {
               assertThat(rsn.name()).isEqualTo("qux");
               assertThat(rsn.dataConnType())
-                .isEqualTo("com.github.sttk.sabi.internal.DataHubInnerTest$AsyncDataConn");
+                  .isEqualTo("com.github.sttk.sabi.internal.DataHubInnerTest$AsyncDataConn");
             }
             default -> fail(e);
           }
@@ -1286,12 +1296,12 @@ public class DataHubInnerTest {
         fail(e);
       }
 
-      assertThat(logger).containsExactly(
-        "AsyncDataSrc 1 setupped",
-        "SyncDataSrc 2 setupped",
-        "SyncDataSrc 2 closed",
-        "AsyncDataSrc 1 closed"
-      );
+      assertThat(logger)
+          .containsExactly(
+              "AsyncDataSrc 1 setupped",
+              "SyncDataSrc 2 setupped",
+              "SyncDataSrc 2 closed",
+              "AsyncDataSrc 1 closed");
     }
 
     @Test
@@ -1321,17 +1331,16 @@ public class DataHubInnerTest {
         fail(e);
       }
 
-      assertThat(logger).containsExactly(
-        "SyncDataSrc 2 setupped",
-        "AsyncDataSrc 1 setupped",
-        "SyncDataSrc 4 setupped",
-        "AsyncDataSrc 3 setupped",
-
-        "SyncDataSrc 4 closed",
-        "AsyncDataSrc 3 closed",
-        "SyncDataSrc 2 closed",
-        "AsyncDataSrc 1 closed"
-      );
+      assertThat(logger)
+          .containsExactly(
+              "SyncDataSrc 2 setupped",
+              "AsyncDataSrc 1 setupped",
+              "SyncDataSrc 4 setupped",
+              "AsyncDataSrc 3 setupped",
+              "SyncDataSrc 4 closed",
+              "AsyncDataSrc 3 closed",
+              "SyncDataSrc 2 closed",
+              "AsyncDataSrc 1 closed");
     }
 
     @Test
@@ -1384,35 +1393,30 @@ public class DataHubInnerTest {
         fail(e);
       }
 
-      assertThat(logger).containsExactly(
-        "SyncDataSrc 2 setupped",
-        "AsyncDataSrc 1 setupped",
-        "SyncDataSrc 4 setupped",
-        "AsyncDataSrc 3 setupped",
-
-        "AsyncDataSrc 1 created DataConn",
-        "SyncDataSrc 2 created DataConn",
-        "AsyncDataSrc 3 created DataConn",
-        "SyncDataSrc 4 created DataConn",
-
-        "AsyncDataConn 1 pre committed",
-        "SyncDataConn 2 pre committed",
-        "AsyncDataConn 3 pre committed",
-        "SyncDataConn 4 pre committed",
-
-        "AsyncDataConn 1 committed",
-        "SyncDataConn 2 failed to commit",
-
-        "SyncDataConn 4 closed",
-        "AsyncDataConn 3 closed",
-        "SyncDataConn 2 closed",
-        "AsyncDataConn 1 closed",
-
-        "SyncDataSrc 4 closed",
-        "AsyncDataSrc 3 closed",
-        "SyncDataSrc 2 closed",
-        "AsyncDataSrc 1 closed"
-      );
+      assertThat(logger)
+          .containsExactly(
+              "SyncDataSrc 2 setupped",
+              "AsyncDataSrc 1 setupped",
+              "SyncDataSrc 4 setupped",
+              "AsyncDataSrc 3 setupped",
+              "AsyncDataSrc 1 created DataConn",
+              "SyncDataSrc 2 created DataConn",
+              "AsyncDataSrc 3 created DataConn",
+              "SyncDataSrc 4 created DataConn",
+              "AsyncDataConn 1 pre committed",
+              "SyncDataConn 2 pre committed",
+              "AsyncDataConn 3 pre committed",
+              "SyncDataConn 4 pre committed",
+              "AsyncDataConn 1 committed",
+              "SyncDataConn 2 failed to commit",
+              "SyncDataConn 4 closed",
+              "AsyncDataConn 3 closed",
+              "SyncDataConn 2 closed",
+              "AsyncDataConn 1 closed",
+              "SyncDataSrc 4 closed",
+              "AsyncDataSrc 3 closed",
+              "SyncDataSrc 2 closed",
+              "AsyncDataSrc 1 closed");
     }
 
     @Test
@@ -1465,34 +1469,29 @@ public class DataHubInnerTest {
         fail(e);
       }
 
-      assertThat(logger).containsExactly(
-        "SyncDataSrc 2 setupped",
-        "AsyncDataSrc 1 setupped",
-        "SyncDataSrc 4 setupped",
-        "AsyncDataSrc 3 setupped",
-
-        "AsyncDataSrc 1 created DataConn",
-        "SyncDataSrc 2 created DataConn",
-        "AsyncDataSrc 3 created DataConn",
-        "SyncDataSrc 4 created DataConn",
-
-        "AsyncDataConn 1 pre committed",
-        "SyncDataConn 2 pre committed",
-        "AsyncDataConn 3 pre committed",
-        "SyncDataConn 4 pre committed",
-
-        "AsyncDataConn 1 failed to commit",
-
-        "SyncDataConn 4 closed",
-        "AsyncDataConn 3 closed",
-        "SyncDataConn 2 closed",
-        "AsyncDataConn 1 closed",
-
-        "SyncDataSrc 4 closed",
-        "AsyncDataSrc 3 closed",
-        "SyncDataSrc 2 closed",
-        "AsyncDataSrc 1 closed"
-      );
+      assertThat(logger)
+          .containsExactly(
+              "SyncDataSrc 2 setupped",
+              "AsyncDataSrc 1 setupped",
+              "SyncDataSrc 4 setupped",
+              "AsyncDataSrc 3 setupped",
+              "AsyncDataSrc 1 created DataConn",
+              "SyncDataSrc 2 created DataConn",
+              "AsyncDataSrc 3 created DataConn",
+              "SyncDataSrc 4 created DataConn",
+              "AsyncDataConn 1 pre committed",
+              "SyncDataConn 2 pre committed",
+              "AsyncDataConn 3 pre committed",
+              "SyncDataConn 4 pre committed",
+              "AsyncDataConn 1 failed to commit",
+              "SyncDataConn 4 closed",
+              "AsyncDataConn 3 closed",
+              "SyncDataConn 2 closed",
+              "AsyncDataConn 1 closed",
+              "SyncDataSrc 4 closed",
+              "AsyncDataSrc 3 closed",
+              "SyncDataSrc 2 closed",
+              "AsyncDataSrc 1 closed");
     }
 
     @Test
@@ -1545,37 +1544,32 @@ public class DataHubInnerTest {
         fail(e);
       }
 
-      assertThat(logger).containsExactly(
-        "SyncDataSrc 2 setupped",
-        "AsyncDataSrc 1 setupped",
-        "SyncDataSrc 4 setupped",
-        "AsyncDataSrc 3 setupped",
-
-        "AsyncDataSrc 1 created DataConn",
-        "SyncDataSrc 2 created DataConn",
-        "AsyncDataSrc 3 created DataConn",
-        "SyncDataSrc 4 created DataConn",
-
-        "AsyncDataConn 1 pre committed",
-        "SyncDataConn 2 pre committed",
-        "AsyncDataConn 3 pre committed",
-        "SyncDataConn 4 pre committed",
-
-        "AsyncDataConn 1 committed",
-        "SyncDataConn 2 committed",
-        "AsyncDataConn 3 committed",
-        "SyncDataConn 4 failed to commit",
-
-        "SyncDataConn 4 closed",
-        "AsyncDataConn 3 closed",
-        "SyncDataConn 2 closed",
-        "AsyncDataConn 1 closed",
-
-        "SyncDataSrc 4 closed",
-        "AsyncDataSrc 3 closed",
-        "SyncDataSrc 2 closed",
-        "AsyncDataSrc 1 closed"
-      );
+      assertThat(logger)
+          .containsExactly(
+              "SyncDataSrc 2 setupped",
+              "AsyncDataSrc 1 setupped",
+              "SyncDataSrc 4 setupped",
+              "AsyncDataSrc 3 setupped",
+              "AsyncDataSrc 1 created DataConn",
+              "SyncDataSrc 2 created DataConn",
+              "AsyncDataSrc 3 created DataConn",
+              "SyncDataSrc 4 created DataConn",
+              "AsyncDataConn 1 pre committed",
+              "SyncDataConn 2 pre committed",
+              "AsyncDataConn 3 pre committed",
+              "SyncDataConn 4 pre committed",
+              "AsyncDataConn 1 committed",
+              "SyncDataConn 2 committed",
+              "AsyncDataConn 3 committed",
+              "SyncDataConn 4 failed to commit",
+              "SyncDataConn 4 closed",
+              "AsyncDataConn 3 closed",
+              "SyncDataConn 2 closed",
+              "AsyncDataConn 1 closed",
+              "SyncDataSrc 4 closed",
+              "AsyncDataSrc 3 closed",
+              "SyncDataSrc 2 closed",
+              "AsyncDataSrc 1 closed");
     }
 
     @Test
@@ -1628,36 +1622,31 @@ public class DataHubInnerTest {
         fail(e);
       }
 
-      assertThat(logger).containsExactly(
-        "SyncDataSrc 2 setupped",
-        "AsyncDataSrc 1 setupped",
-        "SyncDataSrc 4 setupped",
-        "AsyncDataSrc 3 setupped",
-
-        "AsyncDataSrc 1 created DataConn",
-        "SyncDataSrc 2 created DataConn",
-        "AsyncDataSrc 3 created DataConn",
-        "SyncDataSrc 4 created DataConn",
-
-        "AsyncDataConn 1 pre committed",
-        "SyncDataConn 2 pre committed",
-        "AsyncDataConn 3 pre committed",
-        "SyncDataConn 4 pre committed",
-
-        "AsyncDataConn 1 committed",
-        "SyncDataConn 2 committed",
-        "AsyncDataConn 3 failed to commit",
-
-        "SyncDataConn 4 closed",
-        "AsyncDataConn 3 closed",
-        "SyncDataConn 2 closed",
-        "AsyncDataConn 1 closed",
-
-        "SyncDataSrc 4 closed",
-        "AsyncDataSrc 3 closed",
-        "SyncDataSrc 2 closed",
-        "AsyncDataSrc 1 closed"
-      );
+      assertThat(logger)
+          .containsExactly(
+              "SyncDataSrc 2 setupped",
+              "AsyncDataSrc 1 setupped",
+              "SyncDataSrc 4 setupped",
+              "AsyncDataSrc 3 setupped",
+              "AsyncDataSrc 1 created DataConn",
+              "SyncDataSrc 2 created DataConn",
+              "AsyncDataSrc 3 created DataConn",
+              "SyncDataSrc 4 created DataConn",
+              "AsyncDataConn 1 pre committed",
+              "SyncDataConn 2 pre committed",
+              "AsyncDataConn 3 pre committed",
+              "SyncDataConn 4 pre committed",
+              "AsyncDataConn 1 committed",
+              "SyncDataConn 2 committed",
+              "AsyncDataConn 3 failed to commit",
+              "SyncDataConn 4 closed",
+              "AsyncDataConn 3 closed",
+              "SyncDataConn 2 closed",
+              "AsyncDataConn 1 closed",
+              "SyncDataSrc 4 closed",
+              "AsyncDataSrc 3 closed",
+              "SyncDataSrc 2 closed",
+              "AsyncDataSrc 1 closed");
     }
 
     @Test
@@ -1710,30 +1699,26 @@ public class DataHubInnerTest {
         fail(e);
       }
 
-      assertThat(logger).containsExactly(
-        "SyncDataSrc 2 setupped",
-        "AsyncDataSrc 1 setupped",
-        "SyncDataSrc 4 setupped",
-        "AsyncDataSrc 3 setupped",
-
-        "AsyncDataSrc 1 created DataConn",
-        "SyncDataSrc 2 created DataConn",
-        "AsyncDataSrc 3 created DataConn",
-        "SyncDataSrc 4 created DataConn",
-
-        "AsyncDataConn 1 pre committed",
-        "SyncDataConn 2 failed to pre commit",
-
-        "SyncDataConn 4 closed",
-        "AsyncDataConn 3 closed",
-        "SyncDataConn 2 closed",
-        "AsyncDataConn 1 closed",
-
-        "SyncDataSrc 4 closed",
-        "AsyncDataSrc 3 closed",
-        "SyncDataSrc 2 closed",
-        "AsyncDataSrc 1 closed"
-      );
+      assertThat(logger)
+          .containsExactly(
+              "SyncDataSrc 2 setupped",
+              "AsyncDataSrc 1 setupped",
+              "SyncDataSrc 4 setupped",
+              "AsyncDataSrc 3 setupped",
+              "AsyncDataSrc 1 created DataConn",
+              "SyncDataSrc 2 created DataConn",
+              "AsyncDataSrc 3 created DataConn",
+              "SyncDataSrc 4 created DataConn",
+              "AsyncDataConn 1 pre committed",
+              "SyncDataConn 2 failed to pre commit",
+              "SyncDataConn 4 closed",
+              "AsyncDataConn 3 closed",
+              "SyncDataConn 2 closed",
+              "AsyncDataConn 1 closed",
+              "SyncDataSrc 4 closed",
+              "AsyncDataSrc 3 closed",
+              "SyncDataSrc 2 closed",
+              "AsyncDataSrc 1 closed");
     }
 
     @Test
@@ -1786,30 +1771,26 @@ public class DataHubInnerTest {
         fail(e);
       }
 
-      assertThat(logger).containsExactly(
-        "SyncDataSrc 2 setupped",
-        "AsyncDataSrc 1 setupped",
-        "SyncDataSrc 4 setupped",
-        "AsyncDataSrc 3 setupped",
-  
-        "AsyncDataSrc 1 created DataConn",
-        "SyncDataSrc 2 created DataConn",
-        "AsyncDataSrc 3 created DataConn",
-        "SyncDataSrc 4 created DataConn",
-  
-        "AsyncDataConn 1 pre committed",
-        "SyncDataConn 2 failed to pre commit",
-  
-        "SyncDataConn 4 closed",
-        "AsyncDataConn 3 closed",
-        "SyncDataConn 2 closed",
-        "AsyncDataConn 1 closed",
-  
-        "SyncDataSrc 4 closed",
-        "AsyncDataSrc 3 closed",
-        "SyncDataSrc 2 closed",
-        "AsyncDataSrc 1 closed"
-      );
+      assertThat(logger)
+          .containsExactly(
+              "SyncDataSrc 2 setupped",
+              "AsyncDataSrc 1 setupped",
+              "SyncDataSrc 4 setupped",
+              "AsyncDataSrc 3 setupped",
+              "AsyncDataSrc 1 created DataConn",
+              "SyncDataSrc 2 created DataConn",
+              "AsyncDataSrc 3 created DataConn",
+              "SyncDataSrc 4 created DataConn",
+              "AsyncDataConn 1 pre committed",
+              "SyncDataConn 2 failed to pre commit",
+              "SyncDataConn 4 closed",
+              "AsyncDataConn 3 closed",
+              "SyncDataConn 2 closed",
+              "AsyncDataConn 1 closed",
+              "SyncDataSrc 4 closed",
+              "AsyncDataSrc 3 closed",
+              "SyncDataSrc 2 closed",
+              "AsyncDataSrc 1 closed");
     }
 
     @Test
@@ -1862,32 +1843,28 @@ public class DataHubInnerTest {
         fail(e);
       }
 
-      assertThat(logger).containsExactly(
-        "SyncDataSrc 2 setupped",
-        "AsyncDataSrc 1 setupped",
-        "SyncDataSrc 4 setupped",
-        "AsyncDataSrc 3 setupped",
-
-        "AsyncDataSrc 1 created DataConn",
-        "SyncDataSrc 2 created DataConn",
-        "AsyncDataSrc 3 created DataConn",
-        "SyncDataSrc 4 created DataConn",
-
-        "AsyncDataConn 1 pre committed",
-        "SyncDataConn 2 pre committed",
-        "AsyncDataConn 3 pre committed",
-        "SyncDataConn 4 failed to pre commit",
-
-        "SyncDataConn 4 closed",
-        "AsyncDataConn 3 closed",
-        "SyncDataConn 2 closed",
-        "AsyncDataConn 1 closed",
-
-        "SyncDataSrc 4 closed",
-        "AsyncDataSrc 3 closed",
-        "SyncDataSrc 2 closed",
-        "AsyncDataSrc 1 closed"
-      );
+      assertThat(logger)
+          .containsExactly(
+              "SyncDataSrc 2 setupped",
+              "AsyncDataSrc 1 setupped",
+              "SyncDataSrc 4 setupped",
+              "AsyncDataSrc 3 setupped",
+              "AsyncDataSrc 1 created DataConn",
+              "SyncDataSrc 2 created DataConn",
+              "AsyncDataSrc 3 created DataConn",
+              "SyncDataSrc 4 created DataConn",
+              "AsyncDataConn 1 pre committed",
+              "SyncDataConn 2 pre committed",
+              "AsyncDataConn 3 pre committed",
+              "SyncDataConn 4 failed to pre commit",
+              "SyncDataConn 4 closed",
+              "AsyncDataConn 3 closed",
+              "SyncDataConn 2 closed",
+              "AsyncDataConn 1 closed",
+              "SyncDataSrc 4 closed",
+              "AsyncDataSrc 3 closed",
+              "SyncDataSrc 2 closed",
+              "AsyncDataSrc 1 closed");
     }
 
     @Test
@@ -1940,31 +1917,27 @@ public class DataHubInnerTest {
         fail(e);
       }
 
-      assertThat(logger).containsExactly(
-        "SyncDataSrc 2 setupped",
-        "AsyncDataSrc 1 setupped",
-        "SyncDataSrc 4 setupped",
-        "AsyncDataSrc 3 setupped",
-
-        "AsyncDataSrc 1 created DataConn",
-        "SyncDataSrc 2 created DataConn",
-        "AsyncDataSrc 3 created DataConn",
-        "SyncDataSrc 4 created DataConn",
-
-        "AsyncDataConn 1 pre committed",
-        "SyncDataConn 2 pre committed",
-        "AsyncDataConn 3 failed to pre commit",
-
-        "SyncDataConn 4 closed",
-        "AsyncDataConn 3 closed",
-        "SyncDataConn 2 closed",
-        "AsyncDataConn 1 closed",
-
-        "SyncDataSrc 4 closed",
-        "AsyncDataSrc 3 closed",
-        "SyncDataSrc 2 closed",
-        "AsyncDataSrc 1 closed"
-      );
+      assertThat(logger)
+          .containsExactly(
+              "SyncDataSrc 2 setupped",
+              "AsyncDataSrc 1 setupped",
+              "SyncDataSrc 4 setupped",
+              "AsyncDataSrc 3 setupped",
+              "AsyncDataSrc 1 created DataConn",
+              "SyncDataSrc 2 created DataConn",
+              "AsyncDataSrc 3 created DataConn",
+              "SyncDataSrc 4 created DataConn",
+              "AsyncDataConn 1 pre committed",
+              "SyncDataConn 2 pre committed",
+              "AsyncDataConn 3 failed to pre commit",
+              "SyncDataConn 4 closed",
+              "AsyncDataConn 3 closed",
+              "SyncDataConn 2 closed",
+              "AsyncDataConn 1 closed",
+              "SyncDataSrc 4 closed",
+              "AsyncDataSrc 3 closed",
+              "SyncDataSrc 2 closed",
+              "AsyncDataSrc 1 closed");
     }
 
     @Test
@@ -2003,32 +1976,28 @@ public class DataHubInnerTest {
         fail(e);
       }
 
-      assertThat(logger).containsExactly(
-        "SyncDataSrc 2 setupped",
-        "AsyncDataSrc 1 setupped",
-        "SyncDataSrc 4 setupped",
-        "AsyncDataSrc 3 setupped",
-
-        "AsyncDataSrc 1 created DataConn",
-        "SyncDataSrc 2 created DataConn",
-        "AsyncDataSrc 3 created DataConn",
-        "SyncDataSrc 4 created DataConn",
-
-        "AsyncDataConn 1 rollbacked",
-        "SyncDataConn 2 rollbacked",
-        "AsyncDataConn 3 rollbacked",
-        "SyncDataConn 4 rollbacked",
-
-        "SyncDataConn 4 closed",
-        "AsyncDataConn 3 closed",
-        "SyncDataConn 2 closed",
-        "AsyncDataConn 1 closed",
-
-        "SyncDataSrc 4 closed",
-        "AsyncDataSrc 3 closed",
-        "SyncDataSrc 2 closed",
-        "AsyncDataSrc 1 closed"
-      );
+      assertThat(logger)
+          .containsExactly(
+              "SyncDataSrc 2 setupped",
+              "AsyncDataSrc 1 setupped",
+              "SyncDataSrc 4 setupped",
+              "AsyncDataSrc 3 setupped",
+              "AsyncDataSrc 1 created DataConn",
+              "SyncDataSrc 2 created DataConn",
+              "AsyncDataSrc 3 created DataConn",
+              "SyncDataSrc 4 created DataConn",
+              "AsyncDataConn 1 rollbacked",
+              "SyncDataConn 2 rollbacked",
+              "AsyncDataConn 3 rollbacked",
+              "SyncDataConn 4 rollbacked",
+              "SyncDataConn 4 closed",
+              "AsyncDataConn 3 closed",
+              "SyncDataConn 2 closed",
+              "AsyncDataConn 1 closed",
+              "SyncDataSrc 4 closed",
+              "AsyncDataSrc 3 closed",
+              "SyncDataSrc 2 closed",
+              "AsyncDataSrc 1 closed");
     }
 
     @Test
@@ -2068,42 +2037,36 @@ public class DataHubInnerTest {
         fail(e);
       }
 
-      assertThat(logger).containsExactly(
-        "SyncDataSrc 2 setupped",
-        "AsyncDataSrc 1 setupped",
-        "SyncDataSrc 4 setupped",
-        "AsyncDataSrc 3 setupped",
-
-        "AsyncDataSrc 1 created DataConn",
-        "SyncDataSrc 2 created DataConn",
-        "AsyncDataSrc 3 created DataConn",
-        "SyncDataSrc 4 created DataConn",
-
-        "AsyncDataConn 1 pre committed",
-        "SyncDataConn 2 pre committed",
-        "AsyncDataConn 3 pre committed",
-        "SyncDataConn 4 pre committed",
-
-        "AsyncDataConn 1 committed",
-        "SyncDataConn 2 committed",
-        "AsyncDataConn 3 committed",
-        "SyncDataConn 4 committed",
-
-        "AsyncDataConn 1 forced back",
-        "SyncDataConn 2 forced back",
-        "AsyncDataConn 3 forced back",
-        "SyncDataConn 4 forced back",
-
-        "SyncDataConn 4 closed",
-        "AsyncDataConn 3 closed",
-        "SyncDataConn 2 closed",
-        "AsyncDataConn 1 closed",
-
-        "SyncDataSrc 4 closed",
-        "AsyncDataSrc 3 closed",
-        "SyncDataSrc 2 closed",
-        "AsyncDataSrc 1 closed"
-      );
+      assertThat(logger)
+          .containsExactly(
+              "SyncDataSrc 2 setupped",
+              "AsyncDataSrc 1 setupped",
+              "SyncDataSrc 4 setupped",
+              "AsyncDataSrc 3 setupped",
+              "AsyncDataSrc 1 created DataConn",
+              "SyncDataSrc 2 created DataConn",
+              "AsyncDataSrc 3 created DataConn",
+              "SyncDataSrc 4 created DataConn",
+              "AsyncDataConn 1 pre committed",
+              "SyncDataConn 2 pre committed",
+              "AsyncDataConn 3 pre committed",
+              "SyncDataConn 4 pre committed",
+              "AsyncDataConn 1 committed",
+              "SyncDataConn 2 committed",
+              "AsyncDataConn 3 committed",
+              "SyncDataConn 4 committed",
+              "AsyncDataConn 1 forced back",
+              "SyncDataConn 2 forced back",
+              "AsyncDataConn 3 forced back",
+              "SyncDataConn 4 forced back",
+              "SyncDataConn 4 closed",
+              "AsyncDataConn 3 closed",
+              "SyncDataConn 2 closed",
+              "AsyncDataConn 1 closed",
+              "SyncDataSrc 4 closed",
+              "AsyncDataSrc 3 closed",
+              "SyncDataSrc 2 closed",
+              "AsyncDataSrc 1 closed");
     }
 
     @Test
@@ -2142,32 +2105,28 @@ public class DataHubInnerTest {
         fail(e);
       }
 
-      assertThat(logger).containsExactly(
-        "SyncDataSrc 2 setupped",
-        "AsyncDataSrc 1 setupped",
-        "SyncDataSrc 4 setupped",
-        "AsyncDataSrc 3 setupped",
-
-        "AsyncDataSrc 1 created DataConn",
-        "SyncDataSrc 2 created DataConn",
-        "AsyncDataSrc 3 created DataConn",
-        "SyncDataSrc 4 created DataConn",
-
-        "AsyncDataConn 1 post committed",
-        "SyncDataConn 2 post committed",
-        "AsyncDataConn 3 post committed",
-        "SyncDataConn 4 post committed",
-
-        "SyncDataConn 4 closed",
-        "AsyncDataConn 3 closed",
-        "SyncDataConn 2 closed",
-        "AsyncDataConn 1 closed",
-
-        "SyncDataSrc 4 closed",
-        "AsyncDataSrc 3 closed",
-        "SyncDataSrc 2 closed",
-        "AsyncDataSrc 1 closed"
-      );
+      assertThat(logger)
+          .containsExactly(
+              "SyncDataSrc 2 setupped",
+              "AsyncDataSrc 1 setupped",
+              "SyncDataSrc 4 setupped",
+              "AsyncDataSrc 3 setupped",
+              "AsyncDataSrc 1 created DataConn",
+              "SyncDataSrc 2 created DataConn",
+              "AsyncDataSrc 3 created DataConn",
+              "SyncDataSrc 4 created DataConn",
+              "AsyncDataConn 1 post committed",
+              "SyncDataConn 2 post committed",
+              "AsyncDataConn 3 post committed",
+              "SyncDataConn 4 post committed",
+              "SyncDataConn 4 closed",
+              "AsyncDataConn 3 closed",
+              "SyncDataConn 2 closed",
+              "AsyncDataConn 1 closed",
+              "SyncDataSrc 4 closed",
+              "AsyncDataSrc 3 closed",
+              "SyncDataSrc 2 closed",
+              "AsyncDataSrc 1 closed");
     }
   }
 }
