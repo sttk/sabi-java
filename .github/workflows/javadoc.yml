@@ -1,8 +1,9 @@
 name: Javadoc
 
 on:
-  push:
-    branches: [ main ]
+  release:
+    types: [ created ]
+
 
 jobs:
   build:
@@ -12,7 +13,7 @@ jobs:
     - name: GitHub Action for GraalVM
       uses: graalvm/setup-graalvm@v1
       with:
-        java-version: 21
+        java-version: 23
         distribution: 'graalvm'
         github_token: ${{ secrets.GITHUB_TOKEN }}
     - name: Compile
