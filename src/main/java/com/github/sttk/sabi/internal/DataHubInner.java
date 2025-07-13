@@ -4,22 +4,22 @@
  */
 package com.github.sttk.sabi.internal;
 
-import com.github.sttk.sabi.DataSrc;
+import com.github.sttk.errs.Exc;
 import com.github.sttk.sabi.DataConn;
 import com.github.sttk.sabi.DataHub;
-import com.github.sttk.errs.Exc;
-import java.util.Map;
+import com.github.sttk.sabi.DataSrc;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class DataHubInner {
 
-  final static DataSrcList GLOBAL_DATA_SRC_LIST = new DataSrcList(false);
+  static final DataSrcList GLOBAL_DATA_SRC_LIST = new DataSrcList(false);
   static AtomicBoolean GLOBAL_DATA_SRCS_FIXED = new AtomicBoolean(false);
 
   public static void usesGlobal(String name, DataSrc ds) {
-    if (! GLOBAL_DATA_SRCS_FIXED.get()) {
+    if (!GLOBAL_DATA_SRCS_FIXED.get()) {
       GLOBAL_DATA_SRC_LIST.addDataSrc(name, ds);
     }
   }
@@ -27,7 +27,7 @@ public class DataHubInner {
   public static AutoCloseable setupGlobals() throws Exc {
     if (GLOBAL_DATA_SRCS_FIXED.compareAndSet(false, true)) {
       var excMap = GLOBAL_DATA_SRC_LIST.setupDataSrcs();
-      if (! excMap.isEmpty()) {
+      if (!excMap.isEmpty()) {
         GLOBAL_DATA_SRC_LIST.closeDataSrcs();
         throw new Exc(new DataHub.FailToSetupGlobalDataSrcs(excMap));
       }
@@ -89,7 +89,7 @@ public class DataHubInner {
     var excMap = this.localDataSrcList.setupDataSrcs();
     this.localDataSrcList.copyContainerPtrsDidSetupInto(this.dataSrcMap);
 
-    if (! excMap.isEmpty()) {
+    if (!excMap.isEmpty()) {
       throw new Exc(new DataHub.FailToSetupLocalDataSrcs(excMap));
     }
   }
@@ -114,7 +114,7 @@ public class DataHubInner {
     }
     ag.joinAndPutExcsInto(excMap);
 
-    if (! excMap.isEmpty()) {
+    if (!excMap.isEmpty()) {
       throw new Exc(new DataHub.FailToPreCommitDataConn(excMap));
     }
 
@@ -135,7 +135,7 @@ public class DataHubInner {
     }
     ag.joinAndPutExcsInto(excMap);
 
-    if (! excMap.isEmpty()) {
+    if (!excMap.isEmpty()) {
       throw new Exc(new DataHub.FailToCommitDataConn(excMap));
     }
   }

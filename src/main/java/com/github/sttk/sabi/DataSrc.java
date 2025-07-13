@@ -8,6 +8,8 @@ import com.github.sttk.errs.Exc;
 
 public interface DataSrc {
   void setup(AsyncGroup ag) throws Exc;
+
   void close();
+
   DataConn createDataConn() throws Exc;
 }

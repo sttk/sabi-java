@@ -4,8 +4,6 @@
  */
 package com.github.sttk.sabi.internal;
 
-import com.github.sttk.errs.Exc;
-
 public class DataConnList {
   DataConnContainer head;
   DataConnContainer last;

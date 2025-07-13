@@ -2,21 +2,21 @@ package com.github.sttk.sabi.internal;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.AfterEach;
 
 import com.github.sttk.errs.Exc;
 import com.github.sttk.sabi.AsyncGroup;
-import com.github.sttk.sabi.DataConn;
-import com.github.sttk.sabi.DataSrc;
 import com.github.sttk.sabi.DataAcc;
+import com.github.sttk.sabi.DataConn;
 import com.github.sttk.sabi.DataHub;
-import com.github.sttk.sabi.Sabi;
+import com.github.sttk.sabi.DataSrc;
 import com.github.sttk.sabi.Logic;
-import java.util.List;
+import com.github.sttk.sabi.Sabi;
 import java.util.ArrayList;
+import java.util.List;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 
 public class DataAccTest {
   DataAccTest() {}
@@ -35,6 +35,7 @@ public class DataAccTest {
       this.logger = logger;
       this.willFail = willFail;
     }
+
     @Override
     public void setup(AsyncGroup ag) throws Exc {
       if (this.willFail) {
@@ -43,10 +44,12 @@ public class DataAccTest {
       }
       this.logger.add(String.format("FooDataSrc %d setupped", this.id));
     }
+
     @Override
     public void close() {
       this.logger.add(String.format("FooDataSrc %d closed", this.id));
     }
+
     @Override
     public DataConn createDataConn() throws Exc {
       this.logger.add(String.format("FooDataSrc %d created FooDataConn", this.id));
@@ -65,34 +68,42 @@ public class DataAccTest {
       this.text = text;
       this.logger = logger;
     }
+
     String getText() {
       return this.text;
     }
+
     @Override
     public void commit(AsyncGroup ag) throws Exc {
       this.committed = true;
       this.logger.add(String.format("FooDataConn %d committed", this.id));
     }
+
     @Override
     public void preCommit(AsyncGroup ag) throws Exc {
       this.logger.add(String.format("FooDataConn %d pre committed", this.id));
     }
+
     @Override
     public void postCommit(AsyncGroup ag) {
       this.logger.add(String.format("FooDataConn %d post committed", this.id));
     }
+
     @Override
     public boolean shouldForceBack() {
       return this.committed;
     }
+
     @Override
     public void rollback(AsyncGroup ag) {
       this.logger.add(String.format("FooDataConn %d rollbacked", this.id));
     }
+
     @Override
     public void forceBack(AsyncGroup ag) {
       this.logger.add(String.format("FooDataConn %d forced back", this.id));
     }
+
     @Override
     public void close() {
       this.logger.add(String.format("FooDataConn %d closed", this.id));
@@ -111,6 +122,7 @@ public class DataAccTest {
       this.logger = logger;
       this.willFail = willFail;
     }
+
     @Override
     public void setup(AsyncGroup ag) throws Exc {
       if (this.willFail) {
@@ -119,11 +131,13 @@ public class DataAccTest {
       }
       this.logger.add(String.format("BarDataSrc %d setupped", this.id));
     }
+
     @Override
     public void close() {
       this.logger.add(String.format("BarDataSrc.text = %s", this.text));
       this.logger.add(String.format("BarDataSrc %d closed", this.id));
     }
+
     @Override
     public DataConn createDataConn() throws Exc {
       this.logger.add(String.format("BarDataSrc %d created BarDataConn", this.id));
@@ -145,35 +159,43 @@ public class DataAccTest {
       this.logger = logger;
       this.ds = ds;
     }
+
     void setText(String s) {
       this.text = s;
     }
+
     @Override
     public void commit(AsyncGroup ag) throws Exc {
       this.committed = true;
       this.ds.text = this.text;
       this.logger.add(String.format("BarDataConn %d committed", this.id));
     }
+
     @Override
     public void preCommit(AsyncGroup ag) throws Exc {
       this.logger.add(String.format("BarDataConn %d pre committed", this.id));
     }
+
     @Override
     public void postCommit(AsyncGroup ag) {
       this.logger.add(String.format("BarDataConn %d post committed", this.id));
     }
+
     @Override
     public boolean shouldForceBack() {
       return this.committed;
     }
+
     @Override
     public void rollback(AsyncGroup ag) {
       this.logger.add(String.format("BarDataConn %d rollbacked", this.id));
     }
+
     @Override
     public void forceBack(AsyncGroup ag) {
       this.logger.add(String.format("BarDataConn %d forced back", this.id));
     }
+
     @Override
     public void close() {
       this.logger.add(String.format("BarDataConn.text = %s", this.text));
@@ -185,6 +207,7 @@ public class DataAccTest {
 
   static interface SampleData {
     String getValue() throws Exc;
+
     void setValue(String text) throws Exc;
   }
 
@@ -233,6 +256,7 @@ public class DataAccTest {
     void beforeEach() {
       DataHubInnerTest.resetGlobalVariables();
     }
+
     @AfterEach
     void afterEach() {
       DataHubInnerTest.resetGlobalVariables();
@@ -256,18 +280,18 @@ public class DataAccTest {
         fail(e);
       }
 
-      assertThat(logger).containsExactly(
-        "FooDataSrc 1 setupped",
-        "BarDataSrc 2 setupped",
-        "FooDataSrc 1 created FooDataConn",
-        "BarDataSrc 2 created BarDataConn",
-        "BarDataConn.text = hello",
-        "BarDataConn 2 closed",
-        "FooDataConn 1 closed",
-        "BarDataSrc.text = null",
-        "BarDataSrc 2 closed",
-        "FooDataSrc 1 closed"
-      );
+      assertThat(logger)
+          .containsExactly(
+              "FooDataSrc 1 setupped",
+              "BarDataSrc 2 setupped",
+              "FooDataSrc 1 created FooDataConn",
+              "BarDataSrc 2 created BarDataConn",
+              "BarDataConn.text = hello",
+              "BarDataConn 2 closed",
+              "FooDataConn 1 closed",
+              "BarDataSrc.text = null",
+              "BarDataSrc 2 closed",
+              "FooDataSrc 1 closed");
     }
   }
 
@@ -277,6 +301,7 @@ public class DataAccTest {
     void beforeEach() {
       DataHubInnerTest.resetGlobalVariables();
     }
+
     @AfterEach
     void afterEach() {
       DataHubInnerTest.resetGlobalVariables();
@@ -300,18 +325,18 @@ public class DataAccTest {
         fail(e);
       }
 
-      assertThat(logger).containsExactly(
-        "FooDataSrc 1 setupped",
-        "BarDataSrc 2 setupped",
-        "FooDataSrc 1 created FooDataConn",
-        "BarDataSrc 2 created BarDataConn",
-        "BarDataConn.text = hello",
-        "BarDataConn 2 closed",
-        "FooDataConn 1 closed",
-        "BarDataSrc.text = null",
-        "BarDataSrc 2 closed",
-        "FooDataSrc 1 closed"
-      );
+      assertThat(logger)
+          .containsExactly(
+              "FooDataSrc 1 setupped",
+              "BarDataSrc 2 setupped",
+              "FooDataSrc 1 created FooDataConn",
+              "BarDataSrc 2 created BarDataConn",
+              "BarDataConn.text = hello",
+              "BarDataConn 2 closed",
+              "FooDataConn 1 closed",
+              "BarDataSrc.text = null",
+              "BarDataSrc 2 closed",
+              "FooDataSrc 1 closed");
     }
   }
 
@@ -321,6 +346,7 @@ public class DataAccTest {
     void beforeEach() {
       DataHubInnerTest.resetGlobalVariables();
     }
+
     @AfterEach
     void afterEach() {
       DataHubInnerTest.resetGlobalVariables();
@@ -344,18 +370,18 @@ public class DataAccTest {
         fail(e);
       }
 
-      assertThat(logger).containsExactly(
-        "FooDataSrc 1 setupped",
-        "BarDataSrc 2 setupped",
-        "FooDataSrc 1 created FooDataConn",
-        "BarDataSrc 2 created BarDataConn",
-        "BarDataConn.text = hello",
-        "BarDataConn 2 closed",
-        "FooDataConn 1 closed",
-        "BarDataSrc.text = null",
-        "BarDataSrc 2 closed",
-        "FooDataSrc 1 closed"
-      );
+      assertThat(logger)
+          .containsExactly(
+              "FooDataSrc 1 setupped",
+              "BarDataSrc 2 setupped",
+              "FooDataSrc 1 created FooDataConn",
+              "BarDataSrc 2 created BarDataConn",
+              "BarDataConn.text = hello",
+              "BarDataConn 2 closed",
+              "FooDataConn 1 closed",
+              "BarDataSrc.text = null",
+              "BarDataSrc 2 closed",
+              "FooDataSrc 1 closed");
     }
 
     @Test
@@ -384,9 +410,7 @@ public class DataAccTest {
         fail(e);
       }
 
-      assertThat(logger).containsExactly(
-        "FooDataSrc 1 failed to setup"
-      );
+      assertThat(logger).containsExactly("FooDataSrc 1 failed to setup");
     }
   }
 
@@ -396,6 +420,7 @@ public class DataAccTest {
     void beforeEach() {
       DataHubInnerTest.resetGlobalVariables();
     }
+
     @AfterEach
     void afterEach() {
       DataHubInnerTest.resetGlobalVariables();
@@ -420,18 +445,18 @@ public class DataAccTest {
         fail(e);
       }
 
-      assertThat(logger).containsExactly(
-        "BarDataSrc 1 setupped",
-        "FooDataSrc 2 setupped",
-        "FooDataSrc 2 created FooDataConn",
-        "BarDataSrc 1 created BarDataConn",
-        "BarDataConn.text = Hello",
-        "BarDataConn 1 closed",
-        "FooDataConn 2 closed",
-        "FooDataSrc 2 closed",
-        "BarDataSrc.text = null",
-        "BarDataSrc 1 closed"
-      );
+      assertThat(logger)
+          .containsExactly(
+              "BarDataSrc 1 setupped",
+              "FooDataSrc 2 setupped",
+              "FooDataSrc 2 created FooDataConn",
+              "BarDataSrc 1 created BarDataConn",
+              "BarDataConn.text = Hello",
+              "BarDataConn 1 closed",
+              "FooDataConn 2 closed",
+              "FooDataSrc 2 closed",
+              "BarDataSrc.text = null",
+              "BarDataSrc 1 closed");
     }
   }
 
@@ -441,6 +466,7 @@ public class DataAccTest {
     void beforeEach() {
       DataHubInnerTest.resetGlobalVariables();
     }
+
     @AfterEach
     void afterEach() {
       DataHubInnerTest.resetGlobalVariables();
@@ -464,24 +490,24 @@ public class DataAccTest {
         fail(e);
       }
 
-      assertThat(logger).containsExactly(
-        "FooDataSrc 1 setupped",
-        "BarDataSrc 2 setupped",
-        "FooDataSrc 1 created FooDataConn",
-        "BarDataSrc 2 created BarDataConn",
-        "FooDataConn 1 pre committed",
-        "BarDataConn 2 pre committed",
-        "FooDataConn 1 committed",
-        "BarDataConn 2 committed",
-        "FooDataConn 1 post committed",
-        "BarDataConn 2 post committed",
-        "BarDataConn.text = Hello",
-        "BarDataConn 2 closed",
-        "FooDataConn 1 closed",
-        "BarDataSrc.text = Hello",
-        "BarDataSrc 2 closed",
-        "FooDataSrc 1 closed"
-      );
+      assertThat(logger)
+          .containsExactly(
+              "FooDataSrc 1 setupped",
+              "BarDataSrc 2 setupped",
+              "FooDataSrc 1 created FooDataConn",
+              "BarDataSrc 2 created BarDataConn",
+              "FooDataConn 1 pre committed",
+              "BarDataConn 2 pre committed",
+              "FooDataConn 1 committed",
+              "BarDataConn 2 committed",
+              "FooDataConn 1 post committed",
+              "BarDataConn 2 post committed",
+              "BarDataConn.text = Hello",
+              "BarDataConn 2 closed",
+              "FooDataConn 1 closed",
+              "BarDataSrc.text = Hello",
+              "BarDataSrc 2 closed",
+              "FooDataSrc 1 closed");
     }
   }
 
@@ -491,6 +517,7 @@ public class DataAccTest {
     void beforeEach() {
       DataHubInnerTest.resetGlobalVariables();
     }
+
     @AfterEach
     void afterEach() {
       DataHubInnerTest.resetGlobalVariables();
@@ -514,24 +541,24 @@ public class DataAccTest {
         fail(e);
       }
 
-      assertThat(logger).containsExactly(
-        "FooDataSrc 1 setupped",
-        "BarDataSrc 2 setupped",
-        "FooDataSrc 1 created FooDataConn",
-        "BarDataSrc 2 created BarDataConn",
-        "FooDataConn 1 pre committed",
-        "BarDataConn 2 pre committed",
-        "FooDataConn 1 committed",
-        "BarDataConn 2 committed",
-        "FooDataConn 1 post committed",
-        "BarDataConn 2 post committed",
-        "BarDataConn.text = Hello",
-        "BarDataConn 2 closed",
-        "FooDataConn 1 closed",
-        "BarDataSrc.text = Hello",
-        "BarDataSrc 2 closed",
-        "FooDataSrc 1 closed"
-      );
+      assertThat(logger)
+          .containsExactly(
+              "FooDataSrc 1 setupped",
+              "BarDataSrc 2 setupped",
+              "FooDataSrc 1 created FooDataConn",
+              "BarDataSrc 2 created BarDataConn",
+              "FooDataConn 1 pre committed",
+              "BarDataConn 2 pre committed",
+              "FooDataConn 1 committed",
+              "BarDataConn 2 committed",
+              "FooDataConn 1 post committed",
+              "BarDataConn 2 post committed",
+              "BarDataConn.text = Hello",
+              "BarDataConn 2 closed",
+              "FooDataConn 1 closed",
+              "BarDataSrc.text = Hello",
+              "BarDataSrc 2 closed",
+              "FooDataSrc 1 closed");
     }
 
     @Test
@@ -560,9 +587,7 @@ public class DataAccTest {
         fail(e);
       }
 
-      assertThat(logger).containsExactly(
-        "FooDataSrc 1 failed to setup"
-      );
+      assertThat(logger).containsExactly("FooDataSrc 1 failed to setup");
     }
 
     @Test
@@ -585,13 +610,13 @@ public class DataAccTest {
         fail(e);
       }
 
-      assertThat(logger).containsExactly(
-        "FooDataSrc 1 setupped",
-        "BarDataSrc 2 setupped",
-        "BarDataSrc.text = null",
-        "BarDataSrc 2 closed",
-        "FooDataSrc 1 closed"
-      );
+      assertThat(logger)
+          .containsExactly(
+              "FooDataSrc 1 setupped",
+              "BarDataSrc 2 setupped",
+              "BarDataSrc.text = null",
+              "BarDataSrc 2 closed",
+              "FooDataSrc 1 closed");
     }
   }
 
@@ -601,6 +626,7 @@ public class DataAccTest {
     void beforeEach() {
       DataHubInnerTest.resetGlobalVariables();
     }
+
     @AfterEach
     void afterEach() {
       DataHubInnerTest.resetGlobalVariables();
@@ -625,24 +651,24 @@ public class DataAccTest {
         fail(e);
       }
 
-      assertThat(logger).containsExactly(
-        "BarDataSrc 1 setupped",
-        "FooDataSrc 2 setupped",
-        "FooDataSrc 2 created FooDataConn",
-        "BarDataSrc 1 created BarDataConn",
-        "FooDataConn 2 pre committed",
-        "BarDataConn 1 pre committed",
-        "FooDataConn 2 committed",
-        "BarDataConn 1 committed",
-        "FooDataConn 2 post committed",
-        "BarDataConn 1 post committed",
-        "BarDataConn.text = Hello",
-        "BarDataConn 1 closed",
-        "FooDataConn 2 closed",
-        "FooDataSrc 2 closed",
-        "BarDataSrc.text = Hello",
-        "BarDataSrc 1 closed"
-      );
+      assertThat(logger)
+          .containsExactly(
+              "BarDataSrc 1 setupped",
+              "FooDataSrc 2 setupped",
+              "FooDataSrc 2 created FooDataConn",
+              "BarDataSrc 1 created BarDataConn",
+              "FooDataConn 2 pre committed",
+              "BarDataConn 1 pre committed",
+              "FooDataConn 2 committed",
+              "BarDataConn 1 committed",
+              "FooDataConn 2 post committed",
+              "BarDataConn 1 post committed",
+              "BarDataConn.text = Hello",
+              "BarDataConn 1 closed",
+              "FooDataConn 2 closed",
+              "FooDataSrc 2 closed",
+              "BarDataSrc.text = Hello",
+              "BarDataSrc 1 closed");
     }
   }
 }

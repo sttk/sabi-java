@@ -8,10 +8,18 @@ import com.github.sttk.errs.Exc;
 
 public interface DataConn {
   void commit(AsyncGroup ag) throws Exc;
+
   default void preCommit(AsyncGroup ag) throws Exc {}
+
   default void postCommit(AsyncGroup ag) {}
-  default boolean shouldForceBack() { return false; }
+
+  default boolean shouldForceBack() {
+    return false;
+  }
+
   void rollback(AsyncGroup ag);
+
   default void forceBack(AsyncGroup ag) {}
+
   void close();
 }

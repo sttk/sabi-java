@@ -4,22 +4,29 @@
  */
 package com.github.sttk.sabi;
 
-import com.github.sttk.sabi.internal.DataHubInner;
 import com.github.sttk.errs.Exc;
+import com.github.sttk.sabi.internal.DataHubInner;
 import java.util.Map;
-import java.util.HashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 
-public class DataHub implements DataAcc, AutoCloseable  {
+public class DataHub implements DataAcc, AutoCloseable {
   public record FailToSetupGlobalDataSrcs(Map<String, Exc> errors) {}
+
   public record FailToSetupLocalDataSrcs(Map<String, Exc> errors) {}
+
   public record FailToCommitDataConn(Map<String, Exc> errors) {}
+
   public record FailToPreCommitDataConn(Map<String, Exc> errors) {}
+
   public record NoDataSrcToCreateDataConn(String name, String dataConnType) {}
+
   public record FailToCreateDataConn(String name, String dataConnType) {}
+
   public record CreatedDataConnIsNull(String name, String dataConnType) {}
+
   public record FailToCastDataConn(String name, String castToType) {}
+
   public record FailToCastDataHub(String castFromType) {}
+
   public record RuntimeExceptionOccured() {}
 
   private final DataHubInner inner = new DataHubInner();

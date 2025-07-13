@@ -1,15 +1,13 @@
 package com.github.sttk.sabi.internal;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.fail;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Nested;
 
 import com.github.sttk.errs.Exc;
 import com.github.sttk.sabi.AsyncGroup;
 import com.github.sttk.sabi.DataConn;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
+import org.junit.jupiter.api.Test;
 
 public class DataConnListTest {
   private DataConnListTest() {}
@@ -18,13 +16,25 @@ public class DataConnListTest {
     private int id;
     private List<String> logger;
 
-    public SampleDataConn(int id, List<String> logger) { this.id = id; this.logger = logger; }
+    public SampleDataConn(int id, List<String> logger) {
+      this.id = id;
+      this.logger = logger;
+    }
+
     public void commit(AsyncGroup ag) throws Exc {}
+
     public void preCommit(AsyncGroup ag) throws Exc {}
+
     public void postCommit(AsyncGroup ag) {}
-    public boolean shouldForceBack() { return false; }
+
+    public boolean shouldForceBack() {
+      return false;
+    }
+
     public void rollback(AsyncGroup ag) {}
+
     public void forceBack(AsyncGroup ag) {}
+
     public void close() {
       this.logger.add(String.format("SampleDataConn %d closed", this.id));
     }
@@ -79,10 +89,8 @@ public class DataConnListTest {
     assertThat(dcList.head).isNull();
     assertThat(dcList.last).isNull();
 
-    assertThat(logger).containsExactly(
-      "SampleDataConn 3 closed",
-      "SampleDataConn 2 closed",
-      "SampleDataConn 1 closed"
-    );
+    assertThat(logger)
+        .containsExactly(
+            "SampleDataConn 3 closed", "SampleDataConn 2 closed", "SampleDataConn 1 closed");
   }
 }

@@ -2,12 +2,11 @@ package com.github.sttk.sabi.internal;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Nested;
 
 import com.github.sttk.errs.Exc;
 import com.github.sttk.sabi.Runner;
 import java.util.HashMap;
+import org.junit.jupiter.api.Test;
 
 public class AsyncGroupImplTest {
   private AsyncGroupImplTest() {}
@@ -26,10 +25,14 @@ public class AsyncGroupImplTest {
     var ag = new AsyncGroupImpl();
 
     boolean[] executed = {false};
-    Runner fn = () -> {
-      try { Thread.sleep(50); } catch (Exception e) {}
-      executed[0] = true;
-    };
+    Runner fn =
+        () -> {
+          try {
+            Thread.sleep(50);
+          } catch (Exception e) {
+          }
+          executed[0] = true;
+        };
 
     ag.name = "foo";
     ag.add(fn);
@@ -48,11 +51,15 @@ public class AsyncGroupImplTest {
     record FailToDoSomething() {}
 
     boolean[] executed = {false};
-    Runner fn = () -> {
-      try { Thread.sleep(50); } catch (Exception e) {}
-      executed[0] = true;
-      throw new Exc(new FailToDoSomething());
-    };
+    Runner fn =
+        () -> {
+          try {
+            Thread.sleep(50);
+          } catch (Exception e) {
+          }
+          executed[0] = true;
+          throw new Exc(new FailToDoSomething());
+        };
 
     ag.name = "foo";
     ag.add(fn);
@@ -79,21 +86,33 @@ public class AsyncGroupImplTest {
 
     boolean[] executed = {false, false, false};
 
-    Runner fn0 = () -> {
-      try { Thread.sleep(50); } catch (Exception e) {}
-      executed[0] = true;
-      throw new Exc(new Reason0());
-    };
-    Runner fn1 = () -> {
-      try { Thread.sleep(50); } catch (Exception e) {}
-      executed[1] = true;
-      throw new Exc(new Reason1());
-    };
-    Runner fn2 = () -> {
-      try { Thread.sleep(50); } catch (Exception e) {}
-      executed[2] = true;
-      throw new Exc(new Reason2());
-    };
+    Runner fn0 =
+        () -> {
+          try {
+            Thread.sleep(50);
+          } catch (Exception e) {
+          }
+          executed[0] = true;
+          throw new Exc(new Reason0());
+        };
+    Runner fn1 =
+        () -> {
+          try {
+            Thread.sleep(50);
+          } catch (Exception e) {
+          }
+          executed[1] = true;
+          throw new Exc(new Reason1());
+        };
+    Runner fn2 =
+        () -> {
+          try {
+            Thread.sleep(50);
+          } catch (Exception e) {
+          }
+          executed[2] = true;
+          throw new Exc(new Reason2());
+        };
 
     ag.name = "foo0";
     ag.add(fn0);
@@ -109,9 +128,15 @@ public class AsyncGroupImplTest {
     assertThat(executed[1]).isTrue();
     assertThat(executed[2]).isTrue();
 
-    assertThat(m.get("foo0").toString()).isEqualTo("com.github.sttk.errs.Exc { reason = com.github.sttk.sabi.internal.AsyncGroupImplTest$1Reason0 Reason0[], file = AsyncGroupImplTest.java, line = 85 }");
-    assertThat(m.get("foo1").toString()).isEqualTo("com.github.sttk.errs.Exc { reason = com.github.sttk.sabi.internal.AsyncGroupImplTest$1Reason1 Reason1[], file = AsyncGroupImplTest.java, line = 90 }");
-    assertThat(m.get("foo2").toString()).isEqualTo("com.github.sttk.errs.Exc { reason = com.github.sttk.sabi.internal.AsyncGroupImplTest$1Reason2 Reason2[], file = AsyncGroupImplTest.java, line = 95 }");
+    assertThat(m.get("foo0").toString())
+        .isEqualTo(
+            "com.github.sttk.errs.Exc { reason = com.github.sttk.sabi.internal.AsyncGroupImplTest$1Reason0 Reason0[], file = AsyncGroupImplTest.java, line = 96 }");
+    assertThat(m.get("foo1").toString())
+        .isEqualTo(
+            "com.github.sttk.errs.Exc { reason = com.github.sttk.sabi.internal.AsyncGroupImplTest$1Reason1 Reason1[], file = AsyncGroupImplTest.java, line = 105 }");
+    assertThat(m.get("foo2").toString())
+        .isEqualTo(
+            "com.github.sttk.errs.Exc { reason = com.github.sttk.sabi.internal.AsyncGroupImplTest$1Reason2 Reason2[], file = AsyncGroupImplTest.java, line = 114 }");
   }
 
   @Test
@@ -124,21 +149,33 @@ public class AsyncGroupImplTest {
 
     boolean[] executed = {false, false, false};
 
-    Runner fn0 = () -> {
-      try { Thread.sleep(50); } catch (Exception e) {}
-      executed[0] = true;
-      throw new Exc(new Reason0());
-    };
-    Runner fn1 = () -> {
-      try { Thread.sleep(50); } catch (Exception e) {}
-      executed[1] = true;
-      throw new Exc(new Reason1());
-    };
-    Runner fn2 = () -> {
-      try { Thread.sleep(50); } catch (Exception e) {}
-      executed[2] = true;
-      throw new Exc(new Reason2());
-    };
+    Runner fn0 =
+        () -> {
+          try {
+            Thread.sleep(50);
+          } catch (Exception e) {
+          }
+          executed[0] = true;
+          throw new Exc(new Reason0());
+        };
+    Runner fn1 =
+        () -> {
+          try {
+            Thread.sleep(50);
+          } catch (Exception e) {
+          }
+          executed[1] = true;
+          throw new Exc(new Reason1());
+        };
+    Runner fn2 =
+        () -> {
+          try {
+            Thread.sleep(50);
+          } catch (Exception e) {
+          }
+          executed[2] = true;
+          throw new Exc(new Reason2());
+        };
 
     ag.name = "foo0";
     ag.add(fn0);
