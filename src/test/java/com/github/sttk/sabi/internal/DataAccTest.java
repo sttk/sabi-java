@@ -63,7 +63,6 @@ public class DataAccTest {
     FooDataConn(int id, String text, List<String> logger) {
       this.id = id;
       this.text = text;
-      this.committed = committed;
       this.logger = logger;
     }
     String getText() {
