@@ -100,7 +100,7 @@ public class DataHub implements DataAcc, AutoCloseable {
    * Represents an unexpected {@link RuntimeException} that occurred during pre-commit or commit
    * operations.
    */
-  public record RuntimeExceptionOccured() {}
+  public record RuntimeExceptionOccurred() {}
 
   private final DataHubInner inner = new DataHubInner();
 

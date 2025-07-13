@@ -8,7 +8,7 @@ import com.github.sttk.errs.Exc;
 import com.github.sttk.sabi.internal.DataHubInner;
 
 /**
- * {@code Sabi} is the class that provies the static methods related to the global fanctionalities
+ * {@code Sabi} is the class that provides the static methods related to the global functionalities
  * of sabi framework.
  *
  * <p>This class declares {@link #uses uses} method to register a {@link DataSrc} object used
