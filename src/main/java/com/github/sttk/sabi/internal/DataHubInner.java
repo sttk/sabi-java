@@ -107,7 +107,7 @@ public class DataHubInner {
         excMap.put(ptr.name, e);
         break;
       } catch (RuntimeException e) {
-        excMap.put(ptr.name, new Exc(new DataHub.RuntimeExceptionOccured(), e));
+        excMap.put(ptr.name, new Exc(new DataHub.RuntimeExceptionOccurred(), e));
         break;
       }
       ptr = ptr.next;
@@ -128,7 +128,7 @@ public class DataHubInner {
         excMap.put(ptr.name, e);
         break;
       } catch (RuntimeException e) {
-        excMap.put(ptr.name, new Exc(new DataHub.RuntimeExceptionOccured(), e));
+        excMap.put(ptr.name, new Exc(new DataHub.RuntimeExceptionOccurred(), e));
         break;
       }
       ptr = ptr.next;
