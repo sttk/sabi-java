@@ -24,7 +24,7 @@ This package can be installed from [Maven Central Repository][mvn-url].
 
 The examples of declaring that repository and the dependency on this package in Maven `pom.xml` and Gradle `build.gradle` are as follows:
 
-### for Maven
+### For Maven
 
 ```
   <dependencies>
@@ -36,7 +36,7 @@ The examples of declaring that repository and the dependency on this package in 
   </dependencies>
 ```
 
-### for Gradle
+### For Gradle
 
 ```
 repositories {
@@ -57,6 +57,7 @@ First, you'll define `DataSrc` which manages connections to external data servic
 import com.github.sttk.errs.Exc;
 import com.github.sttk.sabi.DataSrc;
 import com.github.sttk.sabi.DataConn;
+import com.github.sttk.sabi.AsyncGroup;
 
 class FooDataSrc implements DataSrc {
   @Override public void setup(AsyncGroup ag) throws Exc {}
@@ -113,7 +114,7 @@ import com.github.sttk.errs.Exc;
 import com.github.sttk.sabi.DataAcc;
 
 interface GettingDataAcc extends DataAcc, MyData {
-  @Override public String getText() throws Exc {
+  @Override default String getText() throws Exc {
     var conn = getDataConn("foo", FooDataConn.class);
     // ...
     return "output text";
@@ -121,7 +122,7 @@ interface GettingDataAcc extends DataAcc, MyData {
 }
 
 interface SettingDataAcc extends DataAcc, MyData {
-  @Override public void setText(String text) throws Exc {
+  @Override default void setText(String text) throws Exc {
     var conn = getDataConn("bar", BarDataConn.class);
     // ...
   }
