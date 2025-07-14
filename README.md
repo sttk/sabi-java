@@ -8,19 +8,17 @@ However, traditional DI often presented an inconvenience in how methods were gro
 
 This framework addresses that inconvenience. The data access interface used by a logic function is unique to that specific logic, passed as an argument to the logic function. This interface declares all the data access methods that specific logic will use.
 
-On the data access layer side, implementations can be provided by concrete types that fulfill multiple `DataAcc` derived class. This allows for implementation in any arbitrary unit — whether by external data service, by table, or by functional concern.
+On the data access layer side, implementations can be provided by concrete types that fulfill multiple `DataAcc` derived classes. This allows for implementation in any arbitrary unit — whether by external data service, by table, or by functional concern.
 
 This is achieved through the following mechanism:
 
-- A `DataHub` class aggregates all data access methods. `DataAcc` derived classs are attached to `DataHub`, giving `DataHub` the implementations of the data access methods.
+- A `DataHub` class aggregates all data access methods. `DataAcc` derived classes are attached to `DataHub`, giving `DataHub` the implementations of the data access methods.
 - Logic functional interfaces accept specific, narrowly defined data access interfaces as arguments. These interfaces declare only the methods relevant to that particular piece of logic.
 - The `DataHub` class implements all of these specific data access interfaces. When a `DataHub` instance is passed to a logic functional interface, the logic functional interface interacts with it via the narrower interface, ensuring it only sees and uses the methods it needs. Using Java's inheritance mechanism, a type implements an interface by methods of other classes. The `DataHub` simply needs to have methods that match the signatures of all the methods declared across the various logic-facing data access interfaces.
 
 This approach provides strong compile-time guarantees that logic only uses what it declares, while allowing flexible organization of data access implementations.
 
 ## Installation
-
-## Install
 
 This package can be installed from [Maven Central Repository][mvn-url].
 
@@ -98,7 +96,7 @@ interface MyData {
   void setText(String text) throws Exc;
 }
 
-class MyLogic implements Logic {
+class MyLogic implements Logic<MyData> {
   @Override public void run(MyData data) throws Exc {
     String text = data.getText();
     data.setText(text);
