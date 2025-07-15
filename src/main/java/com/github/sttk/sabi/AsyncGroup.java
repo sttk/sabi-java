@@ -1,5 +1,5 @@
 /*
- * AsyncGroup class.
+ * AsyncGroup.java
  * Copyright (C) 2023-2025 Takayuki Sato. All Rights Reserved.
  */
 package com.github.sttk.sabi;

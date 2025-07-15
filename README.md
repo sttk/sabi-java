@@ -31,7 +31,7 @@ The examples of declaring that repository and the dependency on this package in 
     <dependency>
       <groupId>io.github.sttk</groupId>
       <artifactId>sabi</artifactId>
-      <version>0.4.0</version>
+      <version>0.5.0</version>
     </dependency>
   </dependencies>
 ```
@@ -43,7 +43,7 @@ repositories {
   mavenCentral()
 }
 dependencies {
-  implementation 'io.github.sttk:sabi:0.4.0'
+  implementation 'io.github.sttk:sabi:0.5.0'
 }
 ```
 
@@ -215,8 +215,8 @@ See the file LICENSE in this distribution for more details.
 
 
 [repo-url]: https://github.com/sttk/sabi-java
-[mvn-img]: https://img.shields.io/badge/maven_central-0.4.0-276bdd.svg
-[mvn-url]: https://mvnrepository.com/artifact/io.github.sttk/sabi/0.4.0
+[mvn-img]: https://img.shields.io/badge/maven_central-0.5.0-276bdd.svg
+[mvn-url]: https://mvnrepository.com/artifact/io.github.sttk/sabi/0.5.0
 [io-img]: https://img.shields.io/badge/github.io-Javadoc-4d7a97.svg
 [io-url]: https://sttk.github.io/sabi-java/
 [ci-img]: https://github.com/sttk/sabi-java/actions/workflows/java-ci.yml/badge.svg?branch=main
