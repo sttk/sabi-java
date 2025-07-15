@@ -1,5 +1,5 @@
 /*
- * package-info class.
+ * package-info.
  * Copyright (C) 2022-2025 Takayuki Sato. All Rights Reserved.
  */
 
