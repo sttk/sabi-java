@@ -1,5 +1,5 @@
 /*
- * package-info.
+ * package-info.java
  * Copyright (C) 2022-2025 Takayuki Sato. All Rights Reserved.
  */
 

@@ -1,5 +1,5 @@
 /*
- * DataSrc class.
+ * DataSrc.java
  * Copyright (C) 2022-2025 Takayuki Sato. All Rights Reserved.
  */
 package com.github.sttk.sabi;
