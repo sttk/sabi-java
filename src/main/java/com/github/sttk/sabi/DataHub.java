@@ -89,14 +89,6 @@ public class DataHub implements DataAcc, AutoCloseable {
   public record FailToCastDataConn(String name, String castToType) {}
 
   /**
-   * Represents an error reason that occurred when failing to cast the {@code DataHub} instance
-   * itself to the expected data access interface type for a {@link Logic}.
-   *
-   * @param castFromType The actual type of the {@code DataHub} instance that failed to cast.
-   */
-  public record FailToCastDataHub(String castFromType) {}
-
-  /**
    * Represents an unexpected {@link RuntimeException} that occurred during pre-commit or commit
    * operations.
    */
@@ -129,71 +121,6 @@ public class DataHub implements DataAcc, AutoCloseable {
   }
 
   /**
-   * Executes the provided application {@link Logic} without transactional boundaries. The {@code
-   * DataHub} instance itself is passed as the data access object {@code D} to the {@link Logic}'s
-   * {@code run} method.
-   *
-   * @param <D> The type of the data access object, which typically is {@code DataHub} or an
-   *     interface implemented by {@code DataHub} that {@link Logic} expects.
-   * @param logic The application logic to execute.
-   * @throws Exc if an {@link Exc} or {@link RuntimeException} occurs during logic execution or if
-   *     the {@code DataHub} cannot be cast to the expected data access type.
-   */
-  public <D> void run(Logic<D> logic) throws Exc {
-    D data;
-    try {
-      @SuppressWarnings("unchecked")
-      D d = (D) this;
-      data = d;
-    } catch (Exception e) {
-      throw new Exc(new FailToCastDataHub(this.getClass().getName()));
-    }
-    try {
-      inner.begin();
-      logic.run(data);
-    } catch (Exc | RuntimeException e) {
-      throw e;
-    } finally {
-      inner.end();
-    }
-  }
-
-  /**
-   * Executes the provided application {@link Logic} within a transactional context. The {@code
-   * DataHub} instance is passed as the data access object {@code D} to the {@link Logic}'s {@code
-   * run} method. If the logic completes successfully, a commit operation is attempted. If any
-   * {@link Exc}, {@link RuntimeException}, or {@link Error} occurs, a rollback operation is
-   * performed.
-   *
-   * @param <D> The type of the data access object, which typically is {@code DataHub} or an
-   *     interface implemented by {@code DataHub} that {@link Logic} expects.
-   * @param logic The application logic to execute transactionally.
-   * @throws Exc if an {@link Exc}, {@link RuntimeException}, or {@link Error} occurs during logic
-   *     execution, pre-commit, or commit. The original exception is re-thrown after rollback.
-   */
-  public <D> void txn(Logic<D> logic) throws Exc {
-    D data;
-    try {
-      @SuppressWarnings("unchecked")
-      D d = (D) this;
-      data = d;
-    } catch (Exception e) {
-      throw new Exc(new FailToCastDataHub(this.getClass().getName()));
-    }
-    try {
-      inner.begin();
-      logic.run(data);
-      inner.commit();
-      inner.postCommit();
-    } catch (Exc | RuntimeException | Error e) {
-      inner.rollback();
-      throw e;
-    } finally {
-      inner.end();
-    }
-  }
-
-  /**
    * Retrieves a {@link DataConn} instance from the managed data sources. This method is part of the
    * {@link DataAcc} interface implementation.
    *
@@ -217,5 +144,21 @@ public class DataHub implements DataAcc, AutoCloseable {
   @Override
   public void close() {
     inner.close();
+  }
+
+  void begin() throws Exc {
+    inner.begin();
+  }
+
+  void commit() throws Exc {
+    inner.commit();
+  }
+
+  void rollback() {
+    inner.rollback();
+  }
+
+  void end() {
+    inner.end();
   }
 }

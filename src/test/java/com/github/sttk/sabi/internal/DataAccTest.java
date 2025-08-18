@@ -316,8 +316,8 @@ public class DataAccTest {
 
       try (var ac = Sabi.setup()) {
         suppressWarnings_unused(ac);
-        try (var hub = new SampleDataHub()) {
-          hub.run(new SampleLogic());
+        try (var data = new SampleDataHub()) {
+          Sabi.run(new SampleLogic(), data);
         } catch (Exception e) {
           fail(e);
         }
@@ -358,11 +358,11 @@ public class DataAccTest {
 
       try (var ac = Sabi.setup()) {
         suppressWarnings_unused(ac);
-        try (var hub = new SampleDataHub()) {
-          hub.uses("foo", new FooDataSrc(1, "hello", logger, false));
-          hub.uses("bar", new BarDataSrc(2, logger, false));
+        try (var data = new SampleDataHub()) {
+          data.uses("foo", new FooDataSrc(1, "hello", logger, false));
+          data.uses("bar", new BarDataSrc(2, logger, false));
 
-          hub.run(new SampleLogic());
+          Sabi.run(new SampleLogic(), data);
         } catch (Exception e) {
           fail(e);
         }
@@ -390,11 +390,11 @@ public class DataAccTest {
 
       try (var ac = Sabi.setup()) {
         suppressWarnings_unused(ac);
-        try (var hub = new SampleDataHub()) {
-          hub.uses("foo", new FooDataSrc(1, "hello", logger, true));
-          hub.uses("bar", new BarDataSrc(2, logger, false));
+        try (var data = new SampleDataHub()) {
+          data.uses("foo", new FooDataSrc(1, "hello", logger, true));
+          data.uses("bar", new BarDataSrc(2, logger, false));
 
-          hub.run(new SampleLogic());
+          Sabi.run(new SampleLogic(), data);
         } catch (Exc e) {
           switch (e.getReason()) {
             case DataHub.FailToSetupLocalDataSrcs r -> {
@@ -434,10 +434,10 @@ public class DataAccTest {
 
       try (var ac = Sabi.setup()) {
         suppressWarnings_unused(ac);
-        try (var hub = new SampleDataHub()) {
-          hub.uses("foo", new FooDataSrc(2, "Hello", logger, false));
+        try (var data = new SampleDataHub()) {
+          data.uses("foo", new FooDataSrc(2, "Hello", logger, false));
 
-          hub.run(new SampleLogic());
+          Sabi.run(new SampleLogic(), data);
         } catch (Exception e) {
           fail(e);
         }
@@ -481,8 +481,8 @@ public class DataAccTest {
 
       try (var ac = Sabi.setup()) {
         suppressWarnings_unused(ac);
-        try (var hub = new SampleDataHub()) {
-          hub.txn(new SampleLogic());
+        try (var data = new SampleDataHub()) {
+          Sabi.txn(new SampleLogic(), data);
         } catch (Exception e) {
           fail(e);
         }
@@ -529,11 +529,11 @@ public class DataAccTest {
 
       try (var ac = Sabi.setup()) {
         suppressWarnings_unused(ac);
-        try (var hub = new SampleDataHub()) {
-          hub.uses("foo", new FooDataSrc(1, "Hello", logger, false));
-          hub.uses("bar", new BarDataSrc(2, logger, false));
+        try (var data = new SampleDataHub()) {
+          data.uses("foo", new FooDataSrc(1, "Hello", logger, false));
+          data.uses("bar", new BarDataSrc(2, logger, false));
 
-          hub.txn(new SampleLogic());
+          Sabi.txn(new SampleLogic(), data);
         } catch (Exception e) {
           fail(e);
         }
@@ -567,11 +567,11 @@ public class DataAccTest {
 
       try (var ac = Sabi.setup()) {
         suppressWarnings_unused(ac);
-        try (var hub = new SampleDataHub()) {
-          hub.uses("foo", new FooDataSrc(1, "Hello", logger, true));
-          hub.uses("bar", new BarDataSrc(2, logger, false));
+        try (var data = new SampleDataHub()) {
+          data.uses("foo", new FooDataSrc(1, "Hello", logger, true));
+          data.uses("bar", new BarDataSrc(2, logger, false));
 
-          hub.txn(new SampleLogic());
+          Sabi.txn(new SampleLogic(), data);
         } catch (Exc e) {
           switch (e.getReason()) {
             case DataHub.FailToSetupLocalDataSrcs r -> {
@@ -596,11 +596,11 @@ public class DataAccTest {
 
       try (var ac = Sabi.setup()) {
         suppressWarnings_unused(ac);
-        try (var hub = new SampleDataHub()) {
-          hub.uses("foo", new FooDataSrc(1, "Hello", logger, false));
-          hub.uses("bar", new BarDataSrc(2, logger, false));
+        try (var data = new SampleDataHub()) {
+          data.uses("foo", new FooDataSrc(1, "Hello", logger, false));
+          data.uses("bar", new BarDataSrc(2, logger, false));
 
-          hub.txn(new FailingLogic());
+          Sabi.txn(new FailingLogic(), data);
         } catch (Exc e) {
           assertThat(e.getReason()).isEqualTo("ZZZ");
         } catch (Exception e) {
@@ -640,10 +640,10 @@ public class DataAccTest {
 
       try (var ac = Sabi.setup()) {
         suppressWarnings_unused(ac);
-        try (var hub = new SampleDataHub()) {
-          hub.uses("foo", new FooDataSrc(2, "Hello", logger, false));
+        try (var data = new SampleDataHub()) {
+          data.uses("foo", new FooDataSrc(2, "Hello", logger, false));
 
-          hub.txn(new SampleLogic());
+          Sabi.txn(new SampleLogic(), data);
         } catch (Exception e) {
           fail(e);
         }

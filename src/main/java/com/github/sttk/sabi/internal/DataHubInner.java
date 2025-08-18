@@ -138,6 +138,16 @@ public class DataHubInner {
     if (!excMap.isEmpty()) {
       throw new Exc(new DataHub.FailToCommitDataConn(excMap));
     }
+
+    ag = new AsyncGroupImpl();
+    ptr = this.dataConnList.head;
+    while (ptr != null) {
+      ag.name = ptr.name;
+      ptr.conn.postCommit(ag);
+      ptr = ptr.next;
+    }
+
+    ag.joinAndIgnoreExcs();
   }
 
   public void rollback() {
@@ -150,18 +160,6 @@ public class DataHubInner {
       } else {
         ptr.conn.rollback(ag);
       }
-      ptr = ptr.next;
-    }
-
-    ag.joinAndIgnoreExcs();
-  }
-
-  public void postCommit() {
-    var ag = new AsyncGroupImpl();
-    var ptr = this.dataConnList.head;
-    while (ptr != null) {
-      ag.name = ptr.name;
-      ptr.conn.postCommit(ag);
       ptr = ptr.next;
     }
 

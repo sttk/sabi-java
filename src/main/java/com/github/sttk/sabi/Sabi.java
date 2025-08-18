@@ -34,6 +34,14 @@ import com.github.sttk.sabi.internal.DataHubInner;
  *   }</code></pre>
  */
 public final class Sabi {
+  /**
+   * Represents an error reason that occurred when failing to cast the {@code DataHub} instance
+   * itself to the expected data access interface type for a {@link Logic}.
+   *
+   * @param castFromType The actual type of the {@code DataHub} instance that failed to cast.
+   */
+  public record FailToCastDataHub(String castFromType) {}
+
   private Sabi() {}
 
   /**
@@ -62,5 +70,73 @@ public final class Sabi {
    */
   public static AutoCloseable setup() throws Exc {
     return DataHubInner.setupGlobals();
+  }
+
+  /**
+   * Executes the provided application {@link Logic} without transactional boundaries. The {@code
+   * DataHub} instance in the parameters is passed as the data access object {@code D} to the {@link
+   * Logic}'s {@code run} method.
+   *
+   * @param <D> The type of the data access object, which typically is {@code DataHub} or an
+   *     interface implemented by {@code DataHub} that {@link Logic} expects.
+   * @param logic The application logic to execute.
+   * @param hub An instance of a DataHub subclass that inherits the data interface for logic
+   *     arguments.
+   * @throws Exc if an {@link Exc} or {@link RuntimeException} occurs during logic execution or if
+   *     the {@code DataHub} cannot be cast to the expected data access type.
+   */
+  public static <D> void run(Logic<D> logic, DataHub hub) throws Exc {
+    D data;
+    try {
+      @SuppressWarnings("unchecked")
+      D d = (D) hub;
+      data = d;
+    } catch (Exception e) {
+      throw new Exc(new FailToCastDataHub(hub.getClass().getName()));
+    }
+    try {
+      hub.begin();
+      logic.run(data);
+    } catch (Exc | RuntimeException e) {
+      throw e;
+    } finally {
+      hub.end();
+    }
+  }
+
+  /**
+   * Executes the provided application {@link Logic} within a transactional context. The {@code
+   * DataHub} instance in the parameter is passed as the data access object {@code D} to the {@link
+   * Logic}'s {@code run} method. If the logic completes successfully, a commit operation is
+   * attempted. If any {@link Exc}, {@link RuntimeException}, or {@link Error} occurs, a rollback
+   * operation is performed.
+   *
+   * @param <D> The type of the data access object, which typically is {@code DataHub} or an
+   *     interface implemented by {@code DataHub} that {@link Logic} expects.
+   * @param logic The application logic to execute transactionally.
+   * @param hub An instance of a DataHub subclass that inherits the data interface for logic
+   *     arguments.
+   * @throws Exc if an {@link Exc}, {@link RuntimeException}, or {@link Error} occurs during logic
+   *     execution, pre-commit, or commit. The original exception is re-thrown after rollback.
+   */
+  public static <D> void txn(Logic<D> logic, DataHub hub) throws Exc {
+    D data;
+    try {
+      @SuppressWarnings("unchecked")
+      D d = (D) hub;
+      data = d;
+    } catch (Exception e) {
+      throw new Exc(new FailToCastDataHub(hub.getClass().getName()));
+    }
+    try {
+      hub.begin();
+      logic.run(data);
+      hub.commit();
+    } catch (Exc | RuntimeException | Error e) {
+      hub.rollback();
+      throw e;
+    } finally {
+      hub.end();
+    }
   }
 }
