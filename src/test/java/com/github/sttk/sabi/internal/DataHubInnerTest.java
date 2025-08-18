@@ -1038,6 +1038,10 @@ public class DataHubInnerTest {
               "SyncDataConn 2 committed",
               "AsyncDataConn 3 committed",
               "SyncDataConn 4 committed",
+              "AsyncDataConn 1 post committed",
+              "SyncDataConn 2 post committed",
+              "AsyncDataConn 3 post committed",
+              "SyncDataConn 4 post committed",
               "SyncDataConn 4 closed",
               "AsyncDataConn 3 closed",
               "SyncDataConn 2 closed",
@@ -2055,70 +2059,14 @@ public class DataHubInnerTest {
               "SyncDataConn 2 committed",
               "AsyncDataConn 3 committed",
               "SyncDataConn 4 committed",
-              "AsyncDataConn 1 forced back",
-              "SyncDataConn 2 forced back",
-              "AsyncDataConn 3 forced back",
-              "SyncDataConn 4 forced back",
-              "SyncDataConn 4 closed",
-              "AsyncDataConn 3 closed",
-              "SyncDataConn 2 closed",
-              "AsyncDataConn 1 closed",
-              "SyncDataSrc 4 closed",
-              "AsyncDataSrc 3 closed",
-              "SyncDataSrc 2 closed",
-              "AsyncDataSrc 1 closed");
-    }
-
-    @Test
-    void post_commit() {
-      var logger = new ArrayList<String>();
-
-      DataHubInner.usesGlobal("foo", new AsyncDataSrc(1, FAIL__NOT, logger));
-      DataHubInner.usesGlobal("bar", new SyncDataSrc(2, FAIL__NOT, logger));
-
-      try (var ac = DataHubInner.setupGlobals()) {
-        suppressWarnings_unused(ac);
-        var hub = new DataHubInner();
-
-        hub.uses("baz", new AsyncDataSrc(3, FAIL__NOT, logger));
-        hub.uses("qux", new SyncDataSrc(4, FAIL__NOT, logger));
-
-        hub.begin();
-
-        var conn1 = hub.getDataConn("foo", AsyncDataConn.class);
-        assertThat(conn1).isNotNull();
-
-        var conn2 = hub.getDataConn("bar", SyncDataConn.class);
-        assertThat(conn2).isNotNull();
-
-        var conn3 = hub.getDataConn("baz", AsyncDataConn.class);
-        assertThat(conn3).isNotNull();
-
-        var conn4 = hub.getDataConn("qux", SyncDataConn.class);
-        assertThat(conn4).isNotNull();
-
-        hub.postCommit();
-        hub.end();
-
-        hub.close();
-      } catch (Exception e) {
-        fail(e);
-      }
-
-      assertThat(logger)
-          .containsExactly(
-              "SyncDataSrc 2 setupped",
-              "AsyncDataSrc 1 setupped",
-              "SyncDataSrc 4 setupped",
-              "AsyncDataSrc 3 setupped",
-              "AsyncDataSrc 1 created DataConn",
-              "SyncDataSrc 2 created DataConn",
-              "AsyncDataSrc 3 created DataConn",
-              "SyncDataSrc 4 created DataConn",
               "AsyncDataConn 1 post committed",
               "SyncDataConn 2 post committed",
               "AsyncDataConn 3 post committed",
               "SyncDataConn 4 post committed",
+              "AsyncDataConn 1 forced back",
+              "SyncDataConn 2 forced back",
+              "AsyncDataConn 3 forced back",
+              "SyncDataConn 4 forced back",
               "SyncDataConn 4 closed",
               "AsyncDataConn 3 closed",
               "SyncDataConn 2 closed",
