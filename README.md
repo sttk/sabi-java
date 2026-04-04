@@ -31,7 +31,7 @@ The examples of declaring that repository and the dependency on this package in 
     <dependency>
       <groupId>io.github.sttk</groupId>
       <artifactId>sabi</artifactId>
-      <version>0.6.0</version>
+      <version>0.7.0</version>
     </dependency>
   </dependencies>
 ```
@@ -43,7 +43,7 @@ repositories {
   mavenCentral()
 }
 dependencies {
-  implementation 'io.github.sttk:sabi:0.6.0'
+  implementation 'io.github.sttk:sabi:0.7.0'
 }
 ```
 
@@ -201,22 +201,22 @@ This framework supports JDK 21 or later.
 
 ### Actually checked JDK versions:
 
-- Oracle GraalVM 21.0.7+8.1
-- Oracle GraalVM 22.0.2+9.1
-- Oracle GraalVM 23.0.2+7.1
-- Oracle GraalVM 24.0.1+9.1
+- Oracle GraalVM 25.0.1+8.1 (build 25.0.1+8-LTS-jvmci-b01)
+- Oracle GraalVM 24.0.2+11.1 (build 24.0.2+11-jvmci-b01)
+- Oracle GraalVM 23.0.2+7.1 (build 23.0.2+7-jvmci-b01)
+- Oracle GraalVM 21.0.9+7.1 (build 21.0.9+7-LTS-jvmci-23.1-b79)
 
 ## License
 
-Copyright (C) 2022-2025 Takayuki Sato
+Copyright (C) 2022-2026 Takayuki Sato
 
 This program is free software under MIT License.<br>
 See the file LICENSE in this distribution for more details.
 
 
 [repo-url]: https://github.com/sttk/sabi-java
-[mvn-img]: https://img.shields.io/badge/maven_central-0.6.0-276bdd.svg
-[mvn-url]: https://central.sonatype.com/artifact/io.github.sttk/sabi/0.6.0
+[mvn-img]: https://img.shields.io/badge/maven_central-0.7.0-276bdd.svg
+[mvn-url]: https://central.sonatype.com/artifact/io.github.sttk/sabi/0.7.0
 [io-img]: https://img.shields.io/badge/github.io-Javadoc-4d7a97.svg
 [io-url]: https://sttk.github.io/sabi-java/
 [ci-img]: https://github.com/sttk/sabi-java/actions/workflows/java-ci.yml/badge.svg?branch=main

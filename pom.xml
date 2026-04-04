@@ -6,7 +6,7 @@
 
   <groupId>io.github.sttk</groupId>
   <artifactId>sabi</artifactId>
-  <version>0.6.0</version>
+  <version>0.7.0</version>
   <packaging>jar</packaging>
 
   <name>sabi</name>
@@ -99,7 +99,7 @@
           <encoding>UTF-8</encoding>
           <charset>UTF-8</charset>
           <docencoding>UTF-8</docencoding>
-          <bottom><![CDATA[Copyright 2022-2025 Takayuki Sato. All Rights Reserved.]]></bottom>
+          <bottom><![CDATA[Copyright 2022-2026 Takayuki Sato. All Rights Reserved.]]></bottom>
           <outputDirectory>${project.reporting.outputDirectory}</outputDirectory>
         </configuration>
         <executions>

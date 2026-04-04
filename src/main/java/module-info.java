@@ -1,6 +1,6 @@
 /*
  * module-info.java
- * Copyright (C) 2022-2025 Takayuki Sato. All Rights Reserved.
+ * Copyright (C) 2022-2026 Takayuki Sato. All Rights Reserved.
  */
 
 /**
@@ -9,7 +9,7 @@
  * <p>This module includes the interfaces that abstracts data accesses to the external data stores
  * and the classes to execute a logic function with or without transaction operations.
  *
- * @version 0.6
+ * @version 0.7
  */
 module com.github.sttk.sabi {
   exports com.github.sttk.sabi;
