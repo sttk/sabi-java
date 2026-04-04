@@ -4,7 +4,6 @@ on:
   release:
     types: [ created ]
 
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -13,7 +12,7 @@ jobs:
     - name: GitHub Action for GraalVM
       uses: graalvm/setup-graalvm@v1
       with:
-        java-version: 23
+        java-version: 25
         distribution: 'graalvm'
         github_token: ${{ secrets.GITHUB_TOKEN }}
     - name: Compile
@@ -25,4 +24,3 @@ jobs:
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./target/site/apidocs
-
