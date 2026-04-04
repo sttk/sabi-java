@@ -1,4 +1,4 @@
-# [sabi][repo-url] [![Maven Central][mvn-img]][mvn-url] [![GitHub.io][io-img]][io-url] [![CI Status][ci-img]][ci-url] [![MIT License][mit-img]][mit-url]
+# [sabi][repo-url] [![Maven Central][mvn-img]][mvn-url] [![MVN Repository][mvnrepo-img]][mvnrepo-url] [![GitHub.io][io-img]][io-url] [![CI Status][ci-img]][ci-url] [![MIT License][mit-img]][mit-url]
 
 A small framework for Java designed to separate logic from data access.
 
@@ -217,6 +217,8 @@ See the file LICENSE in this distribution for more details.
 [repo-url]: https://github.com/sttk/sabi-java
 [mvn-img]: https://img.shields.io/badge/maven_central-0.7.0-276bdd.svg
 [mvn-url]: https://central.sonatype.com/artifact/io.github.sttk/sabi/0.7.0
+[mvnrepo-img]: https://img.shields.io/badge/mvn_repository-0.7.0-498df4.svg
+[mvnrepo-url]: https://mvnrepository.com/artifact/io.github.sttk/sabi
 [io-img]: https://img.shields.io/badge/github.io-Javadoc-4d7a97.svg
 [io-url]: https://sttk.github.io/sabi-java/
 [ci-img]: https://github.com/sttk/sabi-java/actions/workflows/java-ci.yml/badge.svg?branch=main
