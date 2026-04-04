@@ -4,7 +4,7 @@
  */
 package com.github.sttk.sabi;
 
-import com.github.sttk.errs.Exc;
+import com.github.sttk.errs.Err;
 
 /**
  * The interface that abstracts a data source responsible for managing connections to external data
@@ -21,9 +21,9 @@ public interface DataSrc {
    *
    * @param ag An {@link AsyncGroup} that can be used for asynchronous setup operations, especially
    *     if initialization is time-consuming.
-   * @throws Exc if an error occurs during the setup process.
+   * @throws Err if an error occurs during the setup process.
    */
-  void setup(AsyncGroup ag) throws Exc;
+  void setup(AsyncGroup ag) throws Err;
 
   /**
    * Closes the data source, releasing all resources and shutting down connections managed by this
@@ -38,7 +38,7 @@ public interface DataSrc {
    * connection.
    *
    * @return A new {@link DataConn} instance for a session.
-   * @throws Exc if an error occurs while creating the data connection.
+   * @throws Err if an error occurs while creating the data connection.
    */
-  DataConn createDataConn() throws Exc;
+  DataConn createDataConn() throws Err;
 }

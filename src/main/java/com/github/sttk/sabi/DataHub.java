@@ -4,7 +4,7 @@
  */
 package com.github.sttk.sabi;
 
-import com.github.sttk.errs.Exc;
+import com.github.sttk.errs.Err;
 import com.github.sttk.sabi.internal.DataHubInner;
 import java.util.Map;
 
@@ -25,7 +25,7 @@ public class DataHub implements DataAcc, AutoCloseable {
    * @param errors A map containing the names of the data sources and the corresponding exceptions
    *     that occurred during their setup.
    */
-  public record FailToSetupGlobalDataSrcs(Map<String, Exc> errors) {}
+  public record FailToSetupGlobalDataSrcs(Map<String, Err> errors) {}
 
   /**
    * Represents an error reason that occurred when failing to set up local {@link DataSrc}
@@ -34,7 +34,7 @@ public class DataHub implements DataAcc, AutoCloseable {
    * @param errors A map containing the names of the data sources and the corresponding exceptions
    *     that occurred during their setup.
    */
-  public record FailToSetupLocalDataSrcs(Map<String, Exc> errors) {}
+  public record FailToSetupLocalDataSrcs(Map<String, Err> errors) {}
 
   /**
    * Represents an error reason that occurred when failing to commit one or more {@link DataConn}
@@ -43,7 +43,7 @@ public class DataHub implements DataAcc, AutoCloseable {
    * @param errors A map containing the names of the data connections and the corresponding
    *     exceptions that occurred during their commit.
    */
-  public record FailToCommitDataConn(Map<String, Exc> errors) {}
+  public record FailToCommitDataConn(Map<String, Err> errors) {}
 
   /**
    * Represents an error reason that occurred when failing to pre-commit one or more {@link
@@ -52,7 +52,7 @@ public class DataHub implements DataAcc, AutoCloseable {
    * @param errors A map containing the names of the data connections and the corresponding
    *     exceptions that occurred during their pre-commit.
    */
-  public record FailToPreCommitDataConn(Map<String, Exc> errors) {}
+  public record FailToPreCommitDataConn(Map<String, Err> errors) {}
 
   /**
    * Represents an error reason where no {@link DataSrc} was found to create a {@link DataConn} with
@@ -128,11 +128,11 @@ public class DataHub implements DataAcc, AutoCloseable {
    * @param name The name of the data source from which to get the connection.
    * @param cls The {@link Class} object representing the desired type of the data connection.
    * @return A {@link DataConn} instance of the specified type.
-   * @throws Exc if no data source is found, if the connection cannot be created, if the created
+   * @throws Err if no data source is found, if the connection cannot be created, if the created
    *     connection is null, or if the connection cannot be cast to the specified class.
    */
   @Override
-  public <C extends DataConn> C getDataConn(String name, Class<C> cls) throws Exc {
+  public <C extends DataConn> C getDataConn(String name, Class<C> cls) throws Err {
     return inner.getDataConn(name, cls);
   }
 
@@ -146,11 +146,11 @@ public class DataHub implements DataAcc, AutoCloseable {
     inner.close();
   }
 
-  void begin() throws Exc {
+  void begin() throws Err {
     inner.begin();
   }
 
-  void commit() throws Exc {
+  void commit() throws Err {
     inner.commit();
   }
 

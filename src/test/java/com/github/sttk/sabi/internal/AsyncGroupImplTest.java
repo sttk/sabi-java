@@ -3,7 +3,7 @@ package com.github.sttk.sabi.internal;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import com.github.sttk.errs.Exc;
+import com.github.sttk.errs.Err;
 import com.github.sttk.sabi.Runner;
 import java.util.HashMap;
 import org.junit.jupiter.api.Test;
@@ -15,8 +15,8 @@ public class AsyncGroupImplTest {
   void zero() {
     var ag = new AsyncGroupImpl();
 
-    var m = new HashMap<String, Exc>();
-    ag.joinAndPutExcsInto(m);
+    var m = new HashMap<String, Err>();
+    ag.joinAndPutErrsInto(m);
     assertThat(m).hasSize(0);
   }
 
@@ -38,8 +38,8 @@ public class AsyncGroupImplTest {
     ag.add(fn);
     assertThat(executed[0]).isFalse();
 
-    var m = new HashMap<String, Exc>();
-    ag.joinAndPutExcsInto(m);
+    var m = new HashMap<String, Err>();
+    ag.joinAndPutErrsInto(m);
     assertThat(m).hasSize(0);
     assertThat(executed[0]).isTrue();
   }
@@ -58,15 +58,15 @@ public class AsyncGroupImplTest {
           } catch (Exception e) {
           }
           executed[0] = true;
-          throw new Exc(new FailToDoSomething());
+          throw new Err(new FailToDoSomething());
         };
 
     ag.name = "foo";
     ag.add(fn);
     assertThat(executed[0]).isFalse();
 
-    var m = new HashMap<String, Exc>();
-    ag.joinAndPutExcsInto(m);
+    var m = new HashMap<String, Err>();
+    ag.joinAndPutErrsInto(m);
     assertThat(m).hasSize(1);
     assertThat(executed[0]).isTrue();
 
@@ -93,7 +93,7 @@ public class AsyncGroupImplTest {
           } catch (Exception e) {
           }
           executed[0] = true;
-          throw new Exc(new Reason0());
+          throw new Err(new Reason0());
         };
     Runner fn1 =
         () -> {
@@ -102,7 +102,7 @@ public class AsyncGroupImplTest {
           } catch (Exception e) {
           }
           executed[1] = true;
-          throw new Exc(new Reason1());
+          throw new Err(new Reason1());
         };
     Runner fn2 =
         () -> {
@@ -111,7 +111,7 @@ public class AsyncGroupImplTest {
           } catch (Exception e) {
           }
           executed[2] = true;
-          throw new Exc(new Reason2());
+          throw new Err(new Reason2());
         };
 
     ag.name = "foo0";
@@ -121,8 +121,8 @@ public class AsyncGroupImplTest {
     ag.name = "foo2";
     ag.add(fn2);
 
-    var m = new HashMap<String, Exc>();
-    ag.joinAndPutExcsInto(m);
+    var m = new HashMap<String, Err>();
+    ag.joinAndPutErrsInto(m);
     assertThat(m).hasSize(3);
     assertThat(executed[0]).isTrue();
     assertThat(executed[1]).isTrue();
@@ -130,13 +130,13 @@ public class AsyncGroupImplTest {
 
     assertThat(m.get("foo0").toString())
         .isEqualTo(
-            "com.github.sttk.errs.Exc { reason = com.github.sttk.sabi.internal.AsyncGroupImplTest$1Reason0 Reason0[], file = AsyncGroupImplTest.java, line = 96 }");
+            "com.github.sttk.errs.Err { reason = com.github.sttk.sabi.internal.AsyncGroupImplTest$1Reason0 Reason0[], file = AsyncGroupImplTest.java, line = 96 }");
     assertThat(m.get("foo1").toString())
         .isEqualTo(
-            "com.github.sttk.errs.Exc { reason = com.github.sttk.sabi.internal.AsyncGroupImplTest$1Reason1 Reason1[], file = AsyncGroupImplTest.java, line = 105 }");
+            "com.github.sttk.errs.Err { reason = com.github.sttk.sabi.internal.AsyncGroupImplTest$1Reason1 Reason1[], file = AsyncGroupImplTest.java, line = 105 }");
     assertThat(m.get("foo2").toString())
         .isEqualTo(
-            "com.github.sttk.errs.Exc { reason = com.github.sttk.sabi.internal.AsyncGroupImplTest$1Reason2 Reason2[], file = AsyncGroupImplTest.java, line = 114 }");
+            "com.github.sttk.errs.Err { reason = com.github.sttk.sabi.internal.AsyncGroupImplTest$1Reason2 Reason2[], file = AsyncGroupImplTest.java, line = 114 }");
   }
 
   @Test
@@ -156,7 +156,7 @@ public class AsyncGroupImplTest {
           } catch (Exception e) {
           }
           executed[0] = true;
-          throw new Exc(new Reason0());
+          throw new Err(new Reason0());
         };
     Runner fn1 =
         () -> {
@@ -165,7 +165,7 @@ public class AsyncGroupImplTest {
           } catch (Exception e) {
           }
           executed[1] = true;
-          throw new Exc(new Reason1());
+          throw new Err(new Reason1());
         };
     Runner fn2 =
         () -> {
@@ -174,7 +174,7 @@ public class AsyncGroupImplTest {
           } catch (Exception e) {
           }
           executed[2] = true;
-          throw new Exc(new Reason2());
+          throw new Err(new Reason2());
         };
 
     ag.name = "foo0";
@@ -184,7 +184,7 @@ public class AsyncGroupImplTest {
     ag.name = "foo2";
     ag.add(fn2);
 
-    ag.joinAndIgnoreExcs();
+    ag.joinAndIgnoreErrs();
     assertThat(executed[0]).isTrue();
     assertThat(executed[1]).isTrue();
     assertThat(executed[2]).isTrue();

@@ -4,7 +4,7 @@
  */
 package com.github.sttk.sabi;
 
-import com.github.sttk.errs.Exc;
+import com.github.sttk.errs.Err;
 
 /**
  * An interface designed for implementing data access operations through default methods in its
@@ -25,7 +25,7 @@ public interface DataAcc {
    * @param name The name identifying the specific data connection to retrieve.
    * @param cls The {@link Class} object representing the type of the desired data connection.
    * @return A data connection object of the specified type.
-   * @throws Exc if an error occurs while obtaining the data connection.
+   * @throws Err if an error occurs while obtaining the data connection.
    */
-  <C extends DataConn> C getDataConn(String name, Class<C> cls) throws Exc;
+  <C extends DataConn> C getDataConn(String name, Class<C> cls) throws Err;
 }
