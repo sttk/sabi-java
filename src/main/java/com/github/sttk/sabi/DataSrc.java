@@ -1,6 +1,6 @@
 /*
  * DataSrc.java
- * Copyright (C) 2022-2025 Takayuki Sato. All Rights Reserved.
+ * Copyright (C) 2022-2026 Takayuki Sato. All Rights Reserved.
  */
 package com.github.sttk.sabi;
 

@@ -1,6 +1,6 @@
 /*
  * AsyncGroupImpl.java
- * Copyright (C) 2023-2025 Takayuki Sato. All Rights Reserved.
+ * Copyright (C) 2023-2026 Takayuki Sato. All Rights Reserved.
  */
 package com.github.sttk.sabi.internal;
 
