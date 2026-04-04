@@ -3,7 +3,7 @@ package com.github.sttk.sabi.internal;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import com.github.sttk.errs.Exc;
+import com.github.sttk.errs.Err;
 import com.github.sttk.sabi.AsyncGroup;
 import com.github.sttk.sabi.DataConn;
 import com.github.sttk.sabi.DataSrc;
@@ -27,10 +27,10 @@ public class DataSrcListTest {
     }
 
     @Override
-    public void setup(AsyncGroup ag) throws Exc {
+    public void setup(AsyncGroup ag) throws Err {
       if (this.willFail) {
         logger.add(String.format("SyncDataSrc %d failed to setup", this.id));
-        throw new Exc("XXX");
+        throw new Err("XXX");
       }
       logger.add(String.format("SyncDataSrc %d setupped", this.id));
     }
@@ -41,7 +41,7 @@ public class DataSrcListTest {
     }
 
     @Override
-    public DataConn createDataConn() throws Exc {
+    public DataConn createDataConn() throws Err {
       logger.add(String.format("SyncDataSrc %d created DataConn", this.id));
       var conn = new SyncDataConn();
       return conn;
@@ -60,7 +60,7 @@ public class DataSrcListTest {
     }
 
     @Override
-    public void setup(AsyncGroup ag) throws Exc {
+    public void setup(AsyncGroup ag) throws Err {
       ag.add(
           () -> {
             try {
@@ -69,7 +69,7 @@ public class DataSrcListTest {
             }
             if (this.willFail) {
               logger.add(String.format("AsyncDataSrc %d failed to setup", this.id));
-              throw new Exc("XXX");
+              throw new Err("XXX");
             }
             logger.add(String.format("AsyncDataSrc %d setupped", this.id));
           });
@@ -81,7 +81,7 @@ public class DataSrcListTest {
     }
 
     @Override
-    public DataConn createDataConn() throws Exc {
+    public DataConn createDataConn() throws Err {
       logger.add(String.format("AsyncDataSrc %d created DataConn", this.id));
       var conn = new AsyncDataConn();
       return conn;
@@ -90,10 +90,10 @@ public class DataSrcListTest {
 
   static class SyncDataConn implements DataConn {
     @Override
-    public void commit(AsyncGroup ag) throws Exc {}
+    public void commit(AsyncGroup ag) throws Err {}
 
     @Override
-    public void preCommit(AsyncGroup ag) throws Exc {}
+    public void preCommit(AsyncGroup ag) throws Err {}
 
     @Override
     public void postCommit(AsyncGroup ag) {}
@@ -115,10 +115,10 @@ public class DataSrcListTest {
 
   static class AsyncDataConn implements DataConn {
     @Override
-    public void commit(AsyncGroup ag) throws Exc {}
+    public void commit(AsyncGroup ag) throws Err {}
 
     @Override
-    public void preCommit(AsyncGroup ag) throws Exc {}
+    public void preCommit(AsyncGroup ag) throws Err {}
 
     @Override
     public void postCommit(AsyncGroup ag) {}
@@ -911,7 +911,7 @@ public class DataSrcListTest {
     try {
       var conn = ptr.ds.createDataConn();
       assertThat(conn).isNotNull();
-    } catch (Exc e) {
+    } catch (Err e) {
       fail(e);
     }
 
@@ -919,7 +919,7 @@ public class DataSrcListTest {
     try {
       var conn = ptr.ds.createDataConn();
       assertThat(conn).isNotNull();
-    } catch (Exc e) {
+    } catch (Err e) {
       fail(e);
     }
 
@@ -972,11 +972,11 @@ public class DataSrcListTest {
     var dsSync = new SyncDataSrc(2, logger, false);
     dsList.addDataSrc("bar", dsSync);
 
-    var excMap = dsList.setupDataSrcs();
-    assertThat(excMap).hasSize(1);
+    var errMap = dsList.setupDataSrcs();
+    assertThat(errMap).hasSize(1);
 
-    var exc = excMap.get("foo");
-    assertThat(exc.getReason()).isEqualTo("XXX");
+    var err = errMap.get("foo");
+    assertThat(err.getReason()).isEqualTo("XXX");
 
     dsList.closeDataSrcs();
 
@@ -989,8 +989,8 @@ public class DataSrcListTest {
   void test_noDataSrc() {
     var dsList = new DataSrcList(false);
 
-    var excMap = dsList.setupDataSrcs();
-    assertThat(excMap).hasSize(0);
+    var errMap = dsList.setupDataSrcs();
+    assertThat(errMap).hasSize(0);
 
     dsList.closeDataSrcs();
 

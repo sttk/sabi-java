@@ -1,10 +1,10 @@
 /*
- * DataSrcContainer.java
- * Copyright (C) 2025 Takayuki Sato. All Rights Reserved.
+ * DataSrcList.java
+ * Copyright (C) 2025-2026 Takayuki Sato. All Rights Reserved.
  */
 package com.github.sttk.sabi.internal;
 
-import com.github.sttk.errs.Exc;
+import com.github.sttk.errs.Err;
 import com.github.sttk.sabi.DataSrc;
 import java.util.HashMap;
 import java.util.Map;
@@ -122,11 +122,11 @@ public class DataSrcList {
     this.appendContainerPtrNotSetup(ptr);
   }
 
-  Map<String, Exc> setupDataSrcs() {
-    var excMap = new HashMap<String, Exc>();
+  Map<String, Err> setupDataSrcs() {
+    var errMap = new HashMap<String, Err>();
 
     if (this.notSetupHead == null) {
-      return excMap;
+      return errMap;
     }
 
     var ag = new AsyncGroupImpl();
@@ -136,28 +136,28 @@ public class DataSrcList {
       ag.name = ptr.name;
       try {
         ptr.ds.setup(ag);
-      } catch (Exc exc) {
-        excMap.put(ptr.name, exc);
+      } catch (Err err) {
+        errMap.put(ptr.name, err);
         break;
       }
       ptr = ptr.next;
     }
 
-    ag.joinAndPutExcsInto(excMap);
+    ag.joinAndPutErrsInto(errMap);
 
     var firstPtrNotSetupYet = ptr;
 
     ptr = this.notSetupHead;
     while (ptr != null && ptr != firstPtrNotSetupYet) {
       var next = ptr.next;
-      if (!excMap.containsKey(ptr.name)) {
+      if (!errMap.containsKey(ptr.name)) {
         this.removeContainerPtrNotSetup(ptr);
         this.appendContainerPtrDidSetup(ptr);
       }
       ptr = next;
     }
 
-    return excMap;
+    return errMap;
   }
 
   void closeDataSrcs() {

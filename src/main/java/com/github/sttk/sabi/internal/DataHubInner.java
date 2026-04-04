@@ -1,10 +1,10 @@
 /*
  * DataHubInner.java
- * Copyright (C) 2022-2025 Takayuki Sato. All Rights Reserved.
+ * Copyright (C) 2022-2026 Takayuki Sato. All Rights Reserved.
  */
 package com.github.sttk.sabi.internal;
 
-import com.github.sttk.errs.Exc;
+import com.github.sttk.errs.Err;
 import com.github.sttk.sabi.DataConn;
 import com.github.sttk.sabi.DataHub;
 import com.github.sttk.sabi.DataSrc;
@@ -24,12 +24,12 @@ public class DataHubInner {
     }
   }
 
-  public static AutoCloseable setupGlobals() throws Exc {
+  public static AutoCloseable setupGlobals() throws Err {
     if (GLOBAL_DATA_SRCS_FIXED.compareAndSet(false, true)) {
-      var excMap = GLOBAL_DATA_SRC_LIST.setupDataSrcs();
-      if (!excMap.isEmpty()) {
+      var errMap = GLOBAL_DATA_SRC_LIST.setupDataSrcs();
+      if (!errMap.isEmpty()) {
         GLOBAL_DATA_SRC_LIST.closeDataSrcs();
-        throw new Exc(new DataHub.FailToSetupGlobalDataSrcs(excMap));
+        throw new Err(new DataHub.FailToSetupGlobalDataSrcs(errMap));
       }
     }
     return new AutoShutdown();
@@ -83,19 +83,19 @@ public class DataHubInner {
     this.localDataSrcList.closeDataSrcs();
   }
 
-  public void begin() throws Exc {
+  public void begin() throws Err {
     this.fixed = true;
 
-    var excMap = this.localDataSrcList.setupDataSrcs();
+    var errMap = this.localDataSrcList.setupDataSrcs();
     this.localDataSrcList.copyContainerPtrsDidSetupInto(this.dataSrcMap);
 
-    if (!excMap.isEmpty()) {
-      throw new Exc(new DataHub.FailToSetupLocalDataSrcs(excMap));
+    if (!errMap.isEmpty()) {
+      throw new Err(new DataHub.FailToSetupLocalDataSrcs(errMap));
     }
   }
 
-  public void commit() throws Exc {
-    var excMap = new HashMap<String, Exc>();
+  public void commit() throws Err {
+    var errMap = new HashMap<String, Err>();
 
     var ag = new AsyncGroupImpl();
     var ptr = this.dataConnList.head;
@@ -103,19 +103,19 @@ public class DataHubInner {
       ag.name = ptr.name;
       try {
         ptr.conn.preCommit(ag);
-      } catch (Exc e) {
-        excMap.put(ptr.name, e);
+      } catch (Err e) {
+        errMap.put(ptr.name, e);
         break;
       } catch (RuntimeException e) {
-        excMap.put(ptr.name, new Exc(new DataHub.RuntimeExceptionOccurred(), e));
+        errMap.put(ptr.name, new Err(new DataHub.RuntimeExceptionOccurred(), e));
         break;
       }
       ptr = ptr.next;
     }
-    ag.joinAndPutExcsInto(excMap);
+    ag.joinAndPutErrsInto(errMap);
 
-    if (!excMap.isEmpty()) {
-      throw new Exc(new DataHub.FailToPreCommitDataConn(excMap));
+    if (!errMap.isEmpty()) {
+      throw new Err(new DataHub.FailToPreCommitDataConn(errMap));
     }
 
     ag = new AsyncGroupImpl();
@@ -124,19 +124,19 @@ public class DataHubInner {
       ag.name = ptr.name;
       try {
         ptr.conn.commit(ag);
-      } catch (Exc e) {
-        excMap.put(ptr.name, e);
+      } catch (Err e) {
+        errMap.put(ptr.name, e);
         break;
       } catch (RuntimeException e) {
-        excMap.put(ptr.name, new Exc(new DataHub.RuntimeExceptionOccurred(), e));
+        errMap.put(ptr.name, new Err(new DataHub.RuntimeExceptionOccurred(), e));
         break;
       }
       ptr = ptr.next;
     }
-    ag.joinAndPutExcsInto(excMap);
+    ag.joinAndPutErrsInto(errMap);
 
-    if (!excMap.isEmpty()) {
-      throw new Exc(new DataHub.FailToCommitDataConn(excMap));
+    if (!errMap.isEmpty()) {
+      throw new Err(new DataHub.FailToCommitDataConn(errMap));
     }
 
     ag = new AsyncGroupImpl();
@@ -147,7 +147,7 @@ public class DataHubInner {
       ptr = ptr.next;
     }
 
-    ag.joinAndIgnoreExcs();
+    ag.joinAndIgnoreErrs();
   }
 
   public void rollback() {
@@ -163,7 +163,7 @@ public class DataHubInner {
       ptr = ptr.next;
     }
 
-    ag.joinAndIgnoreExcs();
+    ag.joinAndIgnoreErrs();
   }
 
   public void end() {
@@ -172,36 +172,36 @@ public class DataHubInner {
     this.fixed = false;
   }
 
-  public <C extends DataConn> C getDataConn(String name, Class<C> cls) throws Exc {
+  public <C extends DataConn> C getDataConn(String name, Class<C> cls) throws Err {
     var connPtr = this.dataConnMap.get(name);
     if (connPtr != null) {
       try {
         return cls.cast(connPtr.conn);
       } catch (Exception e) {
-        throw new Exc(new DataHub.FailToCastDataConn(name, cls.getName()), e);
+        throw new Err(new DataHub.FailToCastDataConn(name, cls.getName()), e);
       }
     }
 
     var dsPtr = this.dataSrcMap.get(name);
     if (dsPtr == null) {
-      throw new Exc(new DataHub.NoDataSrcToCreateDataConn(name, cls.getName()));
+      throw new Err(new DataHub.NoDataSrcToCreateDataConn(name, cls.getName()));
     }
 
     DataConn conn;
     try {
       conn = dsPtr.ds.createDataConn();
-    } catch (Exc | RuntimeException e) {
-      throw new Exc(new DataHub.FailToCreateDataConn(name, cls.getName()));
+    } catch (Err | RuntimeException e) {
+      throw new Err(new DataHub.FailToCreateDataConn(name, cls.getName()));
     }
     if (conn == null) {
-      throw new Exc(new DataHub.CreatedDataConnIsNull(name, cls.getName()));
+      throw new Err(new DataHub.CreatedDataConnIsNull(name, cls.getName()));
     }
 
     C c;
     try {
       c = cls.cast(conn);
     } catch (Exception e) {
-      throw new Exc(new DataHub.FailToCastDataConn(name, cls.getName()), e);
+      throw new Err(new DataHub.FailToCastDataConn(name, cls.getName()), e);
     }
 
     connPtr = new DataConnContainer(name, c);

@@ -1,6 +1,6 @@
 /*
  * AsyncGroup.java
- * Copyright (C) 2023-2025 Takayuki Sato. All Rights Reserved.
+ * Copyright (C) 2023-2026 Takayuki Sato. All Rights Reserved.
  */
 package com.github.sttk.sabi;
 
@@ -16,14 +16,14 @@ package com.github.sttk.sabi;
 public interface AsyncGroup {
 
   /**
-   * Represents the reason for a new {@link com.github.sttk.errs.Exc} exception object when an
+   * Represents the reason for a new {@link com.github.sttk.errs.Err} exception object when an
    * exception occurred during the execution of a {@link Runner} and the exception class was not the
-   * {@link com.github.sttk.errs.Exc}.
+   * {@link com.github.sttk.errs.Err}.
    */
   record RunnerFailed() {}
 
   /**
-   * Represents the reason for an {@link com.github.sttk.errs.Exc} exception object when the
+   * Represents the reason for an {@link com.github.sttk.errs.Err} exception object when the
    * creation of a thread for asynchronous execution of a {@link Runner} fails.
    */
   record RunnerInterrupted() {}

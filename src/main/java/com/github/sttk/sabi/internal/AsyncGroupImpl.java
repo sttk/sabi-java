@@ -1,17 +1,17 @@
 /*
  * AsyncGroupImpl.java
- * Copyright (C) 2023-2025 Takayuki Sato. All Rights Reserved.
+ * Copyright (C) 2023-2026 Takayuki Sato. All Rights Reserved.
  */
 package com.github.sttk.sabi.internal;
 
-import com.github.sttk.errs.Exc;
+import com.github.sttk.errs.Err;
 import com.github.sttk.sabi.AsyncGroup;
 import com.github.sttk.sabi.Runner;
 import java.util.Map;
 
 public class AsyncGroupImpl implements AsyncGroup {
-  private ExcEntry excHead;
-  private ExcEntry excLast;
+  private ErrEntry errHead;
+  private ErrEntry errLast;
   private VthEntry vthHead;
   private VthEntry vthLast;
   String name;
@@ -27,8 +27,8 @@ public class AsyncGroupImpl implements AsyncGroup {
                 () -> {
                   try {
                     runner.run();
-                  } catch (Exc | RuntimeException e) {
-                    addExc(name, e);
+                  } catch (Err | RuntimeException e) {
+                    addErr(name, e);
                   }
                 });
 
@@ -42,34 +42,34 @@ public class AsyncGroupImpl implements AsyncGroup {
     }
   }
 
-  synchronized void addExc(String name, Exception e) {
-    var exc = (e instanceof Exc) ? Exc.class.cast(e) : new Exc(new RunnerFailed(), e);
-    var ent = new ExcEntry(name, exc);
+  synchronized void addErr(String name, Exception e) {
+    var err = (e instanceof Err) ? Err.class.cast(e) : new Err(new RunnerFailed(), e);
+    var ent = new ErrEntry(name, err);
 
-    if (this.excLast == null) {
-      this.excHead = ent;
-      this.excLast = ent;
+    if (this.errLast == null) {
+      this.errHead = ent;
+      this.errLast = ent;
     } else {
-      this.excLast.next = ent;
-      this.excLast = ent;
+      this.errLast.next = ent;
+      this.errLast = ent;
     }
   }
 
-  void joinAndPutExcsInto(Map<String, Exc> excMap) {
+  void joinAndPutErrsInto(Map<String, Err> errMap) {
     for (var ent = this.vthHead; ent != null; ent = ent.next) {
       try {
         ent.thread.join();
       } catch (InterruptedException e) {
-        addExc(ent.name, new Exc(new RunnerInterrupted(), e));
+        addErr(ent.name, new Err(new RunnerInterrupted(), e));
       }
     }
-    for (var ent = this.excHead; ent != null; ent = ent.next) {
-      excMap.put(ent.name, ent.exc);
+    for (var ent = this.errHead; ent != null; ent = ent.next) {
+      errMap.put(ent.name, ent.err);
     }
     clear();
   }
 
-  void joinAndIgnoreExcs() {
+  void joinAndIgnoreErrs() {
     for (var ent = this.vthHead; ent != null; ent = ent.next) {
       try {
         ent.thread.join();
@@ -80,21 +80,21 @@ public class AsyncGroupImpl implements AsyncGroup {
   }
 
   void clear() {
-    this.excHead = null;
-    this.excLast = null;
+    this.errHead = null;
+    this.errLast = null;
     this.vthHead = null;
     this.vthLast = null;
   }
 }
 
-class ExcEntry {
+class ErrEntry {
   final String name;
-  final Exc exc;
-  ExcEntry next;
+  final Err err;
+  ErrEntry next;
 
-  ExcEntry(String name, Exc exc) {
+  ErrEntry(String name, Err err) {
     this.name = name;
-    this.exc = exc;
+    this.err = err;
   }
 }
 

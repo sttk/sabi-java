@@ -3,7 +3,7 @@ package com.github.sttk.sabi.internal;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import com.github.sttk.errs.Exc;
+import com.github.sttk.errs.Err;
 import com.github.sttk.sabi.AsyncGroup;
 import com.github.sttk.sabi.DataConn;
 import com.github.sttk.sabi.DataHub;
@@ -38,10 +38,10 @@ public class DataHubInnerTest {
     }
 
     @Override
-    public void setup(AsyncGroup ag) throws Exc {
+    public void setup(AsyncGroup ag) throws Err {
       if (this.fail == FAIL__SETUP) {
         this.logger.add(String.format("SyncDataSrc %d failed to setup", this.id));
-        throw new Exc("XXX");
+        throw new Err("XXX");
       }
       this.logger.add(String.format("SyncDataSrc %d setupped", this.id));
     }
@@ -52,10 +52,10 @@ public class DataHubInnerTest {
     }
 
     @Override
-    public DataConn createDataConn() throws Exc {
+    public DataConn createDataConn() throws Err {
       if (this.fail == FAIL__CREATE_DATA_CONN) {
         this.logger.add(String.format("SyncDataSrc %d failed to create a DataConn", this.id));
-        throw new Exc("xxx");
+        throw new Err("xxx");
       }
       this.logger.add(String.format("SyncDataSrc %d created DataConn", this.id));
       var conn = new SyncDataConn(this.id, this.fail, this.logger);
@@ -75,7 +75,7 @@ public class DataHubInnerTest {
     }
 
     @Override
-    public void setup(AsyncGroup ag) throws Exc {
+    public void setup(AsyncGroup ag) throws Err {
       ag.add(
           () -> {
             try {
@@ -84,7 +84,7 @@ public class DataHubInnerTest {
             }
             if (this.fail == FAIL__SETUP) {
               this.logger.add(String.format("AsyncDataSrc %d failed to setup", this.id));
-              throw new Exc("YYY");
+              throw new Err("YYY");
             }
             this.logger.add(String.format("AsyncDataSrc %d setupped", this.id));
           });
@@ -96,10 +96,10 @@ public class DataHubInnerTest {
     }
 
     @Override
-    public DataConn createDataConn() throws Exc {
+    public DataConn createDataConn() throws Err {
       if (this.fail == FAIL__CREATE_DATA_CONN) {
         this.logger.add(String.format("AsyncDataSrc %d failed to create a DataConn", this.id));
-        throw new Exc("yyy");
+        throw new Err("yyy");
       }
       this.logger.add(String.format("AsyncDataSrc %d created DataConn", this.id));
       var conn = new AsyncDataConn(this.id, this.fail, this.logger);
@@ -120,20 +120,20 @@ public class DataHubInnerTest {
     }
 
     @Override
-    public void commit(AsyncGroup ag) throws Exc {
+    public void commit(AsyncGroup ag) throws Err {
       if (this.fail == FAIL__COMMIT) {
         this.logger.add(String.format("SyncDataConn %d failed to commit", this.id));
-        throw new Exc("ZZZ");
+        throw new Err("ZZZ");
       }
       this.committed = true;
       this.logger.add(String.format("SyncDataConn %d committed", this.id));
     }
 
     @Override
-    public void preCommit(AsyncGroup ag) throws Exc {
+    public void preCommit(AsyncGroup ag) throws Err {
       if (this.fail == FAIL__PRE_COMMIT) {
         this.logger.add(String.format("SyncDataConn %d failed to pre commit", this.id));
-        throw new Exc("zzz");
+        throw new Err("zzz");
       }
       this.logger.add(String.format("SyncDataConn %d pre committed", this.id));
     }
@@ -177,20 +177,20 @@ public class DataHubInnerTest {
     }
 
     @Override
-    public void commit(AsyncGroup ag) throws Exc {
+    public void commit(AsyncGroup ag) throws Err {
       if (this.fail == FAIL__COMMIT) {
         this.logger.add(String.format("AsyncDataConn %d failed to commit", this.id));
-        throw new Exc("VVV");
+        throw new Err("VVV");
       }
       this.committed = true;
       this.logger.add(String.format("AsyncDataConn %d committed", this.id));
     }
 
     @Override
-    public void preCommit(AsyncGroup ag) throws Exc {
+    public void preCommit(AsyncGroup ag) throws Err {
       if (this.fail == FAIL__PRE_COMMIT) {
         this.logger.add(String.format("AsyncDataConn %d failed to pre commit", this.id));
-        throw new Exc("vvv");
+        throw new Err("vvv");
       }
       this.logger.add(String.format("AsyncDataConn %d pre committed", this.id));
     }
@@ -310,7 +310,7 @@ public class DataHubInnerTest {
       try (var ac = DataHubInner.setupGlobals()) {
         suppressWarnings_unused(ac);
         fail();
-      } catch (Exc e) {
+      } catch (Err e) {
         switch (e.getReason()) {
           case DataHub.FailToSetupGlobalDataSrcs r -> {
             assertThat(r.errors()).hasSize(2);
@@ -833,7 +833,7 @@ public class DataHubInnerTest {
 
         try {
           hub.begin();
-        } catch (Exc e) {
+        } catch (Err e) {
           switch (e.getReason()) {
             case DataHub.FailToSetupLocalDataSrcs rsn -> {
               assertThat(rsn.errors()).hasSize(1);
@@ -908,7 +908,7 @@ public class DataHubInnerTest {
 
         try {
           hub.begin();
-        } catch (Exc e) {
+        } catch (Err e) {
           switch (e.getReason()) {
             case DataHub.FailToSetupLocalDataSrcs rsn -> {
               assertThat(rsn.errors()).hasSize(1);
@@ -1073,7 +1073,7 @@ public class DataHubInnerTest {
         try {
           hub.getDataConn("foo", SyncDataConn.class);
           fail();
-        } catch (Exc e) {
+        } catch (Err e) {
           switch (e.getReason()) {
             case DataHub.FailToCastDataConn rsn -> {
               assertThat(rsn.name()).isEqualTo("foo");
@@ -1089,7 +1089,7 @@ public class DataHubInnerTest {
         try {
           hub.getDataConn("bar", AsyncDataConn.class);
           fail();
-        } catch (Exc e) {
+        } catch (Err e) {
           switch (e.getReason()) {
             case DataHub.FailToCastDataConn rsn -> {
               assertThat(rsn.name()).isEqualTo("bar");
@@ -1146,7 +1146,7 @@ public class DataHubInnerTest {
         try {
           hub.getDataConn("foo", SyncDataConn.class);
           fail();
-        } catch (Exc e) {
+        } catch (Err e) {
           switch (e.getReason()) {
             case DataHub.FailToCastDataConn rsn -> {
               assertThat(rsn.name()).isEqualTo("foo");
@@ -1162,7 +1162,7 @@ public class DataHubInnerTest {
         try {
           hub.getDataConn("bar", AsyncDataConn.class);
           fail();
-        } catch (Exc e) {
+        } catch (Err e) {
           switch (e.getReason()) {
             case DataHub.FailToCastDataConn rsn -> {
               assertThat(rsn.name()).isEqualTo("bar");
@@ -1216,7 +1216,7 @@ public class DataHubInnerTest {
         try {
           hub.getDataConn("bar", AsyncDataConn.class);
           fail();
-        } catch (Exc e) {
+        } catch (Err e) {
           switch (e.getReason()) {
             case DataHub.FailToCreateDataConn rsn -> {
               assertThat(rsn.name()).isEqualTo("bar");
@@ -1266,7 +1266,7 @@ public class DataHubInnerTest {
         try {
           hub.getDataConn("baz", SyncDataConn.class);
           fail();
-        } catch (Exc e) {
+        } catch (Err e) {
           switch (e.getReason()) {
             case DataHub.NoDataSrcToCreateDataConn rsn -> {
               assertThat(rsn.name()).isEqualTo("baz");
@@ -1282,7 +1282,7 @@ public class DataHubInnerTest {
         try {
           hub.getDataConn("qux", AsyncDataConn.class);
           fail();
-        } catch (Exc e) {
+        } catch (Err e) {
           switch (e.getReason()) {
             case DataHub.NoDataSrcToCreateDataConn rsn -> {
               assertThat(rsn.name()).isEqualTo("qux");
@@ -1377,7 +1377,7 @@ public class DataHubInnerTest {
 
         try {
           hub.commit();
-        } catch (Exc e) {
+        } catch (Err e) {
           switch (e.getReason()) {
             case DataHub.FailToCommitDataConn rsn -> {
               assertThat(rsn.errors()).hasSize(1);
@@ -1453,7 +1453,7 @@ public class DataHubInnerTest {
 
         try {
           hub.commit();
-        } catch (Exc e) {
+        } catch (Err e) {
           switch (e.getReason()) {
             case DataHub.FailToCommitDataConn rsn -> {
               assertThat(rsn.errors()).hasSize(1);
@@ -1528,7 +1528,7 @@ public class DataHubInnerTest {
 
         try {
           hub.commit();
-        } catch (Exc e) {
+        } catch (Err e) {
           switch (e.getReason()) {
             case DataHub.FailToCommitDataConn rsn -> {
               assertThat(rsn.errors()).hasSize(1);
@@ -1606,7 +1606,7 @@ public class DataHubInnerTest {
 
         try {
           hub.commit();
-        } catch (Exc e) {
+        } catch (Err e) {
           switch (e.getReason()) {
             case DataHub.FailToCommitDataConn rsn -> {
               assertThat(rsn.errors()).hasSize(1);
@@ -1683,7 +1683,7 @@ public class DataHubInnerTest {
 
         try {
           hub.commit();
-        } catch (Exc e) {
+        } catch (Err e) {
           switch (e.getReason()) {
             case DataHub.FailToPreCommitDataConn rsn -> {
               assertThat(rsn.errors()).hasSize(1);
@@ -1755,7 +1755,7 @@ public class DataHubInnerTest {
 
         try {
           hub.commit();
-        } catch (Exc e) {
+        } catch (Err e) {
           switch (e.getReason()) {
             case DataHub.FailToPreCommitDataConn rsn -> {
               assertThat(rsn.errors()).hasSize(1);
@@ -1827,7 +1827,7 @@ public class DataHubInnerTest {
 
         try {
           hub.commit();
-        } catch (Exc e) {
+        } catch (Err e) {
           switch (e.getReason()) {
             case DataHub.FailToPreCommitDataConn rsn -> {
               assertThat(rsn.errors()).hasSize(1);
@@ -1901,7 +1901,7 @@ public class DataHubInnerTest {
 
         try {
           hub.commit();
-        } catch (Exc e) {
+        } catch (Err e) {
           switch (e.getReason()) {
             case DataHub.FailToPreCommitDataConn rsn -> {
               assertThat(rsn.errors()).hasSize(1);

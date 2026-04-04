@@ -3,7 +3,7 @@ package com.github.sttk.sabi.internal;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import com.github.sttk.errs.Exc;
+import com.github.sttk.errs.Err;
 import com.github.sttk.sabi.AsyncGroup;
 import com.github.sttk.sabi.DataAcc;
 import com.github.sttk.sabi.DataConn;
@@ -37,10 +37,10 @@ public class DataAccTest {
     }
 
     @Override
-    public void setup(AsyncGroup ag) throws Exc {
+    public void setup(AsyncGroup ag) throws Err {
       if (this.willFail) {
         this.logger.add(String.format("FooDataSrc %d failed to setup", this.id));
-        throw new Exc("XXX");
+        throw new Err("XXX");
       }
       this.logger.add(String.format("FooDataSrc %d setupped", this.id));
     }
@@ -51,7 +51,7 @@ public class DataAccTest {
     }
 
     @Override
-    public DataConn createDataConn() throws Exc {
+    public DataConn createDataConn() throws Err {
       this.logger.add(String.format("FooDataSrc %d created FooDataConn", this.id));
       return new FooDataConn(this.id, this.text, this.logger);
     }
@@ -74,13 +74,13 @@ public class DataAccTest {
     }
 
     @Override
-    public void commit(AsyncGroup ag) throws Exc {
+    public void commit(AsyncGroup ag) throws Err {
       this.committed = true;
       this.logger.add(String.format("FooDataConn %d committed", this.id));
     }
 
     @Override
-    public void preCommit(AsyncGroup ag) throws Exc {
+    public void preCommit(AsyncGroup ag) throws Err {
       this.logger.add(String.format("FooDataConn %d pre committed", this.id));
     }
 
@@ -124,10 +124,10 @@ public class DataAccTest {
     }
 
     @Override
-    public void setup(AsyncGroup ag) throws Exc {
+    public void setup(AsyncGroup ag) throws Err {
       if (this.willFail) {
         this.logger.add(String.format("BarDataSrc %d failed to setup", this.id));
-        throw new Exc("XXX");
+        throw new Err("XXX");
       }
       this.logger.add(String.format("BarDataSrc %d setupped", this.id));
     }
@@ -139,7 +139,7 @@ public class DataAccTest {
     }
 
     @Override
-    public DataConn createDataConn() throws Exc {
+    public DataConn createDataConn() throws Err {
       this.logger.add(String.format("BarDataSrc %d created BarDataConn", this.id));
       return new BarDataConn(this.id, this.text, this.logger, this);
     }
@@ -165,14 +165,14 @@ public class DataAccTest {
     }
 
     @Override
-    public void commit(AsyncGroup ag) throws Exc {
+    public void commit(AsyncGroup ag) throws Err {
       this.committed = true;
       this.ds.text = this.text;
       this.logger.add(String.format("BarDataConn %d committed", this.id));
     }
 
     @Override
-    public void preCommit(AsyncGroup ag) throws Exc {
+    public void preCommit(AsyncGroup ag) throws Err {
       this.logger.add(String.format("BarDataConn %d pre committed", this.id));
     }
 
@@ -206,14 +206,14 @@ public class DataAccTest {
   ///
 
   static interface SampleData {
-    String getValue() throws Exc;
+    String getValue() throws Err;
 
-    void setValue(String text) throws Exc;
+    void setValue(String text) throws Err;
   }
 
   static class SampleLogic implements Logic<SampleData> {
     @Override
-    public void run(SampleData data) throws Exc {
+    public void run(SampleData data) throws Err {
       var v = data.getValue();
       data.setValue(v);
     }
@@ -221,8 +221,8 @@ public class DataAccTest {
 
   static class FailingLogic implements Logic<SampleData> {
     @Override
-    public void run(SampleData data) throws Exc {
-      throw new Exc("ZZZ");
+    public void run(SampleData data) throws Err {
+      throw new Err("ZZZ");
     }
   }
 
@@ -230,7 +230,7 @@ public class DataAccTest {
 
   static interface FooDataAcc extends DataAcc, AllLogicData {
     @Override
-    default String getValue() throws Exc {
+    default String getValue() throws Err {
       var conn = getDataConn("foo", FooDataConn.class);
       return conn.getText();
     }
@@ -238,7 +238,7 @@ public class DataAccTest {
 
   static interface BarDataAcc extends DataAcc, AllLogicData {
     @Override
-    default void setValue(String text) throws Exc {
+    default void setValue(String text) throws Err {
       var conn = getDataConn("bar", BarDataConn.class);
       conn.setText(text);
     }
@@ -395,7 +395,7 @@ public class DataAccTest {
           data.uses("bar", new BarDataSrc(2, logger, false));
 
           Sabi.run(new SampleLogic(), data);
-        } catch (Exc e) {
+        } catch (Err e) {
           switch (e.getReason()) {
             case DataHub.FailToSetupLocalDataSrcs r -> {
               var e2 = r.errors().get("foo");
@@ -572,7 +572,7 @@ public class DataAccTest {
           data.uses("bar", new BarDataSrc(2, logger, false));
 
           Sabi.txn(new SampleLogic(), data);
-        } catch (Exc e) {
+        } catch (Err e) {
           switch (e.getReason()) {
             case DataHub.FailToSetupLocalDataSrcs r -> {
               var e2 = r.errors().get("foo");
@@ -601,7 +601,7 @@ public class DataAccTest {
           data.uses("bar", new BarDataSrc(2, logger, false));
 
           Sabi.txn(new FailingLogic(), data);
-        } catch (Exc e) {
+        } catch (Err e) {
           assertThat(e.getReason()).isEqualTo("ZZZ");
         } catch (Exception e) {
           fail(e);

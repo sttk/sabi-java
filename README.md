@@ -54,31 +54,31 @@ dependencies {
 First, you'll define `DataSrc` which manages connections to external data services and creates `DataConn`. Then, you'll define `DataConn` which represents a session-specific connection and implements transactional operations.
 
 ```java
-import com.github.sttk.errs.Exc;
+import com.github.sttk.errs.Err;
 import com.github.sttk.sabi.DataSrc;
 import com.github.sttk.sabi.DataConn;
 import com.github.sttk.sabi.AsyncGroup;
 
 class FooDataSrc implements DataSrc {
-  @Override public void setup(AsyncGroup ag) throws Exc {}
+  @Override public void setup(AsyncGroup ag) throws Err {}
   @Override public void close() {}
-  @Override public DataConn createDataConn() throws Exc { return new FooDataConn(); }
+  @Override public DataConn createDataConn() throws Err { return new FooDataConn(); }
 }
 
 class FooDataConn implements DataConn {
-  @Override public void commit(AsyncGroup ag) throws Exc {}
+  @Override public void commit(AsyncGroup ag) throws Err {}
   @Override public void rollback(AsyncGroup ag) {}
   @Override public void close(AsyncGroup ag) {}
 }
 
 class BarDataSrc implements DataSrc {
-  @Override public void setup(AsyncGroup ag) throws Exc {}
+  @Override public void setup(AsyncGroup ag) throws Err {}
   @Override public void close() {}
-  @Override public DataConn createDataConn() throws Exc { return new BarDataConn(); }
+  @Override public DataConn createDataConn() throws Err { return new BarDataConn(); }
 }
 
 class BarDataConn implements DataConn {
-  @Override public void commit(AsyncGroup ag) throws Exc {}
+  @Override public void commit(AsyncGroup ag) throws Err {}
   @Override public void rollback(AsyncGroup ag) {}
   @Override public void close(AsyncGroup ag) {}
 }
@@ -89,16 +89,16 @@ class BarDataConn implements DataConn {
 Define interfaces and functions that express your application logic. These interfaces are independent of specific data source implementations, improving testability.
 
 ```java
-import com.github.sttk.errs.Exc;
+import com.github.sttk.errs.Err;
 import com.github.sttk.sabi.Logic;
 
 interface MyData {
-  String getText() throws Exc;
-  void setText(String text) throws Exc;
+  String getText() throws Err;
+  void setText(String text) throws Err;
 }
 
 class MyLogic implements Logic<MyData> {
-  @Override public void run(MyData data) throws Exc {
+  @Override public void run(MyData data) throws Err {
     String text = data.getText();
     data.setText(text);
   }
@@ -110,11 +110,11 @@ class MyLogic implements Logic<MyData> {
 The `DataAcc` interface abstracts access to data connections. The methods defined here will be used to obtain data connections via `DataHub` and perform actual data operations.
 
 ```java
-import com.github.sttk.errs.Exc;
+import com.github.sttk.errs.Err;
 import com.github.sttk.sabi.DataAcc;
 
 interface GettingDataAcc extends DataAcc, MyData {
-  @Override default String getText() throws Exc {
+  @Override default String getText() throws Err {
     var conn = getDataConn("foo", FooDataConn.class);
     // ...
     return "output text";
@@ -122,7 +122,7 @@ interface GettingDataAcc extends DataAcc, MyData {
 }
 
 interface SettingDataAcc extends DataAcc, MyData {
-  @Override default void setText(String text) throws Exc {
+  @Override default void setText(String text) throws Err {
     var conn = getDataConn("bar", BarDataConn.class);
     // ...
   }
@@ -134,7 +134,7 @@ interface SettingDataAcc extends DataAcc, MyData {
 The `DataHub` is the central component that manages all `DataSrc` and `DataConn`, providing access to them for your application logic. By implementing the data interface (`MyData`) from step 2 and the `DataAcc` class from step 3 on `DataHub`, you integrate them.
 
 ```java
-import com.github.sttk.errs.Exc;
+import com.github.sttk.errs.Err;
 import com.github.sttk.sabi.DataHub;
 
 class MyDataHub extends DataHub implements GettingDataAcc, SettingDataAcc {}
@@ -145,7 +145,7 @@ class MyDataHub extends DataHub implements GettingDataAcc, SettingDataAcc {}
 Inside your init function, register your global `DataSrc`. Next, main function calls run function, and inside run function, setup the sabi framework. Then, create an instance of `DataHub` and register the necessary local `DataSrc` using the Uses method. Finally, use the txn method of `DataHub` to execute your defined application logic function (`MyLogic`) within a transaction. This automatically handles transaction commits and rollbacks.
 
 ```java
-import com.github.sttk.errs.Exc;
+import com.github.sttk.errs.Err;
 import com.github.sttk.sabi.Sabi;
 
 public class Main {

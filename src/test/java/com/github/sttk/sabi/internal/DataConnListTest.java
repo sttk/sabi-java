@@ -2,7 +2,7 @@ package com.github.sttk.sabi.internal;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.github.sttk.errs.Exc;
+import com.github.sttk.errs.Err;
 import com.github.sttk.sabi.AsyncGroup;
 import com.github.sttk.sabi.DataConn;
 import java.util.ArrayList;
@@ -21,9 +21,9 @@ public class DataConnListTest {
       this.logger = logger;
     }
 
-    public void commit(AsyncGroup ag) throws Exc {}
+    public void commit(AsyncGroup ag) throws Err {}
 
-    public void preCommit(AsyncGroup ag) throws Exc {}
+    public void preCommit(AsyncGroup ag) throws Err {}
 
     public void postCommit(AsyncGroup ag) {}
 

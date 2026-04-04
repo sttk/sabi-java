@@ -1,10 +1,10 @@
 /*
  * DataConn.java
- * Copyright (C) 2022-2025 Takayuki Sato. All Rights Reserved.
+ * Copyright (C) 2022-2026 Takayuki Sato. All Rights Reserved.
  */
 package com.github.sttk.sabi;
 
-import com.github.sttk.errs.Exc;
+import com.github.sttk.errs.Err;
 
 /**
  * The interface that abstracts a connection per session to an external data service, such as a
@@ -25,18 +25,18 @@ public interface DataConn {
    *
    * @param ag An {@link AsyncGroup} that can be used to perform asynchronous operations if the
    *     commit process is time-consuming.
-   * @throws Exc if an error occurs during the commit operation.
+   * @throws Err if an error occurs during the commit operation.
    */
-  void commit(AsyncGroup ag) throws Exc;
+  void commit(AsyncGroup ag) throws Err;
 
   /**
    * Performs any necessary pre-commit operations. This method is called before the {@link
    * #commit(AsyncGroup)} method.
    *
    * @param ag An {@link AsyncGroup} that can be used for asynchronous pre-commit tasks.
-   * @throws Exc if an error occurs during the pre-commit operation.
+   * @throws Err if an error occurs during the pre-commit operation.
    */
-  default void preCommit(AsyncGroup ag) throws Exc {}
+  default void preCommit(AsyncGroup ag) throws Err {}
 
   /**
    * Performs any necessary post-commit operations. This method is called after the {@link
