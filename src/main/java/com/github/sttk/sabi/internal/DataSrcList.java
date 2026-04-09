@@ -5,6 +5,7 @@
 package com.github.sttk.sabi.internal;
 
 import com.github.sttk.errs.Err;
+import com.github.sttk.sabi.DataHub;
 import com.github.sttk.sabi.DataSrc;
 import java.util.HashMap;
 import java.util.Map;
@@ -138,6 +139,9 @@ public final class DataSrcList {
         ptr.ds.setup(ag);
       } catch (Err err) {
         errMap.put(ptr.name, err);
+        break;
+      } catch (RuntimeException e) {
+        errMap.put(ptr.name, new Err(new DataHub.RuntimeExceptionOccurred(), e));
         break;
       }
       ptr = ptr.next;

@@ -27,8 +27,10 @@ public final class AsyncGroupImpl implements AsyncGroup {
                 () -> {
                   try {
                     runner.run();
-                  } catch (Err | RuntimeException e) {
+                  } catch (Err e) {
                     addErr(name, e);
+                  } catch (RuntimeException e) {
+                    addErr(name, new Err(new AsyncGroup.RuntimeExceptionOccurred(), e));
                   }
                 });
 
@@ -42,8 +44,7 @@ public final class AsyncGroupImpl implements AsyncGroup {
     }
   }
 
-  synchronized void addErr(String name, Exception e) {
-    var err = (e instanceof Err) ? Err.class.cast(e) : new Err(new RunnerFailed(), e);
+  synchronized void addErr(String name, Err err) {
     var ent = new ErrEntry(name, err);
 
     if (this.errLast == null) {
