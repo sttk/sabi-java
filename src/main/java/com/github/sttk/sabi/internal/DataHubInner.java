@@ -13,10 +13,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class DataHubInner {
+public final class DataHubInner {
 
   static final DataSrcList GLOBAL_DATA_SRC_LIST = new DataSrcList(false);
-  static AtomicBoolean GLOBAL_DATA_SRCS_FIXED = new AtomicBoolean(false);
+  static final AtomicBoolean GLOBAL_DATA_SRCS_FIXED = new AtomicBoolean(false);
 
   public static void usesGlobal(String name, DataSrc ds) {
     if (!GLOBAL_DATA_SRCS_FIXED.get()) {

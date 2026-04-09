@@ -6,7 +6,7 @@ package com.github.sttk.sabi.internal;
 
 import com.github.sttk.sabi.DataConn;
 
-public class DataConnContainer {
+public final class DataConnContainer {
   DataConnContainer prev;
   DataConnContainer next;
   String name;

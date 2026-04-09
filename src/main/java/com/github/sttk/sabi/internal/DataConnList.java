@@ -4,7 +4,7 @@
  */
 package com.github.sttk.sabi.internal;
 
-public class DataConnList {
+public final class DataConnList {
   DataConnContainer head;
   DataConnContainer last;
 
