@@ -94,6 +94,14 @@ public class DataHub implements DataAcc, AutoCloseable {
    */
   public record RuntimeExceptionOccurred() {}
 
+  /**
+   * Represents an error reason that occurred when failing to cast the {@code DataHub} instance
+   * itself to the expected data access interface type for a {@link Logic}.
+   *
+   * @param castFromType The actual type of the {@code DataHub} instance that failed to cast.
+   */
+  public record FailToCastDataHub(String castFromType) {}
+
   private final DataHubInner inner = new DataHubInner();
 
   /** Constructs a new {@code DataHub} instance. */
@@ -160,5 +168,69 @@ public class DataHub implements DataAcc, AutoCloseable {
 
   void end() {
     inner.end();
+  }
+
+  /**
+   * Executes the provided application {@link Logic} without transactional boundaries. The {@code
+   * DataHub} instance is treated as the data access object {@code D} to the {@link Logic}'s {@code
+   * run} method.
+   *
+   * @param <D> The type of the data access object, which typically is {@code DataHub} or an
+   *     interface implemented by {@code DataHub} that {@link Logic} expects.
+   * @param logic The application logic to execute.
+   * @throws Err if an {@link Err} or {@link RuntimeException} occurs during logic execution or if
+   *     the {@code DataHub} cannot be cast to the expected data access type.
+   */
+  public <D> void run(Logic<D> logic) throws Err {
+    D data;
+    try {
+      @SuppressWarnings("unchecked")
+      D d = (D) this;
+      data = d;
+    } catch (Exception e) {
+      throw new Err(new FailToCastDataHub(this.getClass().getName()));
+    }
+    try {
+      this.begin();
+      logic.run(data);
+    } catch (Err | RuntimeException e) {
+      throw e;
+    } finally {
+      this.end();
+    }
+  }
+
+  /**
+   * Executes the provided application {@link Logic} within a transactional context. The {@code
+   * DataHub} instance is treated as the data access object {@code D} to the {@link Logic}'s {@code
+   * run} method. If the logic completes successfully, a commit operation is attempted. If any
+   * {@link Err}, {@link RuntimeException}, or {@link Error} occurs, a rollback operation is
+   * performed.
+   *
+   * @param <D> The type of the data access object, which typically is {@code DataHub} or an
+   *     interface implemented by {@code DataHub} that {@link Logic} expects.
+   * @param logic The application logic to execute transactionally.
+   * @throws Err if an {@link Err}, {@link RuntimeException}, or {@link Error} occurs during logic
+   *     execution, pre-commit, or commit. The original exception is re-thrown after rollback.
+   */
+  public <D> void txn(Logic<D> logic) throws Err {
+    D data;
+    try {
+      @SuppressWarnings("unchecked")
+      D d = (D) this;
+      data = d;
+    } catch (Exception e) {
+      throw new Err(new FailToCastDataHub(this.getClass().getName()));
+    }
+    try {
+      this.begin();
+      logic.run(data);
+      this.commit();
+    } catch (Err | RuntimeException | Error e) {
+      this.rollback();
+      throw e;
+    } finally {
+      this.end();
+    }
   }
 }
