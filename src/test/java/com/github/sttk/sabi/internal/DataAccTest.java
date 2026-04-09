@@ -317,7 +317,7 @@ public class DataAccTest {
       try (var ac = Sabi.setup()) {
         suppressWarnings_unused(ac);
         try (var data = new SampleDataHub()) {
-          Sabi.run(new SampleLogic(), data);
+          data.run(new SampleLogic());
         } catch (Exception e) {
           fail(e);
         }
@@ -362,7 +362,7 @@ public class DataAccTest {
           data.uses("foo", new FooDataSrc(1, "hello", logger, false));
           data.uses("bar", new BarDataSrc(2, logger, false));
 
-          Sabi.run(new SampleLogic(), data);
+          data.run(new SampleLogic());
         } catch (Exception e) {
           fail(e);
         }
@@ -394,7 +394,7 @@ public class DataAccTest {
           data.uses("foo", new FooDataSrc(1, "hello", logger, true));
           data.uses("bar", new BarDataSrc(2, logger, false));
 
-          Sabi.run(new SampleLogic(), data);
+          data.run(new SampleLogic());
         } catch (Err e) {
           switch (e.getReason()) {
             case DataHub.FailToSetupLocalDataSrcs r -> {
@@ -437,7 +437,7 @@ public class DataAccTest {
         try (var data = new SampleDataHub()) {
           data.uses("foo", new FooDataSrc(2, "Hello", logger, false));
 
-          Sabi.run(new SampleLogic(), data);
+          data.run(new SampleLogic());
         } catch (Exception e) {
           fail(e);
         }
@@ -482,7 +482,7 @@ public class DataAccTest {
       try (var ac = Sabi.setup()) {
         suppressWarnings_unused(ac);
         try (var data = new SampleDataHub()) {
-          Sabi.txn(new SampleLogic(), data);
+          data.txn(new SampleLogic());
         } catch (Exception e) {
           fail(e);
         }
@@ -533,7 +533,7 @@ public class DataAccTest {
           data.uses("foo", new FooDataSrc(1, "Hello", logger, false));
           data.uses("bar", new BarDataSrc(2, logger, false));
 
-          Sabi.txn(new SampleLogic(), data);
+          data.txn(new SampleLogic());
         } catch (Exception e) {
           fail(e);
         }
@@ -571,7 +571,7 @@ public class DataAccTest {
           data.uses("foo", new FooDataSrc(1, "Hello", logger, true));
           data.uses("bar", new BarDataSrc(2, logger, false));
 
-          Sabi.txn(new SampleLogic(), data);
+          data.txn(new SampleLogic());
         } catch (Err e) {
           switch (e.getReason()) {
             case DataHub.FailToSetupLocalDataSrcs r -> {
@@ -600,7 +600,7 @@ public class DataAccTest {
           data.uses("foo", new FooDataSrc(1, "Hello", logger, false));
           data.uses("bar", new BarDataSrc(2, logger, false));
 
-          Sabi.txn(new FailingLogic(), data);
+          data.txn(new FailingLogic());
         } catch (Err e) {
           assertThat(e.getReason()).isEqualTo("ZZZ");
         } catch (Exception e) {
@@ -643,7 +643,7 @@ public class DataAccTest {
         try (var data = new SampleDataHub()) {
           data.uses("foo", new FooDataSrc(2, "Hello", logger, false));
 
-          Sabi.txn(new SampleLogic(), data);
+          data.txn(new SampleLogic());
         } catch (Exception e) {
           fail(e);
         }
