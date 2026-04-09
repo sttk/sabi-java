@@ -6,7 +6,7 @@ package com.github.sttk.sabi.internal;
 
 import com.github.sttk.sabi.DataSrc;
 
-public class DataSrcContainer {
+public final class DataSrcContainer {
   DataSrcContainer prev;
   DataSrcContainer next;
   boolean local;

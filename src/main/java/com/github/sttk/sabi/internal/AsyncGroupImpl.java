@@ -9,7 +9,7 @@ import com.github.sttk.sabi.AsyncGroup;
 import com.github.sttk.sabi.Runner;
 import java.util.Map;
 
-public class AsyncGroupImpl implements AsyncGroup {
+public final class AsyncGroupImpl implements AsyncGroup {
   private ErrEntry errHead;
   private ErrEntry errLast;
   private VthEntry vthHead;

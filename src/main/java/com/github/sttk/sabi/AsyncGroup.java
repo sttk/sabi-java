@@ -13,7 +13,7 @@ package com.github.sttk.sabi;
  * errors occurring during the execution of a {@link Runner} are stored and can be retrieved by
  * their names in a map.
  */
-public interface AsyncGroup {
+public sealed interface AsyncGroup permits com.github.sttk.sabi.internal.AsyncGroupImpl {
 
   /**
    * Represents the reason for a new {@link com.github.sttk.errs.Err} exception object when an
