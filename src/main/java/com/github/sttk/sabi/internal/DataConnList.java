@@ -1,6 +1,6 @@
 /*
  * DataConnList.java
- * Copyright (C) 2025 Takayuki Sato. All Rights Reserved.
+ * Copyright (C) 2025-2026 Takayuki Sato. All Rights Reserved.
  */
 package com.github.sttk.sabi.internal;
 
