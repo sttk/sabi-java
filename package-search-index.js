@@ -1,1 +1,1 @@
-packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"m":"com.github.sttk.sabi","l":"com.github.sttk.sabi"}];updateSearchResults();
+packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html","k":"18"},{"m":"com.github.sttk.sabi","l":"com.github.sttk.sabi"}];updateSearchResults();
