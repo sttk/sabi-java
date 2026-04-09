@@ -193,8 +193,10 @@ public class DataHub implements DataAcc, AutoCloseable {
     try {
       this.begin();
       logic.run(data);
-    } catch (Err | RuntimeException e) {
+    } catch (Err e) {
       throw e;
+    } catch (RuntimeException e) {
+      throw new Err(new RuntimeExceptionOccurred(), e);
     } finally {
       this.end();
     }
@@ -226,7 +228,13 @@ public class DataHub implements DataAcc, AutoCloseable {
       this.begin();
       logic.run(data);
       this.commit();
-    } catch (Err | RuntimeException | Error e) {
+    } catch (Err e) {
+      this.rollback();
+      throw e;
+    } catch (RuntimeException e) {
+      this.rollback();
+      throw new Err(new RuntimeExceptionOccurred(), e);
+    } catch (Error e) {
       this.rollback();
       throw e;
     } finally {

@@ -190,8 +190,8 @@ public final class DataHubInner {
     DataConn conn;
     try {
       conn = dsPtr.ds.createDataConn();
-    } catch (Err | RuntimeException e) {
-      throw new Err(new DataHub.FailToCreateDataConn(name, cls.getName()));
+    } catch (Exception e) {
+      throw new Err(new DataHub.FailToCreateDataConn(name, cls.getName()), e);
     }
     if (conn == null) {
       throw new Err(new DataHub.CreatedDataConnIsNull(name, cls.getName()));

@@ -28,6 +28,9 @@ public sealed interface AsyncGroup permits com.github.sttk.sabi.internal.AsyncGr
    */
   record RunnerInterrupted() {}
 
+  /** Represents an unexpected {@link RuntimeException} that occurred. */
+  record RuntimeExceptionOccurred() {}
+
   /**
    * Adds a {@link Runner} to this group for asynchronous execution. The added runner will be
    * executed in a separate thread.
