@@ -7,25 +7,29 @@ package com.github.sttk.sabi;
 import com.github.sttk.errs.Err;
 
 /**
- * An interface designed for implementing data access operations through default methods in its
- * sub-interfaces.
+ * Provides access to named {@link DataConn} data connection instances.
  *
- * <p>Sub-interfaces of {@code DataAcc} are expected to define and implement data access methods as
- * default methods. Within these default methods, the connection to the underlying data store should
- * be obtained using the {@link #getDataConn(String, Class)} method provided by this interface. This
- * design promotes a clear separation of concerns, allowing data access logic to be encapsulated
- * within the interface itself.
+ * <p>This interface defines the contract for retrieving managed data connections registered under
+ * specific names within a data access scope (such as a {@link DataHub}). Application business logic
+ * uses this interface to obtain connection objects required to perform database or external service
+ * operations.
  */
 public interface DataAcc {
+
   /**
-   * Retrieves a connection to a data store. This method is intended to be used by default methods
-   * in sub-interfaces to obtain the necessary connection for performing data access operations.
+   * Retrieves a data connection associated with the specified data source name and casts it to the
+   * requested connection class type.
    *
-   * @param <C> The type of the data connection, which must extend {@link DataConn}.
-   * @param name The name identifying the specific data connection to retrieve.
-   * @param cls The {@link Class} object representing the type of the desired data connection.
-   * @return A data connection object of the specified type.
-   * @throws Err if an error occurs while obtaining the data connection.
+   * <p>If a connection for the given {@code name} has already been created within the current
+   * transaction or execution scope, that connection instance is returned. Otherwise, a new
+   * connection is created via the corresponding registered data source.
+   *
+   * @param <C> the expected type of {@link DataConn}
+   * @param name the registered logical name of the data source
+   * @param cls the {@link Class} representing the target connection type {@code C}
+   * @return the data connection instance associated with the specified name
+   * @throws Err if no data source with the specified name is found, if creating the connection
+   *     fails or yields null, or if the connection cannot be cast to the target type
    */
   <C extends DataConn> C getDataConn(String name, Class<C> cls) throws Err;
 }

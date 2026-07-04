@@ -7,38 +7,36 @@ package com.github.sttk.sabi;
 import com.github.sttk.errs.Err;
 
 /**
- * The interface that abstracts a data source responsible for managing connections to external data
- * services, such as databases, file systems, or messaging services.
+ * Represents a data source corresponding to an external data resource, serving as a factory for
+ * data connections or as a connection pool.
  *
- * <p>It receives configuration for connecting to an external data service and then creates and
- * supplies a {@link DataConn} instance, representing a single session connection.
+ * <p>Implementations encapsulate connection management, pool configuration, and resource allocation
+ * for specific data stores or external services (such as relational databases, HTTP clients, or
+ * caching services). Data sources can be registered globally via {@link Sabi#uses(String, DataSrc)}
+ * or bound locally to a {@link DataHub}.
  */
 public interface DataSrc {
+
   /**
-   * Sets up the data source, performing any necessary initialization or configuration to establish
-   * connectivity to the external data service. This method is typically called once at the
-   * application startup.
+   * Sets up this data source.
    *
-   * @param ag An {@link AsyncGroup} that can be used for asynchronous setup operations, especially
-   *     if initialization is time-consuming.
-   * @throws Err if an error occurs during the setup process.
+   * <p>This method is invoked during application startup or hub setup to prepare connections or
+   * connection pools. Asynchronous setup background tasks can be registered using the provided
+   * {@link AsyncGroup}.
+   *
+   * @param ag the asynchronous group for registering background tasks
+   * @throws Err if setting up the data source fails
    */
   void setup(AsyncGroup ag) throws Err;
 
-  /**
-   * Closes the data source, releasing all resources and shutting down connections managed by this
-   * source. This method should be called when the application is shutting down to ensure proper
-   * resource cleanup.
-   */
+  /** Closes this data source and disposes of any allocated resources or connection pools. */
   void close();
 
   /**
-   * Creates and returns a new {@link DataConn} instance, representing a single session connection
-   * to the external data service. Each call to this method should yield a new, independent
-   * connection.
+   * Creates a new {@link DataConn} instance associated with this data source.
    *
-   * @return A new {@link DataConn} instance for a session.
-   * @throws Err if an error occurs while creating the data connection.
+   * @return a new, initialized {@link DataConn} connection instance
+   * @throws Err if creating or establishing the data connection fails
    */
   DataConn createDataConn() throws Err;
 }

@@ -4,32 +4,50 @@
  */
 package com.github.sttk.sabi.internal;
 
+import static com.github.sttk.sabi.DataHub.CreatedDataConnIsNull;
+import static com.github.sttk.sabi.DataHub.FailToCastDataConn;
+import static com.github.sttk.sabi.DataHub.FailToCreateDataConn;
+import static com.github.sttk.sabi.DataHub.FailToSetupGlobalDataSrcs;
+import static com.github.sttk.sabi.DataHub.FailToSetupLocalDataSrcs;
+import static com.github.sttk.sabi.DataHub.NoDataSrcToCreateDataConn;
+
 import com.github.sttk.errs.Err;
 import com.github.sttk.sabi.DataConn;
-import com.github.sttk.sabi.DataHub;
 import com.github.sttk.sabi.DataSrc;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public final class DataHubInner {
-
-  static final DataSrcList GLOBAL_DATA_SRC_LIST = new DataSrcList(false);
+  static final DataSrcManager GLOBAL_DATA_SRC_MANAGER = new DataSrcManager(false);
   static final AtomicBoolean GLOBAL_DATA_SRCS_FIXED = new AtomicBoolean(false);
 
-  public static void usesGlobal(String name, DataSrc ds) {
+  public static void useGlobal(String name, DataSrc ds) {
     if (!GLOBAL_DATA_SRCS_FIXED.get()) {
-      GLOBAL_DATA_SRC_LIST.addDataSrc(name, ds);
+      GLOBAL_DATA_SRC_MANAGER.add(name, ds);
     }
   }
 
   public static AutoCloseable setupGlobals() throws Err {
     if (GLOBAL_DATA_SRCS_FIXED.compareAndSet(false, true)) {
-      var errMap = GLOBAL_DATA_SRC_LIST.setupDataSrcs();
-      if (!errMap.isEmpty()) {
-        GLOBAL_DATA_SRC_LIST.closeDataSrcs();
-        throw new Err(new DataHub.FailToSetupGlobalDataSrcs(errMap));
+      var errors = GLOBAL_DATA_SRC_MANAGER.setup();
+      if (!errors.isEmpty()) {
+        GLOBAL_DATA_SRC_MANAGER.close();
+        throw new Err(new FailToSetupGlobalDataSrcs(errors));
+      }
+    }
+    return new AutoShutdown();
+  }
+
+  public static AutoCloseable setupGlobalsWithOrder(List<String> names) throws Err {
+    if (GLOBAL_DATA_SRCS_FIXED.compareAndSet(false, true)) {
+      var errors = GLOBAL_DATA_SRC_MANAGER.setupWithOrder(names);
+      if (!errors.isEmpty()) {
+        GLOBAL_DATA_SRC_MANAGER.close();
+        throw new Err(new FailToSetupGlobalDataSrcs(errors));
       }
     }
     return new AutoShutdown();
@@ -38,175 +56,138 @@ public final class DataHubInner {
   static class AutoShutdown implements AutoCloseable {
     @Override
     public void close() {
-      GLOBAL_DATA_SRC_LIST.closeDataSrcs();
+      GLOBAL_DATA_SRC_MANAGER.close();
     }
   }
 
-  final DataSrcList localDataSrcList = new DataSrcList(true);
-  final Map<String, DataSrcContainer> dataSrcMap = new HashMap<>();
-  final DataConnList dataConnList = new DataConnList();
-  final Map<String, DataConnContainer> dataConnMap = new HashMap<>();
-  boolean fixed = false;
+  final DataSrcManager localDataSrcManager;
+  final Map<String, DataSrcContainer> dataSrcMap;
+  final DataConnManager dataConnManager;
+  final Map<String, DataConnContainer> dataConnMap;
+  boolean fixed;
 
   public DataHubInner() {
     GLOBAL_DATA_SRCS_FIXED.compareAndSet(false, true);
-    GLOBAL_DATA_SRC_LIST.copyContainerPtrsDidSetupInto(this.dataSrcMap);
+    this.fixed = false;
+
+    this.localDataSrcManager = new DataSrcManager(true);
+    this.dataSrcMap = new HashMap<>();
+    this.dataConnManager = new DataConnManager();
+    this.dataConnMap = new HashMap<>();
+
+    GLOBAL_DATA_SRC_MANAGER.copyDsReadyToMap(this.dataSrcMap);
   }
 
-  public void uses(String name, DataSrc ds) {
+  public DataHubInner(List<String> names) {
+    GLOBAL_DATA_SRCS_FIXED.compareAndSet(false, true);
+    this.fixed = false;
+
+    this.localDataSrcManager = new DataSrcManager(true);
+    this.dataSrcMap = new HashMap<>();
+    this.dataConnManager = new DataConnManager(names);
+    this.dataConnMap = new HashMap<>();
+
+    GLOBAL_DATA_SRC_MANAGER.copyDsReadyToMap(this.dataSrcMap);
+  }
+
+  public void useLocal(String name, DataSrc ds) {
     if (this.fixed) {
       return;
     }
 
-    this.localDataSrcList.addDataSrc(name, ds);
+    this.localDataSrcManager.add(name, ds);
   }
 
-  public void disuses(String name) {
+  public void disuseLocal(String name) {
     if (this.fixed) {
       return;
     }
 
-    var ptr = this.dataSrcMap.get(name);
-    if (ptr != null && ptr.local && Objects.equals(ptr.name, name)) {
+    var cont = this.dataSrcMap.get(name);
+    if (cont != null && cont.local && Objects.equals(cont.name, name)) {
       this.dataSrcMap.remove(name);
     }
 
-    this.localDataSrcList.removeAndCloseContainerPtrDidSetupByName(name);
-    this.localDataSrcList.removeAndCloseContainerPtrNotSetupByName(name);
+    this.localDataSrcManager.remove(name);
   }
 
-  public void close() {
+  public void closeLocals() {
     this.dataConnMap.clear();
-    this.dataConnList.closeDataConns();
+    this.dataConnManager.close();
 
     this.dataSrcMap.clear();
-    this.localDataSrcList.closeDataSrcs();
+    this.localDataSrcManager.close();
   }
 
   public void begin() throws Err {
     this.fixed = true;
 
-    var errMap = this.localDataSrcList.setupDataSrcs();
-    this.localDataSrcList.copyContainerPtrsDidSetupInto(this.dataSrcMap);
+    var errors = this.localDataSrcManager.setup();
+    this.localDataSrcManager.copyDsReadyToMap(this.dataSrcMap);
 
-    if (!errMap.isEmpty()) {
-      throw new Err(new DataHub.FailToSetupLocalDataSrcs(errMap));
+    if (!errors.isEmpty()) {
+      throw new Err(new FailToSetupLocalDataSrcs(errors));
     }
   }
 
-  public void commit() throws Err {
-    var errMap = new HashMap<String, Err>();
-
-    var ag = new AsyncGroupImpl();
-    var ptr = this.dataConnList.head;
-    while (ptr != null) {
-      ag.name = ptr.name;
-      try {
-        ptr.conn.preCommit(ag);
-      } catch (Err e) {
-        errMap.put(ptr.name, e);
-        break;
-      } catch (RuntimeException e) {
-        errMap.put(ptr.name, new Err(new DataHub.RuntimeExceptionOccurred(), e));
-        break;
-      }
-      ptr = ptr.next;
-    }
-    ag.joinAndPutErrsInto(errMap);
-
-    if (!errMap.isEmpty()) {
-      throw new Err(new DataHub.FailToPreCommitDataConn(errMap));
-    }
-
-    ag = new AsyncGroupImpl();
-    ptr = this.dataConnList.head;
-    while (ptr != null) {
-      ag.name = ptr.name;
-      try {
-        ptr.conn.commit(ag);
-      } catch (Err e) {
-        errMap.put(ptr.name, e);
-        break;
-      } catch (RuntimeException e) {
-        errMap.put(ptr.name, new Err(new DataHub.RuntimeExceptionOccurred(), e));
-        break;
-      }
-      ptr = ptr.next;
-    }
-    ag.joinAndPutErrsInto(errMap);
-
-    if (!errMap.isEmpty()) {
-      throw new Err(new DataHub.FailToCommitDataConn(errMap));
-    }
-
-    ag = new AsyncGroupImpl();
-    ptr = this.dataConnList.head;
-    while (ptr != null) {
-      ag.name = ptr.name;
-      ptr.conn.postCommit(ag);
-      ptr = ptr.next;
-    }
-
-    ag.joinAndIgnoreErrs();
+  public void prepareTxnFailureReportBuilders(ArrayList<TxnFailureReportBuilder> list) {
+    this.dataConnManager.prepareTxnFailureReportBuilders(list);
   }
 
-  public void rollback() {
-    var ag = new AsyncGroupImpl();
-    var ptr = this.dataConnList.head;
-    while (ptr != null) {
-      ag.name = ptr.name;
-      if (ptr.conn.shouldForceBack()) {
-        ptr.conn.forceBack(ag);
-      } else {
-        ptr.conn.rollback(ag);
-      }
-      ptr = ptr.next;
-    }
+  public void commit(List<TxnFailureReportBuilder> builders) throws Err {
+    this.dataConnManager.commit(builders);
+  }
 
-    ag.joinAndIgnoreErrs();
+  public void rollback(List<TxnFailureReportBuilder> builders) throws Err {
+    this.dataConnManager.rollback(builders);
   }
 
   public void end() {
     this.dataConnMap.clear();
-    this.dataConnList.closeDataConns();
+    this.dataConnManager.close();
+
     this.fixed = false;
   }
 
   public <C extends DataConn> C getDataConn(String name, Class<C> cls) throws Err {
-    var connPtr = this.dataConnMap.get(name);
-    if (connPtr != null) {
+    var dcCont = this.dataConnMap.get(name);
+    if (dcCont != null && dcCont.conn != null) {
       try {
-        return cls.cast(connPtr.conn);
+        return cls.cast(dcCont.conn);
       } catch (Exception e) {
-        throw new Err(new DataHub.FailToCastDataConn(name, cls.getName()), e);
+        String fromType = dcCont.conn.getClass().getName();
+        String toType = cls.getName();
+        throw new Err(new FailToCastDataConn(name, fromType, toType), e);
       }
     }
 
-    var dsPtr = this.dataSrcMap.get(name);
-    if (dsPtr == null) {
-      throw new Err(new DataHub.NoDataSrcToCreateDataConn(name, cls.getName()));
+    var dsCont = this.dataSrcMap.get(name);
+    if (dsCont == null || dsCont.ds == null) {
+      throw new Err(new NoDataSrcToCreateDataConn(name, cls.getName()));
     }
 
-    DataConn conn;
+    DataConn dc;
     try {
-      conn = dsPtr.ds.createDataConn();
+      dc = dsCont.ds.createDataConn();
     } catch (Exception e) {
-      throw new Err(new DataHub.FailToCreateDataConn(name, cls.getName()), e);
+      throw new Err(new FailToCreateDataConn(name, cls.getName()), e);
     }
-    if (conn == null) {
-      throw new Err(new DataHub.CreatedDataConnIsNull(name, cls.getName()));
+    if (dc == null) {
+      throw new Err(new CreatedDataConnIsNull(name, cls.getName()));
     }
+
+    dcCont = new DataConnContainer(name, dc);
+    this.dataConnMap.put(name, dcCont);
+    this.dataConnManager.add(dcCont);
 
     C c;
     try {
-      c = cls.cast(conn);
+      c = cls.cast(dc);
     } catch (Exception e) {
-      throw new Err(new DataHub.FailToCastDataConn(name, cls.getName()), e);
+      String fromType = dc.getClass().getName();
+      String toType = cls.getName();
+      throw new Err(new FailToCastDataConn(name, fromType, toType), e);
     }
-
-    connPtr = new DataConnContainer(name, c);
-    this.dataConnMap.put(name, connPtr);
-    this.dataConnList.appendContainer(connPtr);
 
     return c;
   }

@@ -5,78 +5,105 @@
 package com.github.sttk.sabi;
 
 import com.github.sttk.errs.Err;
+import java.util.List;
 
 /**
- * The interface that abstracts a connection per session to an external data service, such as a
- * database, file system, or messaging service.
+ * Represents a data connection participating in transaction lifecycles managed by a {@link
+ * DataHub}.
  *
- * <p>Its primary purpose is to enable cohesive transaction operations across multiple external data
- * services within a single transaction context. Implementations of this interface provide the
- * concrete input/output operations for their respective data services.
- *
- * <p>Methods declared within this interface are designed to handle transactional logic. The
- * AsyncGroup parameter in various methods allows for asynchronous processing when commit or
- * rollback operations are time-consuming.
+ * <p>Implementations encapsulate connection state and operations for external resources such as
+ * relational databases, NoSQL stores, or web services. During a transaction, connections progress
+ * through pre-commit, commit, and post-commit phases, and support rollback and failure reporting
+ * when errors occur.
  */
 public interface DataConn {
+
   /**
-   * Commits the changes made within the current session to the external data service. This method
-   * is responsible for finalizing all operations performed since the last commit or rollback.
+   * Represents an error when one or more data connections fail during the pre-commit phase.
    *
-   * @param ag An {@link AsyncGroup} that can be used to perform asynchronous operations if the
-   *     commit process is time-consuming.
-   * @throws Err if an error occurs during the commit operation.
+   * @param errors the list of error entries detailing connection names and failure causes
+   */
+  public record FailToPreCommitDataConn(List<ErrEntry> errors) {}
+
+  /**
+   * Represents an error when one or more data connections fail during the commit phase.
+   *
+   * @param errors the list of error entries detailing connection names and failure causes
+   */
+  public record FailToCommitDataConn(List<ErrEntry> errors) {}
+
+  /**
+   * Represents an error when one or more data connections fail during the post-commit phase.
+   *
+   * @param errors the list of error entries detailing connection names and failure causes
+   */
+  public record FailToPostCommitDataConn(List<ErrEntry> errors) {}
+
+  ///
+
+  /**
+   * Commits changes made through this connection.
+   *
+   * <p>Async background tasks may be registered to the provided {@link AsyncGroup} during commit
+   * processing.
+   *
+   * @param ag the asynchronous group for registering background tasks
+   * @throws Err if committing the transaction changes fails
    */
   void commit(AsyncGroup ag) throws Err;
 
   /**
-   * Performs any necessary pre-commit operations. This method is called before the {@link
-   * #commit(AsyncGroup)} method.
+   * Prepares this connection for commit prior to the main commit phase.
    *
-   * @param ag An {@link AsyncGroup} that can be used for asynchronous pre-commit tasks.
-   * @throws Err if an error occurs during the pre-commit operation.
+   * <p>The default implementation does nothing. Subclasses can override this method to perform
+   * pre-commit checks or flush pending writes.
+   *
+   * @param ag the asynchronous group for registering background tasks
+   * @throws Err if pre-commit preparation or validation fails
    */
   default void preCommit(AsyncGroup ag) throws Err {}
 
   /**
-   * Performs any necessary post-commit operations. This method is called after the {@link
-   * #commit(AsyncGroup)} method has successfully completed.
+   * Performs post-commit operations after all connections in a transaction have successfully
+   * committed.
    *
-   * @param ag An {@link AsyncGroup} that can be used for asynchronous post-commit tasks.
+   * <p>The default implementation does nothing. Subclasses can override this method to perform
+   * cleanup or trigger post-commit notifications.
+   *
+   * @param ag the asynchronous group for registering background tasks
+   * @throws Err if post-commit processing fails
    */
-  default void postCommit(AsyncGroup ag) {}
+  default void postCommit(AsyncGroup ag) throws Err {}
 
   /**
-   * Indicates whether a force-back operation should be performed. A force-back is a mechanism to
-   * revert the committed changes when this connection had been already committed but the other
-   * connection had failed.
+   * Checks whether this connection has been successfully committed.
    *
-   * @return {@code true} if a force-back is required, {@code false} otherwise.
+   * @return {@code true} if this connection was committed; {@code false} otherwise
    */
-  default boolean shouldForceBack() {
-    return false;
-  }
+  boolean isCommitted();
 
   /**
-   * Rolls back the changes made within the current session, discarding all operations performed
-   * since the last commit or rollback.
+   * Rolls back changes made through this connection.
    *
-   * @param ag An {@link AsyncGroup} that can be used to perform asynchronous operations if the
-   *     rollback process is time-consuming.
+   * <p>This method is invoked when a transaction fails and must restore the connection or
+   * underlying storage to its pre-transaction state.
+   *
+   * @param ag the asynchronous group for registering background tasks
+   * @throws Err if rolling back connection changes fails
    */
-  void rollback(AsyncGroup ag);
+  void rollback(AsyncGroup ag) throws Err;
 
   /**
-   * Performs a force-back operation to revert the committed changes when this connection had been
-   * already committed but the other connection had failed.
+   * Notifies this connection of a transaction failure with detailed failure reports.
    *
-   * @param ag An {@link AsyncGroup} that can be used for asynchronous force-back tasks.
+   * <p>The default implementation does nothing. Implementations can inspect failure reports to log
+   * diagnostics or take recovery actions.
+   *
+   * @param ag the asynchronous group for registering background tasks
+   * @param reports the list of transaction failure reports
    */
-  default void forceBack(AsyncGroup ag) {}
+  default void onTxnFailure(AsyncGroup ag, List<TxnFailureReport> reports) {}
 
-  /**
-   * Closes the connection to the external data service, releasing any associated resources. This
-   * method should be called to ensure proper resource management.
-   */
+  /** Closes and disposes of this data connection, releasing any held resources. */
   void close();
 }

@@ -4,107 +4,82 @@
  */
 package com.github.sttk.sabi.internal;
 
+import static com.github.sttk.sabi.AsyncGroup.RunnerInterrupted;
+
 import com.github.sttk.errs.Err;
 import com.github.sttk.sabi.AsyncGroup;
+import com.github.sttk.sabi.ErrEntry;
 import com.github.sttk.sabi.Runner;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 public final class AsyncGroupImpl implements AsyncGroup {
-  private ErrEntry errHead;
-  private ErrEntry errLast;
+  private List<ErrEntry> eeList = new ArrayList<>();
   private VthEntry vthHead;
   private VthEntry vthLast;
-  String name;
+  int _index;
+  String _name;
 
-  public AsyncGroupImpl() {}
+  AsyncGroupImpl() {}
 
   @Override
-  public void add(final Runner runner) {
-    final var name = this.name;
+  public void add(Runner runner) {
+    var index = this._index;
+    var name = this._name;
     var vth =
         Thread.ofVirtual()
             .start(
                 () -> {
                   try {
                     runner.run();
-                  } catch (Err e) {
-                    addErr(name, e);
+                  } catch (Err err) {
+                    addErr(index, name, err);
                   } catch (RuntimeException e) {
-                    addErr(name, new Err(new AsyncGroup.RuntimeExceptionOccurred(), e));
+                    addErr(index, name, e);
                   }
                 });
 
-    var ent = new VthEntry(name, vth);
+    var ve = new VthEntry(index, name, vth);
     if (this.vthLast == null) {
-      this.vthHead = ent;
-      this.vthLast = ent;
+      this.vthHead = ve;
+      this.vthLast = ve;
     } else {
-      this.vthLast.next = ent;
-      this.vthLast = ent;
+      this.vthLast.next = ve;
+      this.vthLast = ve;
     }
   }
 
-  synchronized void addErr(String name, Err err) {
-    var ent = new ErrEntry(name, err);
-
-    if (this.errLast == null) {
-      this.errHead = ent;
-      this.errLast = ent;
-    } else {
-      this.errLast.next = ent;
-      this.errLast = ent;
-    }
+  synchronized void addErr(int index, String name, Err err) {
+    var ee = new ErrEntry(index, name, err);
+    this.eeList.add(ee);
   }
 
-  void joinAndPutErrsInto(Map<String, Err> errMap) {
-    for (var ent = this.vthHead; ent != null; ent = ent.next) {
+  synchronized void addErr(int index, String name, RuntimeException e) {
+    var err = new Err(new AsyncGroup.RuntimeExceptionOccured(), e);
+    var ee = new ErrEntry(index, name, err);
+    this.eeList.add(ee);
+  }
+
+  List<ErrEntry> join() {
+    for (var ve = this.vthHead; ve != null; ve = ve.next) {
       try {
-        ent.thread.join();
+        ve.thread.join();
       } catch (InterruptedException e) {
-        addErr(ent.name, new Err(new RunnerInterrupted(), e));
+        addErr(ve.index, ve.name, new Err(new RunnerInterrupted(), e));
       }
     }
-    for (var ent = this.errHead; ent != null; ent = ent.next) {
-      errMap.put(ent.name, ent.err);
-    }
-    clear();
-  }
-
-  void joinAndIgnoreErrs() {
-    for (var ent = this.vthHead; ent != null; ent = ent.next) {
-      try {
-        ent.thread.join();
-      } catch (InterruptedException e) {
-      }
-    }
-    clear();
-  }
-
-  void clear() {
-    this.errHead = null;
-    this.errLast = null;
-    this.vthHead = null;
-    this.vthLast = null;
-  }
-}
-
-class ErrEntry {
-  final String name;
-  final Err err;
-  ErrEntry next;
-
-  ErrEntry(String name, Err err) {
-    this.name = name;
-    this.err = err;
+    return this.eeList;
   }
 }
 
 class VthEntry {
+  final int index;
   final String name;
   final Thread thread;
   VthEntry next;
 
-  VthEntry(String name, Thread thread) {
+  VthEntry(int index, String name, Thread thread) {
+    this.index = index;
     this.name = name;
     this.thread = thread;
   }

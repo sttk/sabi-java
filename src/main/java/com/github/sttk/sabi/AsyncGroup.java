@@ -4,38 +4,43 @@
  */
 package com.github.sttk.sabi;
 
-/**
- * An interface for asynchronously executing multiple {@link Runner} instances and waiting for their
- * completion.
- *
- * <p>Implementations of this interface allow adding multiple {@link Runner} objects, which are then
- * executed concurrently. The group waits until all added runners have finished their execution. Any
- * errors occurring during the execution of a {@link Runner} are stored and can be retrieved by
- * their names in a map.
- */
-public sealed interface AsyncGroup permits com.github.sttk.sabi.internal.AsyncGroupImpl {
+import com.github.sttk.sabi.internal.AsyncGroupImpl;
 
-  /**
-   * Represents the reason for a new {@link com.github.sttk.errs.Err} exception object when an
-   * exception occurred during the execution of a {@link Runner} and the exception class was not the
-   * {@link com.github.sttk.errs.Err}.
-   */
+/**
+ * Manages asynchronous background tasks executed during data source and data connection lifecycle
+ * events.
+ *
+ * <p>An instance of {@code AsyncGroup} is passed to methods of {@link DataSrc} (such as {@link
+ * DataSrc#setup(AsyncGroup)}) and {@link DataConn} (such as {@link DataConn#commit(AsyncGroup)} and
+ * {@link DataConn#rollback(AsyncGroup)}). Implementations of data sources and data connections can
+ * register background asynchronous operations (such as parallel cleanup or pre-commit validations)
+ * using the {@link #add(Runner)} method.
+ *
+ * <p>All registered {@link Runner} tasks are managed by this group and executed asynchronously. If
+ * any registered task fails, is interrupted, or throws an unhandled runtime exception,
+ * corresponding error records defined in this interface are produced to report the failure.
+ */
+public sealed interface AsyncGroup permits AsyncGroupImpl {
+
+  /** Indicates that a registered {@link Runner} task failed during its execution. */
   record RunnerFailed() {}
 
-  /**
-   * Represents the reason for an {@link com.github.sttk.errs.Err} exception object when the
-   * creation of a thread for asynchronous execution of a {@link Runner} fails.
-   */
+  /** Indicates that a registered {@link Runner} task execution was interrupted. */
   record RunnerInterrupted() {}
 
-  /** Represents an unexpected {@link RuntimeException} that occurred. */
-  record RuntimeExceptionOccurred() {}
+  /**
+   * Indicates that an unhandled runtime exception was thrown during the execution of a registered
+   * {@link Runner} task.
+   */
+  record RuntimeExceptionOccured() {}
 
   /**
-   * Adds a {@link Runner} to this group for asynchronous execution. The added runner will be
-   * executed in a separate thread.
+   * Adds a background task to be executed asynchronously by this group.
    *
-   * @param runner The {@link Runner} to be added and executed asynchronously.
+   * <p>The task is encapsulated in a {@link Runner} functional interface and scheduled for parallel
+   * asynchronous execution.
+   *
+   * @param runner the {@link Runner} task to be added and executed asynchronously
    */
-  void add(final Runner runner);
+  void add(Runner runner);
 }

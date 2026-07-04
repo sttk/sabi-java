@@ -6,15 +6,20 @@ package com.github.sttk.sabi;
 
 import com.github.sttk.errs.Err;
 
-/** {@code Runner} is the interface that runs any procedure. */
+/**
+ * Functional interface representing an asynchronous task to be executed by an {@link AsyncGroup}.
+ *
+ * <p>Tasks implementing this interface are added to an {@link AsyncGroup} (via {@link
+ * AsyncGroup#add(Runner)}) during data source or data connection lifecycle events (such as setup,
+ * commit, or rollback) to perform parallel background processing.
+ */
 @FunctionalInterface
 public interface Runner {
 
   /**
-   * Runs the procedure that this instance represents. This method takes no argument and returns
-   * nothing. And this method throws an {@link Err} exception if this method failed.
+   * Runs the asynchronous background task.
    *
-   * @throws Err If this method failed.
+   * @throws Err if an error occurs during task execution
    */
   void run() throws Err;
 }
