@@ -1,24 +1,49 @@
-# [sabi][repo-url] [![Maven Central][mvn-img]][mvn-url] [![MVN Repository][mvnrepo-img]][mvnrepo-url] [![GitHub.io][io-img]][io-url] [![CI Status][ci-img]][ci-url] [![MIT License][mit-img]][mit-url]
+<div align="center">
+  <a href="https://github.com/sttk/sabi-java">
+    <img src="./images/sabi-java.png" width="250" height="auto" alt="Sabi"/>
+  </a>
 
-A small framework for Java designed to separate logic from data access.
+  <h2>
+  "sabi" - A small framework to separate logic and data access
+  </h2>
+  <br>
 
-It achieves this by connecting the logic layer and the data access layer via traits, similar to traditional Dependency Injection (DI). This reduces the dependency between the two, allowing them to be implemented and tested independently.
+  [![Maven Central][mvn-img]][mvn-url] [![MVN Repository][mvnrepo-img]][mvnrepo-url] [![GitHub.io][io-img]][io-url] [![CI Status][ci-img]][ci-url] [![MIT License][mit-img]][mit-url]
+</div>
 
-However, traditional DI often presented an inconvenience in how methods were grouped. Typically, methods were grouped by external data service like a database or by database table. This meant the logic layer had to depend on units defined by the data access layer's concerns. Furthermore, such traits often contained more methods than a specific piece of logic needed, making it difficult to tell which methods were actually used in the logic without tracing the code.
+## Overview
 
-This framework addresses that inconvenience. The data access interface used by a logic function is unique to that specific logic, passed as an argument to the logic function. This interface declares all the data access methods that specific logic will use.
+**sabi** was developed with the goal of thoroughly separating business logic from data access. However, it differs from conventional Dependency Injection (DI) frameworks that merely invert dependencies by placing an interface between the two layers—**sabi** draws a clear line beyond that simple approach.
 
-On the data access layer side, implementations can be provided by concrete types that fulfill multiple `DataAcc` derived classes. This allows for implementation in any arbitrary unit — whether by external data service, by table, or by functional concern.
+What elevates **sabi** to an advanced framework in particular are the following two key techniques: introducing a data-access interface optimized for each individual piece of logic, and routing input/output from the controller layer directly to the data access layer via `DataSrc`, completely bypassing the logic layer.
 
-This is achieved through the following mechanism:
+### Introducing Data-Access Interfaces Optimized Per Logic Unit
 
-- A `DataHub` class aggregates all data access methods. `DataAcc` derived classes are attached to `DataHub`, giving `DataHub` the implementations of the data access methods.
-- Logic functional interfaces accept specific, narrowly defined data access interfaces as arguments. These interfaces declare only the methods relevant to that particular piece of logic.
-- The `DataHub` class implements all of these specific data access interfaces. When a `DataHub` instance is passed to a logic functional interface, the logic functional interface interacts with it via the narrower interface, ensuring it only sees and uses the methods it needs. Using Java's inheritance mechanism, a type implements an interface by methods of other classes. The `DataHub` simply needs to have methods that match the signatures of all the methods declared across the various logic-facing data access interfaces.
+The former approach thoroughly embodies the Interface Segregation Principle (ISP)—one of the SOLID principles that has often ended up more nominal than real in practice. Each piece of logic (use case) defines, on the logic side, its own dedicated interface that specifies only the operations it truly needs. Meanwhile, the data access side implements interfaces based on its responsibility as a data provider. The `DataHub` then mediates and maps between the two, so that the logic side never needs to be aware of the data access side's structure, and the data access side never needs to depend on the structure of individual pieces of logic—each maintains its own independent responsibility.
 
-This approach provides strong compile-time guarantees that logic only uses what it declares, while allowing flexible organization of data access implementations.
+This design is grounded in the philosophy that "the world does not exist as a single, fixed, objective reality, but rather reveals its meaning and form according to the questions and purposes held by the observing subject." The interface that logic should see should not be dictated by the constraints of the data access side, but should instead be defined based on the logic's own context and needs. The same holds true in reverse for the interface that data access should see. What matters to the logic is not the structure of the database or the ORM, but the "capability required to realize this particular use case." What matters to the data access side, on the other hand, is how to access storage or external services. By having both sides define their interfaces according to their own respective contexts, and having the `DataHub` bridge them together, true loose coupling is achieved—one where neither side depends on the other's internal structure.
 
-## Installation
+Furthermore, because logic never needs to know any implementation details of data access, it can easily be swapped out for mocks that provide the necessary capabilities during testing, achieving high testability as well.
+
+### A Structure That Routes Controller-Layer I/O Directly to the Data Access Layer, Bypassing the Logic Layer
+
+The latter approach—routing input/output from the controller layer directly to the data access layer, completely bypassing the logic layer—was conceived by decomposing the controller layer's role into two elements: "invoking logic" and "input/output data." In conventional architectures, because these two elements were never separated, a layered structure whose sole responsibility was data flow (the so-called "data bucket brigade") became unavoidable, forcing data to be transformed every time it crossed a layer. However, by routing input/output data directly to the infrastructure layer (the data access division), this redundant data flow—and the layered structure that existed to support it—becomes entirely unnecessary.
+
+As a result, the hierarchical dependency that would normally remain between logic and data access is completely eliminated, and is elevated instead into an equal relationship based on a contract defined by the interface's method signatures. This can be seen as an evolutionary extension of the Dependency Inversion Principle (DIP)—taking the conventional DIP, which merely reverses the direction of dependency, a step further by minimizing and localizing the dependency itself within the boundary of the contract.
+
+### An AI-Friendly, Capability-Oriented Framework
+
+Moreover, this structure is also well-suited to AI-driven automated programming. For AI-driven automated programming to be performed safely and accurately, the following conditions are required:
+
+* **Localized dependencies**: The scope of dependencies an AI must grasp for a single change should be confined to a narrow portion of the system, not the system as a whole.
+* **Explicit boundaries of side effects**: The extent to which side effects can propagate should be made explicit in the code itself, rather than relying on implicit call ordering.
+* **Localized impact of change**: Adding features or swapping implementations should not ripple out into existing code that doesn't use them.
+* **Substitutability through contract**: An implementation should be safely replaceable as long as it satisfies the contract (interface), without needing to know its implementation details.
+
+**sabi** satisfies all of these conditions at the structural level by defining a dedicated data access interface for each piece of logic and making that logic depend only on that narrow interface—so that adding functionality to a particular `DataAcc` never affects existing logic, and swapping implementations can be done safely as long as the interface's contract is satisfied. In this way, **sabi** is not merely a DI framework, but an AI-friendly, capability-oriented framework suited to the modern AI era.
+
+
+## Install
 
 This package can be installed from [Maven Central Repository][mvn-url].
 
@@ -84,7 +109,7 @@ class BarDataConn implements DataConn {
 }
 ```
 
-### 2. Implementing logic functions and data traits
+### 2. Implementing logic functions and data interfaces
 
 Define interfaces and functions that express your application logic. These interfaces are independent of specific data source implementations, improving testability.
 
@@ -214,7 +239,6 @@ This program is free software under MIT License.<br>
 See the file LICENSE in this distribution for more details.
 
 
-[repo-url]: https://github.com/sttk/sabi-java
 [mvn-img]: https://img.shields.io/badge/maven_central-0.8.0-276bdd.svg
 [mvn-url]: https://central.sonatype.com/artifact/io.github.sttk/sabi/0.8.0
 [mvnrepo-img]: https://img.shields.io/badge/mvn_repository-0.8.0-498df4.svg
