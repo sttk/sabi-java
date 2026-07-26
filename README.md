@@ -51,7 +51,7 @@ The examples of declaring that repository and the dependency on this package in 
 
 ### For Maven
 
-```
+```xml
   <dependencies>
     <dependency>
       <groupId>io.github.sttk</groupId>
@@ -63,7 +63,7 @@ The examples of declaring that repository and the dependency on this package in 
 
 ### For Gradle
 
-```
+```groovy
 repositories {
   mavenCentral()
 }
@@ -74,103 +74,107 @@ dependencies {
 
 ## Usage
 
-### 1. Implementing DataSrc and DataConn
+### 1. Implementing a logic function and a data access interface
 
-First, you'll define `DataSrc` which manages connections to external data services and creates `DataConn`. Then, you'll define `DataConn` which represents a session-specific connection and implements transactional operations.
-
-```java
-import com.github.sttk.errs.Err;
-import com.github.sttk.sabi.DataSrc;
-import com.github.sttk.sabi.DataConn;
-import com.github.sttk.sabi.AsyncGroup;
-
-class FooDataSrc implements DataSrc {
-  @Override public void setup(AsyncGroup ag) throws Err {}
-  @Override public void close() {}
-  @Override public DataConn createDataConn() throws Err { return new FooDataConn(); }
-}
-
-class FooDataConn implements DataConn {
-  @Override public void commit(AsyncGroup ag) throws Err {}
-  @Override public void rollback(AsyncGroup ag) {}
-  @Override public void close(AsyncGroup ag) {}
-}
-
-class BarDataSrc implements DataSrc {
-  @Override public void setup(AsyncGroup ag) throws Err {}
-  @Override public void close() {}
-  @Override public DataConn createDataConn() throws Err { return new BarDataConn(); }
-}
-
-class BarDataConn implements DataConn {
-  @Override public void commit(AsyncGroup ag) throws Err {}
-  @Override public void rollback(AsyncGroup ag) {}
-  @Override public void close(AsyncGroup ag) {}
-}
-```
-
-### 2. Implementing logic functions and data interfaces
-
-Define interfaces and functions that express your application logic. These interfaces are independent of specific data source implementations, improving testability.
+First, define a functional interface that represents your application logic, along with its dedicated data access interface. This interface is independent of specific data source implementations, improving testability.
 
 ```java
 import com.github.sttk.errs.Err;
-import com.github.sttk.sabi.Logic;
 
 interface MyData {
   String getText() throws Err;
   void setText(String text) throws Err;
 }
+```
+```java
+import com.github.sttk.errs.Err;
 
 class MyLogic implements Logic<MyData> {
-  @Override public void run(MyData data) throws Err {
+  @Override
+  public void run(MyData data) throws Err {
     String text = data.getText();
     data.setText(text);
   }
 }
 ```
 
-### 3. Implementing DataAcc derived classes
+### 2. Implementing DataAcc derived interfaces
 
-The `DataAcc` interface abstracts access to data connections. The methods defined here will be used to obtain data connections via `DataHub` and perform actual data operations.
+The `DataAcc` interface provides a simple mechanism to retrieve `DataConn` objects. However, it's the derived interfaces (like `GettingDataAcc` and `SettingDataAcc` in this example) that define the application-specific methods for accessing data. These methods then use `DataHub#getDataConn` to obtain the appropriate `DataConn` and perform the actual data operations.
+
+```java
+interface AllLogicData extends MyData {}
+```
 
 ```java
 import com.github.sttk.errs.Err;
 import com.github.sttk.sabi.DataAcc;
 
-interface GettingDataAcc extends DataAcc, MyData {
-  @Override default String getText() throws Err {
-    var conn = getDataConn("foo", FooDataConn.class);
-    // ...
+interface GettingDataAcc implements DataAcc, AllLogicData {
+  default String getText() throws Err {
     return "output text";
-  }
-}
-
-interface SettingDataAcc extends DataAcc, MyData {
-  @Override default void setText(String text) throws Err {
-    var conn = getDataConn("bar", BarDataConn.class);
-    // ...
   }
 }
 ```
 
-### 4. Integrating data interfaces and DataAcc derived classes into `DataHub`
+```java
+import com.github.sttk.errs.Err;
+import com.github.sttk.sabi.DataAcc;
+import com.github.sttk.sabi_redis.RedisDataConn;
+import com.github.sttk.sabi_stdio.StdioDataConn;  // This is a conceptual, non-existent DataConn.
+import java.io.InputStream;
+import java.io.PrintStream;
 
-The `DataHub` is the central component that manages all `DataSrc` and `DataConn`, providing access to them for your application logic. By implementing the data interface (`MyData`) from step 2 and the `DataAcc` class from step 3 on `DataHub`, you integrate them.
+interface SettingDataAcc implements DataAcc, AllLogicData {
+  default String setText(String text) throws Err {
+    var redisDc = getDataConn("redis", RedisDataConn.class);
+    var redisConn = redisDc.getConnection();
+    var commands = redisConn.sync();
+    try {
+      commands.set("sample", val);
+    } catch (Exception e) {
+      throw new Err("fail to set value", e);
+    }
+
+    redisDc.addRollback(rConn -> {
+      var cmd = rConn.sync();
+      try {
+        var cmd.del("sample");
+      } catch (Exception e) {
+        throw new Err("fail to roll back", e);
+      }
+    });
+
+    var stdioDc = getDataConn("stdio", StdioDataConn.class);
+    stdioDc.addPostCommit((InputStream in, PrintStream out, PrintStream err) -> {
+      out.printf(""%s", text);
+    });
+  }
+}
+```
+
+### 3. Integrating data interfaces and DataAcc derived interfaces into DataHub
+
+The `DataHub` is the central component that manages all `DataSrc` and `DataConn`,
+providing access to them for your application logic.
+By implementing the data interface (`MyData`) from step 1. and the `DataAcc` classs
+from step 2. on `DataHub`, you integrate them.
+
+```java
+import com.github.sttk.sabi.DataHub;
+
+class MyDataHub extends DataHub implements GettingDataAcc, SettingDataAcc {
+  public MyDataHub() {}
+}
+```
+
+### 4. Using logic functions and DataHub
+
+Inside your `static` block, register your global `DataSrc`. Next, `main` function calls `run` function, and inside `run` function, set up the sabi framework. Then, create an instance of `DataHub` and register the necessary local `DataSrc` using the `Sabi.uses` method. Finally, use the `DataHub#run` method or `DataHub#txn` method to execute your defined application logic function (`MyLogic`) without or within a transaction.
 
 ```java
 import com.github.sttk.errs.Err;
 import com.github.sttk.sabi.DataHub;
-
-class MyDataHub extends DataHub implements GettingDataAcc, SettingDataAcc {}
-```
-
-### 5. Using logic functions and `DataHub`
-
-Inside your init function, register your global `DataSrc`. Next, main function calls run function, and inside run function, setup the sabi framework. Then, create an instance of `DataHub` and register the necessary local `DataSrc` using the Uses method. Finally, use the txn method of `DataHub` to execute your defined application logic function (`MyLogic`) within a transaction. This automatically handles transaction commits and rollbacks.
-
-```java
-import com.github.sttk.errs.Err;
 import com.github.sttk.sabi.Sabi;
 
 public class Main {
@@ -179,22 +183,33 @@ public class Main {
     Sabi.uses("foo", new FooDataSrc());
   }
 
+  static MyLogic myLogic = new MyLogic();
+
   public static void main(String[] args) {
-    // Set up the sabi framework.
-    try (var ac = Sabi.setup()) {
-
-      // Creates a new instance of DataHub.
-      var hub = new MyDataHub();
-
-      // Register session-local DataSrc to DataHub.
-      hub.uses("bar", new BarDataSrc());
-
-      // Execute application logic within a transaction.
-      // MyLogic performs data operations via DataHub.
-      hub.txn(new MyLogic());
-
+    try {
+      run();
     } catch (Exception e) {
+      System.err.println(e.toString());
       System.exit(1);
+    }
+  }
+
+  static void run() throws Err {
+    // Set up the sabi framework
+    try (var ac = Sabi.setup()) {
+      
+      // Creates a new instance of DataHub.
+      try (var data := new MyDataHub()) {
+
+        // Register session-local DataSrc with DataHub
+        data.uses("bar", new BarDataSrc());
+
+        // Execute application logic without a transaction control. 
+        data.run(myLogic);
+
+        // If you need to execute logic within a transaction, use the `txn` method instead of `run`
+        // data.txn(myLogic);
+      }
     }
   }
 }
