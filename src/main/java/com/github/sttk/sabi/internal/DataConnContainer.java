@@ -1,16 +1,14 @@
 /*
  * DataConnContainer.java
- * Copyright (C) 2025-2026 Takayuki Sato. All Rights Reserved.
+ * Copyright (C) 2026 Takayuki Sato. All Rights Reserved.
  */
 package com.github.sttk.sabi.internal;
 
 import com.github.sttk.sabi.DataConn;
 
-public final class DataConnContainer {
-  DataConnContainer prev;
-  DataConnContainer next;
-  String name;
-  DataConn conn;
+public class DataConnContainer {
+  final String name;
+  final DataConn conn;
 
   DataConnContainer(String name, DataConn conn) {
     this.name = name;

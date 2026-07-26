@@ -6,61 +6,58 @@ package com.github.sttk.sabi;
 
 import com.github.sttk.errs.Err;
 import com.github.sttk.sabi.internal.DataHubInner;
+import java.util.List;
 
 /**
- * {@code Sabi} is the class that provides the static methods related to the global functionalities
- * of sabi framework.
+ * Utility class for managing and setting up global {@link DataSrc} instances.
  *
- * <p>This class declares {@link #uses uses} method to register a {@link DataSrc} object used
- * globally with its name. And this class also declares {@link #setup setup} methods, which is the
- * static method to setup all global registered {@link DataSrc} objects.
- *
- * <p>The usages of these static methods is as follows:
- *
- * <pre><code>   public class Application {
- *       static {
- *           Sabi.uses("foo", new FooDataSrc());
- *           Sabi.uses("bar", new BarDataSrc());
- *       }
- *       public static void main(String ...args) {
- *           int exitCode = 0;
- *           try (var ac = Sabi.setup()) {
- *               ...
- *           } catch (Exception e) {
- *               exitCode = 1;
- *           }
- *           System.exit(exitCode);
- *       }
- *   }</code></pre>
+ * <p>Applications can register global data sources using {@link #uses(String, DataSrc)} during
+ * startup, and then call {@link #setup()} or {@link #setup(String...)} to set them up. The returned
+ * {@link AutoCloseable} handles shutting down and closing global data sources when the application
+ * terminates or finishes using them.
  */
 public final class Sabi {
   private Sabi() {}
 
   /**
-   * Registers a {@link DataSrc} object with a unique name for global use within the Sabi framework.
-   * This method should typically be called in a static initializer block of your application's main
-   * class.
+   * Registers a global data source with the specified logical name.
    *
-   * @param name The unique name to associate with the {@link DataSrc}.
-   * @param ds The {@link DataSrc} instance to be registered.
+   * @param name the logical name for the global data source
+   * @param ds the {@link DataSrc} instance to register
    */
   public static void uses(String name, DataSrc ds) {
-    DataHubInner.usesGlobal(name, ds);
+    DataHubInner.useGlobal(name, ds);
   }
 
   /**
-   * Sets up all globally registered {@link DataSrc} objects. This involves calling the {@link
-   * DataSrc#setup(AsyncGroup) setup} method on each registered data source. This method should be
-   * called once at the application startup.
+   * Sets up all registered global data sources in their registration order.
    *
-   * <p>The returned {@link AutoCloseable} object can be used in a try-with-resources statement to
-   * automatically invoke the close operations upon exiting the try block.
-   *
-   * @return An {@link AutoCloseable} object that, when closed, will trigger the global close
-   *     operation.
-   * @throws Err if an error occurs during the setup of any {@link DataSrc}.
+   * @return an {@link AutoCloseable} that closes all initialized global data sources when closed
+   * @throws Err if setting up any global data source fails
    */
   public static AutoCloseable setup() throws Err {
     return DataHubInner.setupGlobals();
+  }
+
+  /**
+   * Sets up registered global data sources matching the specified names in the given order.
+   *
+   * @param names varargs array of global data source names to set up
+   * @return an {@link AutoCloseable} that closes the set-up global data sources when closed
+   * @throws Err if setting up any of the specified global data sources fails
+   */
+  public static AutoCloseable setup(String... names) throws Err {
+    return DataHubInner.setupGlobalsWithOrder(List.of(names));
+  }
+
+  /**
+   * Sets up registered global data sources matching the specified list of names in the given order.
+   *
+   * @param names list of global data source names to set up
+   * @return an {@link AutoCloseable} that closes the set-up global data sources when closed
+   * @throws Err if setting up any of the specified global data sources fails
+   */
+  public static AutoCloseable setup(List<String> names) throws Err {
+    return DataHubInner.setupGlobalsWithOrder(names);
   }
 }

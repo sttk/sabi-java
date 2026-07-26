@@ -1,2080 +1,1596 @@
 package com.github.sttk.sabi.internal;
 
+import static com.github.sttk.sabi.DataConn.FailToCommitDataConn;
+import static com.github.sttk.sabi.DataConn.FailToPostCommitDataConn;
+import static com.github.sttk.sabi.DataConn.FailToPreCommitDataConn;
+import static com.github.sttk.sabi.DataHub.CreatedDataConnIsNull;
+import static com.github.sttk.sabi.DataHub.FailToCastDataConn;
+import static com.github.sttk.sabi.DataHub.FailToCastDataHub;
+import static com.github.sttk.sabi.DataHub.FailToCreateDataConn;
+import static com.github.sttk.sabi.DataHub.FailToSetupGlobalDataSrcs;
+import static com.github.sttk.sabi.DataHub.FailToSetupLocalDataSrcs;
+import static com.github.sttk.sabi.DataHub.NoDataSrcToCreateDataConn;
+import static com.github.sttk.sabi.Sabi.setup;
+import static com.github.sttk.sabi.Sabi.uses;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.assertj.core.api.Assertions.fail;
 
 import com.github.sttk.errs.Err;
 import com.github.sttk.sabi.AsyncGroup;
 import com.github.sttk.sabi.DataConn;
 import com.github.sttk.sabi.DataHub;
 import com.github.sttk.sabi.DataSrc;
+import com.github.sttk.sabi.TxnFailureReport;
 import java.util.ArrayList;
 import java.util.List;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 public class DataHubInnerTest {
   private DataHubInnerTest() {}
 
-  static final int FAIL__NOT = 0;
-  static final int FAIL__SETUP = 1;
-  static final int FAIL__CREATE_DATA_CONN = 2;
-  static final int FAIL__COMMIT = 3;
-  static final int FAIL__PRE_COMMIT = 4;
+  enum Failure {
+    None,
+    PreCommit,
+    Commit,
+    PostCommit,
+    Rollback,
+    Setup,
+    CreateDataConn,
+    CreatedDataConnIsNull,
+  }
 
-  final void suppressWarnings_unused(Object a) {}
+  static class MyDataConn implements DataConn {
+    int id;
+    Failure failure;
+    boolean committed;
+    List<String> logger;
 
-  static class SyncDataSrc implements DataSrc {
-    private int id;
-    private int fail;
-    private List<String> logger;
-
-    SyncDataSrc(int id, int fail, List<String> logger) {
+    MyDataConn(int id, Failure failure, List<String> logger) {
       this.id = id;
-      this.fail = fail;
+      this.failure = failure;
+      this.logger = logger;
+      this.committed = false;
+    }
+
+    @Override
+    public boolean isCommitted() {
+      return this.committed;
+    }
+
+    @Override
+    public void preCommit(AsyncGroup ag) throws Err {
+      if (this.failure == Failure.PreCommit) {
+        this.logger.add(String.format("MyDataConn#preCommit %d failed", this.id));
+        throw new Err("pre commit error");
+      }
+      this.logger.add(String.format("MyDataConn#preCommit %d", this.id));
+    }
+
+    @Override
+    public void commit(AsyncGroup ag) throws Err {
+      if (this.failure == Failure.Commit) {
+        this.logger.add(String.format("MyDataConn#commit %d failed", this.id));
+        throw new Err("commit error");
+      }
+      this.logger.add(String.format("MyDataConn#commit %d", this.id));
+    }
+
+    @Override
+    public void postCommit(AsyncGroup ag) throws Err {
+      if (this.failure == Failure.PostCommit) {
+        this.logger.add(String.format("MyDataConn#postCommit %d failed", this.id));
+        throw new Err("post commit error");
+      }
+      this.logger.add(String.format("MyDataConn#postCommit %d", this.id));
+    }
+
+    @Override
+    public void rollback(AsyncGroup ag) throws Err {
+      if (this.failure == Failure.Rollback) {
+        this.logger.add(String.format("MyDataConn#rollback %d failed", this.id));
+        throw new Err("rollback error");
+      }
+      this.logger.add(String.format("MyDataConn#rollback %d", this.id));
+    }
+
+    @Override
+    public void onTxnFailure(AsyncGroup ag, List<TxnFailureReport> repots) {
+      this.logger.add(String.format("MyDataConn#onTxnFailure %d", this.id));
+    }
+
+    @Override
+    public void close() {
+      this.logger.add(String.format("MyDataConn#close %d", this.id));
+    }
+  }
+
+  static class MyDataSrc implements DataSrc {
+    int id;
+    Failure failure;
+    List<String> logger;
+
+    MyDataSrc(int id, Failure failure, List<String> logger) {
+      this.id = id;
+      this.failure = failure;
       this.logger = logger;
     }
 
     @Override
     public void setup(AsyncGroup ag) throws Err {
-      if (this.fail == FAIL__SETUP) {
-        this.logger.add(String.format("SyncDataSrc %d failed to setup", this.id));
-        throw new Err("XXX");
+      if (this.failure == Failure.Setup) {
+        this.logger.add(String.format("MyDataSrc#setup %d failed", this.id));
+        throw new Err("setup error");
       }
-      this.logger.add(String.format("SyncDataSrc %d setupped", this.id));
+      this.logger.add(String.format("MyDataSrc#setup %d", this.id));
     }
 
     @Override
     public void close() {
-      this.logger.add(String.format("SyncDataSrc %d closed", this.id));
+      this.logger.add(String.format("MyDataSrc#close %d", this.id));
     }
 
     @Override
     public DataConn createDataConn() throws Err {
-      if (this.fail == FAIL__CREATE_DATA_CONN) {
-        this.logger.add(String.format("SyncDataSrc %d failed to create a DataConn", this.id));
-        throw new Err("xxx");
+      if (this.failure == Failure.CreateDataConn) {
+        this.logger.add(String.format("MyDataSrc#createDataConn %d failed", this.id));
+        throw new Err("eeee");
       }
-      this.logger.add(String.format("SyncDataSrc %d created DataConn", this.id));
-      var conn = new SyncDataConn(this.id, this.fail, this.logger);
-      return conn;
+      if (this.failure == Failure.CreatedDataConnIsNull) {
+        this.logger.add(String.format("MyDataSrc#createDataConn %d is null", this.id));
+        return null;
+      }
+      this.logger.add(String.format("MyDataSrc#createDataConn %d", this.id));
+      return new MyDataConn(this.id, this.failure, this.logger);
     }
   }
 
-  static class AsyncDataSrc implements DataSrc {
-    private int id;
-    private int fail;
-    private List<String> logger;
+  static class BadDataConn implements DataConn {
+    BadDataConn(int id, Failure failure, List<String> logger) {}
 
-    AsyncDataSrc(int id, int fail, List<String> logger) {
-      this.id = id;
-      this.fail = fail;
-      this.logger = logger;
+    @Override
+    public boolean isCommitted() {
+      return true;
     }
 
     @Override
-    public void setup(AsyncGroup ag) throws Err {
-      ag.add(
-          () -> {
-            try {
-              Thread.sleep(50);
-            } catch (Exception e) {
-            }
-            if (this.fail == FAIL__SETUP) {
-              this.logger.add(String.format("AsyncDataSrc %d failed to setup", this.id));
-              throw new Err("YYY");
-            }
-            this.logger.add(String.format("AsyncDataSrc %d setupped", this.id));
-          });
-    }
+    public void preCommit(AsyncGroup ag) throws Err {}
 
     @Override
-    public void close() {
-      this.logger.add(String.format("AsyncDataSrc %d closed", this.id));
-    }
+    public void commit(AsyncGroup ag) throws Err {}
 
     @Override
-    public DataConn createDataConn() throws Err {
-      if (this.fail == FAIL__CREATE_DATA_CONN) {
-        this.logger.add(String.format("AsyncDataSrc %d failed to create a DataConn", this.id));
-        throw new Err("yyy");
-      }
-      this.logger.add(String.format("AsyncDataSrc %d created DataConn", this.id));
-      var conn = new AsyncDataConn(this.id, this.fail, this.logger);
-      return conn;
-    }
+    public void postCommit(AsyncGroup ag) throws Err {}
+
+    @Override
+    public void rollback(AsyncGroup ag) throws Err {}
+
+    @Override
+    public void onTxnFailure(AsyncGroup ag, List<TxnFailureReport> repots) {}
+
+    @Override
+    public void close() {}
   }
 
-  static class SyncDataConn implements DataConn {
-    private int id;
-    private int fail;
-    private boolean committed;
-    private List<String> logger;
+  static interface FailToCastData {}
 
-    SyncDataConn(int id, int fail, List<String> logger) {
-      this.id = id;
-      this.fail = fail;
-      this.logger = logger;
-    }
-
-    @Override
-    public void commit(AsyncGroup ag) throws Err {
-      if (this.fail == FAIL__COMMIT) {
-        this.logger.add(String.format("SyncDataConn %d failed to commit", this.id));
-        throw new Err("ZZZ");
+  int countDs(List<DataSrcContainer> list) {
+    int n = 0;
+    for (var cont : list) {
+      if (cont.ds != null) {
+        n++;
       }
-      this.committed = true;
-      this.logger.add(String.format("SyncDataConn %d committed", this.id));
     }
-
-    @Override
-    public void preCommit(AsyncGroup ag) throws Err {
-      if (this.fail == FAIL__PRE_COMMIT) {
-        this.logger.add(String.format("SyncDataConn %d failed to pre commit", this.id));
-        throw new Err("zzz");
-      }
-      this.logger.add(String.format("SyncDataConn %d pre committed", this.id));
-    }
-
-    @Override
-    public void postCommit(AsyncGroup ag) {
-      this.logger.add(String.format("SyncDataConn %d post committed", this.id));
-    }
-
-    @Override
-    public boolean shouldForceBack() {
-      return this.committed;
-    }
-
-    @Override
-    public void rollback(AsyncGroup ag) {
-      this.logger.add(String.format("SyncDataConn %d rollbacked", this.id));
-    }
-
-    @Override
-    public void forceBack(AsyncGroup ag) {
-      this.logger.add(String.format("SyncDataConn %d forced back", this.id));
-    }
-
-    @Override
-    public void close() {
-      this.logger.add(String.format("SyncDataConn %d closed", this.id));
-    }
+    return n;
   }
 
-  static class AsyncDataConn implements DataConn {
-    private int id;
-    private int fail;
-    private boolean committed;
-    private List<String> logger;
-
-    AsyncDataConn(int id, int fail, List<String> logger) {
-      this.id = id;
-      this.fail = fail;
-      this.logger = logger;
-    }
-
-    @Override
-    public void commit(AsyncGroup ag) throws Err {
-      if (this.fail == FAIL__COMMIT) {
-        this.logger.add(String.format("AsyncDataConn %d failed to commit", this.id));
-        throw new Err("VVV");
-      }
-      this.committed = true;
-      this.logger.add(String.format("AsyncDataConn %d committed", this.id));
-    }
-
-    @Override
-    public void preCommit(AsyncGroup ag) throws Err {
-      if (this.fail == FAIL__PRE_COMMIT) {
-        this.logger.add(String.format("AsyncDataConn %d failed to pre commit", this.id));
-        throw new Err("vvv");
-      }
-      this.logger.add(String.format("AsyncDataConn %d pre committed", this.id));
-    }
-
-    @Override
-    public void postCommit(AsyncGroup ag) {
-      this.logger.add(String.format("AsyncDataConn %d post committed", this.id));
-    }
-
-    @Override
-    public boolean shouldForceBack() {
-      return this.committed;
-    }
-
-    @Override
-    public void rollback(AsyncGroup ag) {
-      this.logger.add(String.format("AsyncDataConn %d rollbacked", this.id));
-    }
-
-    @Override
-    public void forceBack(AsyncGroup ag) {
-      this.logger.add(String.format("AsyncDataConn %d forced back", this.id));
-    }
-
-    @Override
-    public void close() {
-      this.logger.add(String.format("AsyncDataConn %d closed", this.id));
-    }
-  }
-
-  static void resetGlobalVariables() {
+  static void resetGlobals() {
+    DataHubInner.GLOBAL_DATA_SRC_MANAGER.close();
     DataHubInner.GLOBAL_DATA_SRCS_FIXED.set(false);
-    DataHubInner.GLOBAL_DATA_SRC_LIST.closeDataSrcs();
   }
 
-  @Nested
-  class TestOfGlobalFunctions {
-    @BeforeEach
-    void beforeEach() {
-      resetGlobalVariables();
-    }
+  ///
 
-    @AfterEach
-    void afterEach() {
-      resetGlobalVariables();
-    }
-
-    @Test
-    void setup_and_shutdown() {
-      var logger = new ArrayList<String>();
-
-      assertThat(DataHubInner.GLOBAL_DATA_SRC_LIST.notSetupHead).isNull();
-      assertThat(DataHubInner.GLOBAL_DATA_SRC_LIST.didSetupHead).isNull();
-
-      DataHubInner.usesGlobal("foo", new AsyncDataSrc(1, FAIL__NOT, logger));
-      DataHubInner.usesGlobal("bar", new SyncDataSrc(2, FAIL__NOT, logger));
-
-      var ptr = DataHubInner.GLOBAL_DATA_SRC_LIST.notSetupHead;
-      assertThat(ptr).isNotNull();
-      assertThat(ptr.name).isEqualTo("foo");
-      ptr = ptr.next;
-      assertThat(ptr).isNotNull();
-      assertThat(ptr.name).isEqualTo("bar");
-      ptr = ptr.next;
-      assertThat(ptr).isNull();
-
-      assertThat(DataHubInner.GLOBAL_DATA_SRC_LIST.didSetupHead).isNull();
-
-      try (var ac = DataHubInner.setupGlobals()) {
-        suppressWarnings_unused(ac);
-        assertThat(DataHubInner.GLOBAL_DATA_SRC_LIST.notSetupHead).isNull();
-
-        ptr = DataHubInner.GLOBAL_DATA_SRC_LIST.didSetupHead;
-        assertThat(ptr).isNotNull();
-        assertThat(ptr.name).isEqualTo("foo");
-        ptr = ptr.next;
-        assertThat(ptr).isNotNull();
-        assertThat(ptr.name).isEqualTo("bar");
-        ptr = ptr.next;
-        assertThat(ptr).isNull();
-      } catch (Exception e) {
-        fail(e);
-      }
-
-      assertThat(DataHubInner.GLOBAL_DATA_SRC_LIST.notSetupHead).isNull();
-      assertThat(DataHubInner.GLOBAL_DATA_SRC_LIST.didSetupHead).isNull();
-
-      assertThat(logger)
-          .containsExactly(
-              "SyncDataSrc 2 setupped",
-              "AsyncDataSrc 1 setupped",
-              "SyncDataSrc 2 closed",
-              "AsyncDataSrc 1 closed");
-    }
-
-    @Test
-    void fail_to_setup() {
-      var logger = new ArrayList<String>();
-
-      assertThat(DataHubInner.GLOBAL_DATA_SRC_LIST.notSetupHead).isNull();
-      assertThat(DataHubInner.GLOBAL_DATA_SRC_LIST.didSetupHead).isNull();
-
-      DataHubInner.usesGlobal("foo", new AsyncDataSrc(1, FAIL__SETUP, logger));
-      DataHubInner.usesGlobal("bar", new SyncDataSrc(2, FAIL__SETUP, logger));
-
-      var ptr = DataHubInner.GLOBAL_DATA_SRC_LIST.notSetupHead;
-      assertThat(ptr).isNotNull();
-      assertThat(ptr.name).isEqualTo("foo");
-      ptr = ptr.next;
-      assertThat(ptr).isNotNull();
-      assertThat(ptr.name).isEqualTo("bar");
-      ptr = ptr.next;
-      assertThat(ptr).isNull();
-
-      assertThat(DataHubInner.GLOBAL_DATA_SRC_LIST.didSetupHead).isNull();
-
-      try (var ac = DataHubInner.setupGlobals()) {
-        suppressWarnings_unused(ac);
-        fail();
-      } catch (Err e) {
-        switch (e.getReason()) {
-          case DataHub.FailToSetupGlobalDataSrcs r -> {
-            assertThat(r.errors()).hasSize(2);
-            assertThat(r.errors().get("foo").getReason()).isEqualTo("YYY");
-            assertThat(r.errors().get("bar").getReason()).isEqualTo("XXX");
-          }
-          default -> fail();
-        }
-      } catch (Exception e) {
-        fail(e);
-      }
-
-      assertThat(DataHubInner.GLOBAL_DATA_SRC_LIST.notSetupHead).isNull();
-      assertThat(DataHubInner.GLOBAL_DATA_SRC_LIST.didSetupHead).isNull();
-
-      assertThat(logger)
-          .containsExactly("SyncDataSrc 2 failed to setup", "AsyncDataSrc 1 failed to setup");
-    }
-
-    @Test
-    void cannot_add_global_data_srcs_after_setup() {
-      var logger = new ArrayList<String>();
-
-      assertThat(DataHubInner.GLOBAL_DATA_SRC_LIST.notSetupHead).isNull();
-      assertThat(DataHubInner.GLOBAL_DATA_SRC_LIST.didSetupHead).isNull();
-
-      DataHubInner.usesGlobal("foo", new AsyncDataSrc(1, FAIL__NOT, logger));
-
-      var ptr = DataHubInner.GLOBAL_DATA_SRC_LIST.notSetupHead;
-      assertThat(ptr).isNotNull();
-      assertThat(ptr.name).isEqualTo("foo");
-      ptr = ptr.next;
-      assertThat(ptr).isNull();
-
-      assertThat(DataHubInner.GLOBAL_DATA_SRC_LIST.didSetupHead).isNull();
-
-      try (var ac = DataHubInner.setupGlobals()) {
-        suppressWarnings_unused(ac);
-        assertThat(DataHubInner.GLOBAL_DATA_SRC_LIST.notSetupHead).isNull();
-
-        ptr = DataHubInner.GLOBAL_DATA_SRC_LIST.didSetupHead;
-        assertThat(ptr).isNotNull();
-        assertThat(ptr.name).isEqualTo("foo");
-        ptr = ptr.next;
-        assertThat(ptr).isNull();
-
-        DataHubInner.usesGlobal("bar", new SyncDataSrc(2, FAIL__NOT, logger));
-
-        assertThat(DataHubInner.GLOBAL_DATA_SRC_LIST.notSetupHead).isNull();
-
-        ptr = DataHubInner.GLOBAL_DATA_SRC_LIST.didSetupHead;
-        assertThat(ptr).isNotNull();
-        assertThat(ptr.name).isEqualTo("foo");
-        ptr = ptr.next;
-        assertThat(ptr).isNull();
-
-      } catch (Exception e) {
-        fail(e);
-      }
-
-      assertThat(DataHubInner.GLOBAL_DATA_SRC_LIST.notSetupHead).isNull();
-      assertThat(DataHubInner.GLOBAL_DATA_SRC_LIST.didSetupHead).isNull();
-
-      assertThat(logger).containsExactly("AsyncDataSrc 1 setupped", "AsyncDataSrc 1 closed");
-    }
-
-    @Test
-    void do_nothing_if_executing_setup_twice() {
-      var logger = new ArrayList<String>();
-
-      assertThat(DataHubInner.GLOBAL_DATA_SRC_LIST.notSetupHead).isNull();
-      assertThat(DataHubInner.GLOBAL_DATA_SRC_LIST.didSetupHead).isNull();
-
-      DataHubInner.usesGlobal("foo", new AsyncDataSrc(1, FAIL__NOT, logger));
-
-      var ptr = DataHubInner.GLOBAL_DATA_SRC_LIST.notSetupHead;
-      assertThat(ptr).isNotNull();
-      assertThat(ptr.name).isEqualTo("foo");
-      ptr = ptr.next;
-      assertThat(ptr).isNull();
-
-      assertThat(DataHubInner.GLOBAL_DATA_SRC_LIST.didSetupHead).isNull();
-
-      try (var ac = DataHubInner.setupGlobals()) {
-        suppressWarnings_unused(ac);
-        assertThat(DataHubInner.GLOBAL_DATA_SRC_LIST.notSetupHead).isNull();
-
-        ptr = DataHubInner.GLOBAL_DATA_SRC_LIST.didSetupHead;
-        assertThat(ptr).isNotNull();
-        assertThat(ptr.name).isEqualTo("foo");
-        ptr = ptr.next;
-        assertThat(ptr).isNull();
-
-        DataHubInner.usesGlobal("bar", new SyncDataSrc(2, FAIL__NOT, logger));
-
-        assertThat(DataHubInner.GLOBAL_DATA_SRC_LIST.notSetupHead).isNull();
-
-        ptr = DataHubInner.GLOBAL_DATA_SRC_LIST.didSetupHead;
-        assertThat(ptr).isNotNull();
-        assertThat(ptr.name).isEqualTo("foo");
-        ptr = ptr.next;
-        assertThat(ptr).isNull();
-
-      } catch (Exception e) {
-        fail(e);
-      }
-
-      assertThat(DataHubInner.GLOBAL_DATA_SRC_LIST.notSetupHead).isNull();
-      assertThat(DataHubInner.GLOBAL_DATA_SRC_LIST.didSetupHead).isNull();
-
-      assertThat(logger).containsExactly("AsyncDataSrc 1 setupped", "AsyncDataSrc 1 closed");
+  @Test
+  void testNewDataHubImpl() {
+    var hub = new DataHubInner();
+    try {
+      assertThat(countDs(hub.localDataSrcManager.listUnready)).isEqualTo(0);
+      assertThat(countDs(hub.localDataSrcManager.listReady)).isEqualTo(0);
+      assertThat(hub.localDataSrcManager.local).isTrue();
+      assertThat(hub.dataSrcMap).isEmpty();
+      assertThat(hub.dataConnManager.list).isEmpty();
+      assertThat(hub.dataConnManager.indexMap).isEmpty();
+      assertThat(hub.dataConnMap).isEmpty();
+      assertThat(hub.fixed).isFalse();
+    } finally {
+      hub.closeLocals();
     }
   }
 
-  @Nested
-  class TestOfDataHubLocal {
-    @BeforeEach
-    void beforeEach() {
-      resetGlobalVariables();
+  @Test
+  void testNewDataHubWithCommitOrder() {
+    var hub = new DataHubInner(List.of("bar", "qux", "foo"));
+    try {
+      assertThat(countDs(hub.localDataSrcManager.listUnready)).isEqualTo(0);
+      assertThat(countDs(hub.localDataSrcManager.listReady)).isEqualTo(0);
+      assertThat(hub.localDataSrcManager.local).isTrue();
+      assertThat(hub.dataSrcMap).isEmpty();
+      assertThat(hub.dataConnManager.list).hasSize(3);
+      assertThat(hub.dataConnManager.indexMap).hasSize(3);
+      assertThat(hub.dataConnMap).isEmpty();
+      assertThat(hub.fixed).isFalse();
+    } finally {
+      hub.closeLocals();
     }
+  }
 
-    @AfterEach
-    void afterEach() {
-      resetGlobalVariables();
-    }
+  @Test
+  void testUsesAndOk() {
+    var logger = new ArrayList<String>();
 
-    @Test
-    void new_and_close_with_no_global_data_srcs() {
-      var hub = new DataHubInner();
+    var hub = new DataHubInner();
+    try {
+      hub.useLocal("foo", new MyDataSrc(1, Failure.None, logger));
+      hub.useLocal("bar", new MyDataSrc(2, Failure.None, logger));
 
-      assertThat(hub.localDataSrcList.notSetupHead).isNull();
-      assertThat(hub.localDataSrcList.didSetupHead).isNull();
-      assertThat(hub.dataConnList.head).isNull();
-      assertThat(hub.dataSrcMap).hasSize(0);
-      assertThat(hub.dataConnMap).hasSize(0);
+      assertThat(countDs(hub.localDataSrcManager.listUnready)).isEqualTo(2);
+      assertThat(countDs(hub.localDataSrcManager.listReady)).isEqualTo(0);
+      assertThat(hub.localDataSrcManager.local).isTrue();
+      assertThat(hub.dataSrcMap).isEmpty();
+      assertThat(hub.dataConnManager.list).isEmpty();
+      assertThat(hub.dataConnManager.indexMap).isEmpty();
+      assertThat(hub.dataConnMap).isEmpty();
       assertThat(hub.fixed).isFalse();
 
-      hub.close();
+      hub.begin();
+
+      assertThat(countDs(hub.localDataSrcManager.listUnready)).isEqualTo(0);
+      assertThat(countDs(hub.localDataSrcManager.listReady)).isEqualTo(2);
+      assertThat(hub.localDataSrcManager.local).isTrue();
+      assertThat(hub.dataSrcMap).hasSize(2);
+      assertThat(hub.dataConnManager.list).isEmpty();
+      assertThat(hub.dataConnManager.indexMap).isEmpty();
+      assertThat(hub.dataConnMap).isEmpty();
+      assertThat(hub.fixed).isTrue();
+
+    } catch (Exception e) {
+      fail(e);
+    } finally {
+      hub.closeLocals();
+    }
+  }
+
+  @Test
+  void testUsesButAlreadyFixed() {
+    var logger = new ArrayList<String>();
+
+    var hub = new DataHubInner();
+    try {
+      hub.useLocal("foo", new MyDataSrc(1, Failure.None, logger));
+
+      assertThat(countDs(hub.localDataSrcManager.listUnready)).isEqualTo(1);
+      assertThat(countDs(hub.localDataSrcManager.listReady)).isEqualTo(0);
+      assertThat(hub.localDataSrcManager.local).isTrue();
+      assertThat(hub.dataSrcMap).isEmpty();
+      assertThat(hub.dataConnManager.list).isEmpty();
+      assertThat(hub.dataConnManager.indexMap).isEmpty();
+      assertThat(hub.dataConnMap).isEmpty();
+      assertThat(hub.fixed).isFalse();
+
+      hub.begin();
+
+      assertThat(countDs(hub.localDataSrcManager.listUnready)).isEqualTo(0);
+      assertThat(countDs(hub.localDataSrcManager.listReady)).isEqualTo(1);
+      assertThat(hub.localDataSrcManager.local).isTrue();
+      assertThat(hub.dataSrcMap).hasSize(1);
+      assertThat(hub.dataConnManager.list).isEmpty();
+      assertThat(hub.dataConnManager.indexMap).isEmpty();
+      assertThat(hub.dataConnMap).isEmpty();
+      assertThat(hub.fixed).isTrue();
+
+      hub.useLocal("bar", new MyDataSrc(2, Failure.None, logger));
+
+      assertThat(countDs(hub.localDataSrcManager.listUnready)).isEqualTo(0);
+      assertThat(countDs(hub.localDataSrcManager.listReady)).isEqualTo(1);
+      assertThat(hub.localDataSrcManager.local).isTrue();
+      assertThat(hub.dataSrcMap).hasSize(1);
+      assertThat(hub.dataConnManager.list).isEmpty();
+      assertThat(hub.dataConnManager.indexMap).isEmpty();
+      assertThat(hub.dataConnMap).isEmpty();
+      assertThat(hub.fixed).isTrue();
+
+    } catch (Exception e) {
+      fail(e);
+    } finally {
+      hub.closeLocals();
+    }
+  }
+
+  @Test
+  void testDisuseAndOk() {
+    var logger = new ArrayList<String>();
+
+    var hub = new DataHubInner();
+    try {
+      hub.useLocal("foo", new MyDataSrc(1, Failure.None, logger));
+      hub.useLocal("bar", new MyDataSrc(2, Failure.None, logger));
+
+      assertThat(countDs(hub.localDataSrcManager.listUnready)).isEqualTo(2);
+      assertThat(countDs(hub.localDataSrcManager.listReady)).isEqualTo(0);
+      assertThat(hub.localDataSrcManager.local).isTrue();
+      assertThat(hub.dataSrcMap).isEmpty();
+      assertThat(hub.dataConnManager.list).isEmpty();
+      assertThat(hub.dataConnManager.indexMap).isEmpty();
+      assertThat(hub.dataConnMap).isEmpty();
+      assertThat(hub.fixed).isFalse();
+
+      hub.disuseLocal("foo");
+
+      assertThat(countDs(hub.localDataSrcManager.listUnready)).isEqualTo(1);
+      assertThat(countDs(hub.localDataSrcManager.listReady)).isEqualTo(0);
+      assertThat(hub.localDataSrcManager.local).isTrue();
+      assertThat(hub.dataSrcMap).isEmpty();
+      assertThat(hub.dataConnManager.list).isEmpty();
+      assertThat(hub.dataConnManager.indexMap).isEmpty();
+      assertThat(hub.dataConnMap).isEmpty();
+      assertThat(hub.fixed).isFalse();
+
+      hub.disuseLocal("bar");
+
+      assertThat(countDs(hub.localDataSrcManager.listUnready)).isEqualTo(0);
+      assertThat(countDs(hub.localDataSrcManager.listReady)).isEqualTo(0);
+      assertThat(hub.localDataSrcManager.local).isTrue();
+      assertThat(hub.dataSrcMap).isEmpty();
+      assertThat(hub.dataConnManager.list).isEmpty();
+      assertThat(hub.dataConnManager.indexMap).isEmpty();
+      assertThat(hub.dataConnMap).isEmpty();
+      assertThat(hub.fixed).isFalse();
+
+    } catch (Exception e) {
+      fail(e);
+    } finally {
+      hub.closeLocals();
+    }
+  }
+
+  @Test
+  void testDisuseAndFix() {
+    var logger = new ArrayList<String>();
+
+    var hub = new DataHubInner();
+    try {
+      hub.useLocal("foo", new MyDataSrc(1, Failure.None, logger));
+      hub.useLocal("bar", new MyDataSrc(2, Failure.None, logger));
+
+      assertThat(countDs(hub.localDataSrcManager.listUnready)).isEqualTo(2);
+      assertThat(countDs(hub.localDataSrcManager.listReady)).isEqualTo(0);
+      assertThat(hub.localDataSrcManager.local).isTrue();
+      assertThat(hub.dataSrcMap).isEmpty();
+      assertThat(hub.dataConnManager.list).isEmpty();
+      assertThat(hub.dataConnManager.indexMap).isEmpty();
+      assertThat(hub.dataConnMap).isEmpty();
+      assertThat(hub.fixed).isFalse();
+
+      hub.disuseLocal("foo");
+
+      assertThat(countDs(hub.localDataSrcManager.listUnready)).isEqualTo(1);
+      assertThat(countDs(hub.localDataSrcManager.listReady)).isEqualTo(0);
+      assertThat(hub.localDataSrcManager.local).isTrue();
+      assertThat(hub.dataSrcMap).isEmpty();
+      assertThat(hub.dataConnManager.list).isEmpty();
+      assertThat(hub.dataConnManager.indexMap).isEmpty();
+      assertThat(hub.dataConnMap).isEmpty();
+      assertThat(hub.fixed).isFalse();
+
+      hub.disuseLocal("bar");
+
+      assertThat(countDs(hub.localDataSrcManager.listUnready)).isEqualTo(0);
+      assertThat(countDs(hub.localDataSrcManager.listReady)).isEqualTo(0);
+      assertThat(hub.localDataSrcManager.local).isTrue();
+      assertThat(hub.dataSrcMap).isEmpty();
+      assertThat(hub.dataConnManager.list).isEmpty();
+      assertThat(hub.dataConnManager.indexMap).isEmpty();
+      assertThat(hub.dataConnMap).isEmpty();
+      assertThat(hub.fixed).isFalse();
+
+      hub.useLocal("foo", new MyDataSrc(1, Failure.None, logger));
+      hub.useLocal("bar", new MyDataSrc(2, Failure.None, logger));
+
+      hub.begin();
+
+      assertThat(countDs(hub.localDataSrcManager.listUnready)).isEqualTo(0);
+      assertThat(countDs(hub.localDataSrcManager.listReady)).isEqualTo(2);
+      assertThat(hub.localDataSrcManager.local).isTrue();
+      assertThat(hub.dataSrcMap).hasSize(2);
+      assertThat(hub.dataConnManager.list).isEmpty();
+      assertThat(hub.dataConnManager.indexMap).isEmpty();
+      assertThat(hub.dataConnMap).isEmpty();
+      assertThat(hub.fixed).isTrue();
+
+      hub.disuseLocal("foo");
+
+      assertThat(countDs(hub.localDataSrcManager.listUnready)).isEqualTo(0);
+      assertThat(countDs(hub.localDataSrcManager.listReady)).isEqualTo(2);
+      assertThat(hub.localDataSrcManager.local).isTrue();
+      assertThat(hub.dataSrcMap).hasSize(2);
+      assertThat(hub.dataConnManager.list).isEmpty();
+      assertThat(hub.dataConnManager.indexMap).isEmpty();
+      assertThat(hub.dataConnMap).isEmpty();
+      assertThat(hub.fixed).isTrue();
+
+      hub.disuseLocal("bar");
+
+      assertThat(countDs(hub.localDataSrcManager.listUnready)).isEqualTo(0);
+      assertThat(countDs(hub.localDataSrcManager.listReady)).isEqualTo(2);
+      assertThat(hub.localDataSrcManager.local).isTrue();
+      assertThat(hub.dataSrcMap).hasSize(2);
+      assertThat(hub.dataConnManager.list).isEmpty();
+      assertThat(hub.dataConnManager.indexMap).isEmpty();
+      assertThat(hub.dataConnMap).isEmpty();
+      assertThat(hub.fixed).isTrue();
+
+      hub.end();
+
+      assertThat(countDs(hub.localDataSrcManager.listUnready)).isEqualTo(0);
+      assertThat(countDs(hub.localDataSrcManager.listReady)).isEqualTo(2);
+      assertThat(hub.localDataSrcManager.local).isTrue();
+      assertThat(hub.dataSrcMap).hasSize(2);
+      assertThat(hub.dataConnManager.list).isEmpty();
+      assertThat(hub.dataConnManager.indexMap).isEmpty();
+      assertThat(hub.dataConnMap).isEmpty();
+      assertThat(hub.fixed).isFalse();
+
+      hub.disuseLocal("foo");
+
+      assertThat(countDs(hub.localDataSrcManager.listUnready)).isEqualTo(0);
+      assertThat(countDs(hub.localDataSrcManager.listReady)).isEqualTo(1);
+      assertThat(hub.localDataSrcManager.local).isTrue();
+      assertThat(hub.dataSrcMap).hasSize(1);
+      assertThat(hub.dataConnManager.list).isEmpty();
+      assertThat(hub.dataConnManager.indexMap).isEmpty();
+      assertThat(hub.dataConnMap).isEmpty();
+      assertThat(hub.fixed).isFalse();
+
+      hub.disuseLocal("bar");
+
+      assertThat(countDs(hub.localDataSrcManager.listUnready)).isEqualTo(0);
+      assertThat(countDs(hub.localDataSrcManager.listReady)).isEqualTo(0);
+      assertThat(hub.localDataSrcManager.local).isTrue();
+      assertThat(hub.dataSrcMap).isEmpty();
+      assertThat(hub.dataConnManager.list).isEmpty();
+      assertThat(hub.dataConnManager.indexMap).isEmpty();
+      assertThat(hub.dataConnMap).isEmpty();
+      assertThat(hub.fixed).isFalse();
+
+    } catch (Exception e) {
+      fail(e);
+    } finally {
+      hub.closeLocals();
+    }
+  }
+
+  @Test
+  void testBeginIfEmpty() {
+    var logger = new ArrayList<String>();
+
+    var hub = new DataHubInner();
+    try {
+      hub.begin();
+
+      assertThat(countDs(hub.localDataSrcManager.listUnready)).isEqualTo(0);
+      assertThat(countDs(hub.localDataSrcManager.listReady)).isEqualTo(0);
+      assertThat(hub.localDataSrcManager.local).isTrue();
+      assertThat(hub.dataSrcMap).isEmpty();
+      assertThat(hub.dataConnManager.list).isEmpty();
+      assertThat(hub.dataConnManager.indexMap).isEmpty();
+      assertThat(hub.dataConnMap).isEmpty();
+      assertThat(hub.fixed).isTrue();
+
+      hub.end();
+
+      assertThat(countDs(hub.localDataSrcManager.listUnready)).isEqualTo(0);
+      assertThat(countDs(hub.localDataSrcManager.listReady)).isEqualTo(0);
+      assertThat(hub.localDataSrcManager.local).isTrue();
+      assertThat(hub.dataSrcMap).isEmpty();
+      assertThat(hub.dataConnManager.list).isEmpty();
+      assertThat(hub.dataConnManager.indexMap).isEmpty();
+      assertThat(hub.dataConnMap).isEmpty();
+      assertThat(hub.fixed).isFalse();
+
+    } catch (Exception e) {
+      fail(e);
+    } finally {
+      hub.closeLocals();
+    }
+  }
+
+  @Test
+  void testBeginAndOk() {
+    var logger = new ArrayList<String>();
+
+    var hub = new DataHubInner();
+    try {
+      hub.useLocal("foo", new MyDataSrc(1, Failure.None, logger));
+      hub.useLocal("bar", new MyDataSrc(2, Failure.None, logger));
+
+      assertThat(countDs(hub.localDataSrcManager.listUnready)).isEqualTo(2);
+      assertThat(countDs(hub.localDataSrcManager.listReady)).isEqualTo(0);
+      assertThat(hub.localDataSrcManager.local).isTrue();
+      assertThat(hub.dataSrcMap).isEmpty();
+      assertThat(hub.dataConnManager.list).isEmpty();
+      assertThat(hub.dataConnManager.indexMap).isEmpty();
+      assertThat(hub.dataConnMap).isEmpty();
+      assertThat(hub.fixed).isFalse();
+
+      hub.begin();
+
+      assertThat(countDs(hub.localDataSrcManager.listUnready)).isEqualTo(0);
+      assertThat(countDs(hub.localDataSrcManager.listReady)).isEqualTo(2);
+      assertThat(hub.localDataSrcManager.local).isTrue();
+      assertThat(hub.dataSrcMap).hasSize(2);
+      assertThat(hub.dataConnManager.list).isEmpty();
+      assertThat(hub.dataConnManager.indexMap).isEmpty();
+      assertThat(hub.dataConnMap).isEmpty();
+      assertThat(hub.fixed).isTrue();
+
+      hub.end();
+
+      assertThat(countDs(hub.localDataSrcManager.listUnready)).isEqualTo(0);
+      assertThat(countDs(hub.localDataSrcManager.listReady)).isEqualTo(2);
+      assertThat(hub.localDataSrcManager.local).isTrue();
+      assertThat(hub.dataSrcMap).hasSize(2);
+      assertThat(hub.dataConnManager.list).isEmpty();
+      assertThat(hub.dataConnManager.indexMap).isEmpty();
+      assertThat(hub.dataConnMap).isEmpty();
+      assertThat(hub.fixed).isFalse();
+
+    } catch (Exception e) {
+      fail(e);
+    } finally {
+      hub.closeLocals();
     }
 
-    @Test
-    void new_and_close_with_global_data_srcs() {
-      var logger = new ArrayList<String>();
+    assertThat(logger).hasSize(4);
+    var iter = logger.iterator();
+    assertThat(iter.next()).isEqualTo("MyDataSrc#setup 1");
+    assertThat(iter.next()).isEqualTo("MyDataSrc#setup 2");
+    assertThat(iter.next()).isEqualTo("MyDataSrc#close 2");
+    assertThat(iter.next()).isEqualTo("MyDataSrc#close 1");
+    assertThat(iter.hasNext()).isFalse();
+  }
 
-      DataHubInner.usesGlobal("foo", new AsyncDataSrc(1, FAIL__NOT, logger));
-      DataHubInner.usesGlobal("bar", new SyncDataSrc(2, FAIL__NOT, logger));
+  @Test
+  void testBeginButFailed() {
+    var logger = new ArrayList<String>();
 
-      try (var ac = DataHubInner.setupGlobals()) {
-        suppressWarnings_unused(ac);
-        assertThat(DataHubInner.GLOBAL_DATA_SRC_LIST.notSetupHead).isNull();
+    var hub = new DataHubInner();
+    try {
+      hub.useLocal("foo", new MyDataSrc(1, Failure.None, logger));
+      hub.useLocal("bar", new MyDataSrc(2, Failure.Setup, logger));
+      hub.useLocal("baz", new MyDataSrc(3, Failure.None, logger));
 
-        var ptr = DataHubInner.GLOBAL_DATA_SRC_LIST.didSetupHead;
-        assertThat(ptr).isNotNull();
-        assertThat(ptr.name).isEqualTo("foo");
-        ptr = ptr.next;
-        assertThat(ptr).isNotNull();
-        assertThat(ptr.name).isEqualTo("bar");
-        ptr = ptr.next;
-        assertThat(ptr).isNull();
+      assertThat(countDs(hub.localDataSrcManager.listUnready)).isEqualTo(3);
+      assertThat(countDs(hub.localDataSrcManager.listReady)).isEqualTo(0);
+      assertThat(hub.localDataSrcManager.local).isTrue();
+      assertThat(hub.dataSrcMap).isEmpty();
+      assertThat(hub.dataConnManager.list).isEmpty();
+      assertThat(hub.dataConnManager.indexMap).isEmpty();
+      assertThat(hub.dataConnMap).isEmpty();
+      assertThat(hub.fixed).isFalse();
 
-        var hub = new DataHubInner();
-
-        assertThat(hub.localDataSrcList.notSetupHead).isNull();
-        assertThat(hub.localDataSrcList.didSetupHead).isNull();
-        assertThat(hub.dataConnList.head).isNull();
-        assertThat(hub.dataSrcMap).hasSize(2);
-        assertThat(hub.dataConnMap).hasSize(0);
-        assertThat(hub.fixed).isFalse();
-
-        assertThat(DataHubInner.GLOBAL_DATA_SRC_LIST.notSetupHead).isNull();
-
-        ptr = DataHubInner.GLOBAL_DATA_SRC_LIST.didSetupHead;
-        assertThat(ptr).isNotNull();
-        assertThat(ptr.name).isEqualTo("foo");
-        ptr = ptr.next;
-        assertThat(ptr).isNotNull();
-        assertThat(ptr.name).isEqualTo("bar");
-        ptr = ptr.next;
-        assertThat(ptr).isNull();
-
-        hub.close();
-      } catch (Exception e) {
-        fail(e);
-      }
-
-      assertThat(DataHubInner.GLOBAL_DATA_SRC_LIST.notSetupHead).isNull();
-      assertThat(DataHubInner.GLOBAL_DATA_SRC_LIST.didSetupHead).isNull();
-
-      assertThat(logger)
-          .containsExactly(
-              "SyncDataSrc 2 setupped",
-              "AsyncDataSrc 1 setupped",
-              "SyncDataSrc 2 closed",
-              "AsyncDataSrc 1 closed");
-    }
-
-    @Test
-    void uses_and_disuses() {
-      var logger = new ArrayList<String>();
-
-      DataHubInner.usesGlobal("foo", new AsyncDataSrc(1, FAIL__NOT, logger));
-      DataHubInner.usesGlobal("bar", new SyncDataSrc(2, FAIL__NOT, logger));
-
-      try (var ac = DataHubInner.setupGlobals()) {
-        suppressWarnings_unused(ac);
-        var hub = new DataHubInner();
-
-        assertThat(hub.localDataSrcList.notSetupHead).isNull();
-        assertThat(hub.localDataSrcList.didSetupHead).isNull();
-        assertThat(hub.dataConnList.head).isNull();
-        assertThat(hub.dataSrcMap).hasSize(2);
-        assertThat(hub.dataConnMap).hasSize(0);
-        assertThat(hub.fixed).isFalse();
-
-        hub.uses("baz", new SyncDataSrc(3, FAIL__NOT, logger));
-        var ptr = hub.localDataSrcList.notSetupHead;
-        assertThat(ptr).isNotNull();
-        assertThat(ptr.name).isEqualTo("baz");
-        ptr = ptr.next;
-        assertThat(ptr).isNull();
-        assertThat(hub.localDataSrcList.didSetupHead).isNull();
-        assertThat(hub.dataConnList.head).isNull();
-        assertThat(hub.dataSrcMap).hasSize(2);
-        assertThat(hub.dataConnMap).hasSize(0);
-        assertThat(hub.fixed).isFalse();
-
-        hub.uses("qux", new AsyncDataSrc(4, FAIL__NOT, logger));
-        ptr = hub.localDataSrcList.notSetupHead;
-        assertThat(ptr).isNotNull();
-        assertThat(ptr.name).isEqualTo("baz");
-        ptr = ptr.next;
-        assertThat(ptr).isNotNull();
-        assertThat(ptr.name).isEqualTo("qux");
-        ptr = ptr.next;
-        assertThat(ptr).isNull();
-        assertThat(hub.localDataSrcList.didSetupHead).isNull();
-        assertThat(hub.dataConnList.head).isNull();
-        assertThat(hub.dataSrcMap).hasSize(2);
-        assertThat(hub.dataConnMap).hasSize(0);
-        assertThat(hub.fixed).isFalse();
-
-        hub.disuses("foo"); // do nothing because of global
-        hub.disuses("bar"); // do nothing because of global
-
-        ptr = hub.localDataSrcList.notSetupHead;
-        assertThat(ptr).isNotNull();
-        assertThat(ptr.name).isEqualTo("baz");
-        ptr = ptr.next;
-        assertThat(ptr).isNotNull();
-        assertThat(ptr.name).isEqualTo("qux");
-        ptr = ptr.next;
-        assertThat(ptr).isNull();
-        assertThat(hub.localDataSrcList.didSetupHead).isNull();
-        assertThat(hub.dataConnList.head).isNull();
-        assertThat(hub.dataSrcMap).hasSize(2);
-        assertThat(hub.dataConnMap).hasSize(0);
-        assertThat(hub.fixed).isFalse();
-
-        hub.disuses("baz");
-
-        ptr = hub.localDataSrcList.notSetupHead;
-        assertThat(ptr).isNotNull();
-        assertThat(ptr.name).isEqualTo("qux");
-        ptr = ptr.next;
-        assertThat(ptr).isNull();
-        assertThat(hub.localDataSrcList.didSetupHead).isNull();
-        assertThat(hub.dataConnList.head).isNull();
-        assertThat(hub.dataSrcMap).hasSize(2);
-        assertThat(hub.dataConnMap).hasSize(0);
-        assertThat(hub.fixed).isFalse();
-
-        hub.disuses("qux");
-
-        ptr = hub.localDataSrcList.notSetupHead;
-        assertThat(ptr).isNull();
-        assertThat(hub.localDataSrcList.didSetupHead).isNull();
-        assertThat(hub.dataConnList.head).isNull();
-        assertThat(hub.dataSrcMap).hasSize(2);
-        assertThat(hub.dataConnMap).hasSize(0);
-        assertThat(hub.fixed).isFalse();
-
-        hub.close();
-      } catch (Exception e) {
-        fail(e);
-      }
-
-      assertThat(DataHubInner.GLOBAL_DATA_SRC_LIST.notSetupHead).isNull();
-      assertThat(DataHubInner.GLOBAL_DATA_SRC_LIST.didSetupHead).isNull();
-
-      assertThat(logger)
-          .containsExactly(
-              "SyncDataSrc 2 setupped",
-              "AsyncDataSrc 1 setupped",
-              "SyncDataSrc 3 closed",
-              "AsyncDataSrc 4 closed",
-              "SyncDataSrc 2 closed",
-              "AsyncDataSrc 1 closed");
-    }
-
-    @Test
-    void cannot_add_and_remove_data_src_between_begin_and_end() {
-      var logger = new ArrayList<String>();
-
-      try (var ac = DataHubInner.setupGlobals()) {
-        suppressWarnings_unused(ac);
-        var hub = new DataHubInner();
-
-        assertThat(hub.localDataSrcList.notSetupHead).isNull();
-        assertThat(hub.localDataSrcList.didSetupHead).isNull();
-        assertThat(hub.dataConnList.head).isNull();
-        assertThat(hub.dataSrcMap).hasSize(0);
-        assertThat(hub.dataConnMap).hasSize(0);
-        assertThat(hub.fixed).isFalse();
-
-        hub.uses("baz", new SyncDataSrc(1, FAIL__NOT, logger));
-        var ptr = hub.localDataSrcList.notSetupHead;
-        assertThat(ptr).isNotNull();
-        assertThat(ptr.name).isEqualTo("baz");
-        ptr = ptr.next;
-        assertThat(ptr).isNull();
-        assertThat(hub.localDataSrcList.didSetupHead).isNull();
-        assertThat(hub.dataConnList.head).isNull();
-        assertThat(hub.dataSrcMap).hasSize(0);
-        assertThat(hub.dataConnMap).hasSize(0);
-        assertThat(hub.fixed).isFalse();
-
-        try {
-          hub.begin();
-        } catch (Exception e) {
-          fail(e);
-        }
-
-        ptr = hub.localDataSrcList.notSetupHead;
-        assertThat(ptr).isNull();
-        ptr = hub.localDataSrcList.didSetupHead;
-        assertThat(ptr).isNotNull();
-        assertThat(ptr.name).isEqualTo("baz");
-        ptr = ptr.next;
-        assertThat(ptr).isNull();
-        assertThat(hub.dataConnList.head).isNull();
-        assertThat(hub.dataSrcMap).hasSize(1);
-        assertThat(hub.dataConnMap).hasSize(0);
-        assertThat(hub.fixed).isTrue();
-
-        hub.uses("foo", new AsyncDataSrc(2, FAIL__NOT, logger));
-
-        ptr = hub.localDataSrcList.notSetupHead;
-        assertThat(ptr).isNull();
-        ptr = hub.localDataSrcList.didSetupHead;
-        assertThat(ptr).isNotNull();
-        assertThat(ptr.name).isEqualTo("baz");
-        ptr = ptr.next;
-        assertThat(ptr).isNull();
-        assertThat(hub.dataConnList.head).isNull();
-        assertThat(hub.dataSrcMap).hasSize(1);
-        assertThat(hub.dataConnMap).hasSize(0);
-        assertThat(hub.fixed).isTrue();
-
-        hub.disuses("baz");
-
-        ptr = hub.localDataSrcList.notSetupHead;
-        assertThat(ptr).isNull();
-        ptr = hub.localDataSrcList.didSetupHead;
-        assertThat(ptr).isNotNull();
-        assertThat(ptr.name).isEqualTo("baz");
-        ptr = ptr.next;
-        assertThat(ptr).isNull();
-        assertThat(hub.dataConnList.head).isNull();
-        assertThat(hub.dataSrcMap).hasSize(1);
-        assertThat(hub.dataConnMap).hasSize(0);
-        assertThat(hub.fixed).isTrue();
-
-        hub.end();
-
-        ptr = hub.localDataSrcList.notSetupHead;
-        assertThat(ptr).isNull();
-        ptr = hub.localDataSrcList.didSetupHead;
-        assertThat(ptr).isNotNull();
-        assertThat(ptr.name).isEqualTo("baz");
-        ptr = ptr.next;
-        assertThat(ptr).isNull();
-        assertThat(hub.dataConnList.head).isNull();
-        assertThat(hub.dataSrcMap).hasSize(1);
-        assertThat(hub.dataConnMap).hasSize(0);
-        assertThat(hub.fixed).isFalse();
-
-        hub.uses("foo", new AsyncDataSrc(2, FAIL__NOT, logger));
-
-        ptr = hub.localDataSrcList.notSetupHead;
-        assertThat(ptr).isNotNull();
-        assertThat(ptr.name).isEqualTo("foo");
-        ptr = ptr.next;
-        assertThat(ptr).isNull();
-        ptr = hub.localDataSrcList.didSetupHead;
-        assertThat(ptr).isNotNull();
-        assertThat(ptr.name).isEqualTo("baz");
-        ptr = ptr.next;
-        assertThat(ptr).isNull();
-        assertThat(hub.dataConnList.head).isNull();
-        assertThat(hub.dataSrcMap).hasSize(1);
-        assertThat(hub.dataConnMap).hasSize(0);
-        assertThat(hub.fixed).isFalse();
-
-        hub.disuses("baz");
-
-        ptr = hub.localDataSrcList.notSetupHead;
-        assertThat(ptr).isNotNull();
-        assertThat(ptr.name).isEqualTo("foo");
-        ptr = ptr.next;
-        assertThat(ptr).isNull();
-        ptr = hub.localDataSrcList.didSetupHead;
-        assertThat(ptr).isNull();
-        assertThat(hub.dataConnList.head).isNull();
-        assertThat(hub.dataSrcMap).hasSize(0);
-        assertThat(hub.dataConnMap).hasSize(0);
-        assertThat(hub.fixed).isFalse();
-
-        hub.close();
-      } catch (Exception e) {
-        fail(e);
-      }
-
-      assertThat(logger).containsExactly("SyncDataSrc 1 setupped", "SyncDataSrc 1 closed");
-    }
-
-    @Test
-    void begin_and_end() {
-      var logger = new ArrayList<String>();
-
-      DataHubInner.usesGlobal("foo", new AsyncDataSrc(1, FAIL__NOT, logger));
-      DataHubInner.usesGlobal("bar", new SyncDataSrc(2, FAIL__NOT, logger));
-
-      try (var ac = DataHubInner.setupGlobals()) {
-        suppressWarnings_unused(ac);
-        var hub = new DataHubInner();
-
-        hub.uses("baz", new SyncDataSrc(3, FAIL__NOT, logger));
-        hub.uses("qux", new AsyncDataSrc(4, FAIL__NOT, logger));
-
-        var ptr = hub.localDataSrcList.notSetupHead;
-        assertThat(ptr).isNotNull();
-        assertThat(ptr.name).isEqualTo("baz");
-        ptr = ptr.next;
-        assertThat(ptr).isNotNull();
-        assertThat(ptr.name).isEqualTo("qux");
-        ptr = ptr.next;
-        assertThat(ptr).isNull();
-        ptr = hub.localDataSrcList.didSetupHead;
-        assertThat(ptr).isNull();
-        assertThat(hub.dataSrcMap).hasSize(2);
-        assertThat(hub.dataConnMap).hasSize(0);
-        assertThat(hub.fixed).isFalse();
-
-        try {
-          hub.begin();
-        } catch (Exception e) {
-          fail(e);
-        }
-
-        ptr = hub.localDataSrcList.notSetupHead;
-        assertThat(ptr).isNull();
-        ptr = hub.localDataSrcList.didSetupHead;
-        assertThat(ptr).isNotNull();
-        assertThat(ptr.name).isEqualTo("baz");
-        ptr = ptr.next;
-        assertThat(ptr).isNotNull();
-        assertThat(ptr.name).isEqualTo("qux");
-        ptr = ptr.next;
-        assertThat(ptr).isNull();
-        assertThat(hub.dataSrcMap).hasSize(4);
-        assertThat(hub.dataConnMap).hasSize(0);
-        assertThat(hub.fixed).isTrue();
-
-        hub.end();
-
-        ptr = hub.localDataSrcList.notSetupHead;
-        assertThat(ptr).isNull();
-        ptr = hub.localDataSrcList.didSetupHead;
-        assertThat(ptr).isNotNull();
-        assertThat(ptr.name).isEqualTo("baz");
-        ptr = ptr.next;
-        assertThat(ptr).isNotNull();
-        assertThat(ptr.name).isEqualTo("qux");
-        ptr = ptr.next;
-        assertThat(ptr).isNull();
-        assertThat(hub.dataSrcMap).hasSize(4);
-        assertThat(hub.dataConnMap).hasSize(0);
-        assertThat(hub.fixed).isFalse();
-
-        hub.close();
-      } catch (Exception e) {
-        fail(e);
-      }
-
-      assertThat(logger)
-          .containsExactly(
-              "SyncDataSrc 2 setupped",
-              "AsyncDataSrc 1 setupped",
-              "SyncDataSrc 3 setupped",
-              "AsyncDataSrc 4 setupped",
-              "AsyncDataSrc 4 closed",
-              "SyncDataSrc 3 closed",
-              "SyncDataSrc 2 closed",
-              "AsyncDataSrc 1 closed");
-    }
-
-    @Test
-    void begin_and_end_but_fail_sync() {
-      var logger = new ArrayList<String>();
-
-      DataHubInner.usesGlobal("foo", new AsyncDataSrc(1, FAIL__NOT, logger));
-      DataHubInner.usesGlobal("bar", new SyncDataSrc(2, FAIL__NOT, logger));
-
-      try (var ac = DataHubInner.setupGlobals()) {
-        suppressWarnings_unused(ac);
-        var hub = new DataHubInner();
-
-        hub.uses("baz", new AsyncDataSrc(3, FAIL__NOT, logger));
-        hub.uses("qux", new SyncDataSrc(4, FAIL__SETUP, logger));
-
-        try {
-          hub.begin();
-        } catch (Err e) {
-          switch (e.getReason()) {
-            case DataHub.FailToSetupLocalDataSrcs rsn -> {
-              assertThat(rsn.errors()).hasSize(1);
-              var e2 = rsn.errors().get("qux");
-              assertThat(e2.getReason()).isEqualTo("XXX");
-            }
-            default -> fail(e);
+      try {
+        hub.begin();
+        fail();
+      } catch (Err err) {
+        switch (err.getReason()) {
+          case FailToSetupLocalDataSrcs rsn -> {
+            assertThat(rsn.errors()).hasSize(1);
+            var ee = rsn.errors().get(0);
+            assertThat(ee.index).isEqualTo(1);
+            assertThat(ee.name).isEqualTo("bar");
+            assertThat(ee.err.getReason()).isEqualTo("setup error");
           }
-        } catch (Exception e) {
-          fail(e);
+          default -> fail(err);
         }
-
-        var ptr = hub.localDataSrcList.notSetupHead;
-        assertThat(ptr).isNotNull();
-        assertThat(ptr.name).isEqualTo("qux");
-        ptr = ptr.next;
-        assertThat(ptr).isNull();
-        ptr = hub.localDataSrcList.didSetupHead;
-        assertThat(ptr).isNotNull();
-        assertThat(ptr.name).isEqualTo("baz");
-        ptr = ptr.next;
-        assertThat(ptr).isNull();
-        assertThat(hub.dataSrcMap).hasSize(3);
-        assertThat(hub.dataConnMap).hasSize(0);
-        assertThat(hub.fixed).isTrue();
-
+      } finally {
         hub.end();
+      }
+    } catch (Exception e) {
+      fail(e);
+    } finally {
+      hub.closeLocals();
+    }
 
-        ptr = hub.localDataSrcList.notSetupHead;
-        assertThat(ptr).isNotNull();
-        assertThat(ptr.name).isEqualTo("qux");
-        ptr = ptr.next;
-        assertThat(ptr).isNull();
-        ptr = hub.localDataSrcList.didSetupHead;
-        assertThat(ptr).isNotNull();
-        assertThat(ptr.name).isEqualTo("baz");
-        ptr = ptr.next;
-        assertThat(ptr).isNull();
-        assertThat(hub.dataSrcMap).hasSize(3);
-        assertThat(hub.dataConnMap).hasSize(0);
-        assertThat(hub.fixed).isFalse();
+    assertThat(logger).hasSize(3);
+    var iter = logger.iterator();
+    assertThat(iter.next()).isEqualTo("MyDataSrc#setup 1");
+    assertThat(iter.next()).isEqualTo("MyDataSrc#setup 2 failed");
+    assertThat(iter.next()).isEqualTo("MyDataSrc#close 1");
+    assertThat(iter.hasNext()).isFalse();
+  }
 
-        hub.close();
+  @Nested
+  class RunTest {
+    @Test
+    void testRunAndOk() {
+      var logger = new ArrayList<String>();
+
+      try (var hub = new DataHub()) {
+        hub.uses("foo", new MyDataSrc(1, Failure.None, logger));
+        hub.uses("bar", new MyDataSrc(2, Failure.None, logger));
+
+        hub.run(
+            data -> {
+              logger.add("execute logic");
+            });
+
       } catch (Exception e) {
         fail(e);
       }
 
-      assertThat(logger)
-          .containsExactly(
-              "SyncDataSrc 2 setupped",
-              "AsyncDataSrc 1 setupped",
-              "SyncDataSrc 4 failed to setup",
-              "AsyncDataSrc 3 setupped",
-              "AsyncDataSrc 3 closed",
-              "SyncDataSrc 2 closed",
-              "AsyncDataSrc 1 closed");
+      assertThat(logger).hasSize(5);
+      var iter = logger.iterator();
+      assertThat(iter.next()).isEqualTo("MyDataSrc#setup 1");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#setup 2");
+      assertThat(iter.next()).isEqualTo("execute logic");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#close 2");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#close 1");
+      assertThat(iter.hasNext()).isFalse();
     }
 
     @Test
-    void begin_and_end_but_fail_async() {
+    void testRunButFailedToRunLogic() {
       var logger = new ArrayList<String>();
 
-      DataHubInner.usesGlobal("foo", new AsyncDataSrc(1, FAIL__NOT, logger));
-      DataHubInner.usesGlobal("bar", new SyncDataSrc(2, FAIL__NOT, logger));
+      try (var hub = new DataHub()) {
+        hub.uses("foo", new MyDataSrc(1, Failure.None, logger));
+        hub.uses("bar", new MyDataSrc(2, Failure.None, logger));
 
-      try (var ac = DataHubInner.setupGlobals()) {
-        suppressWarnings_unused(ac);
-        var hub = new DataHubInner();
-
-        hub.uses("baz", new AsyncDataSrc(3, FAIL__SETUP, logger));
-        hub.uses("qux", new SyncDataSrc(4, FAIL__NOT, logger));
-
-        try {
-          hub.begin();
-        } catch (Err e) {
-          switch (e.getReason()) {
-            case DataHub.FailToSetupLocalDataSrcs rsn -> {
-              assertThat(rsn.errors()).hasSize(1);
-              var e2 = rsn.errors().get("baz");
-              assertThat(e2.getReason()).isEqualTo("YYY");
-            }
-            default -> fail(e);
+        hub.run(
+            data -> {
+              logger.add("execute logic but fail");
+            });
+      } catch (Err err) {
+        switch (err.getReason()) {
+          case String s -> {
+            assertThat(s).isEqualTo("logic error but fail");
           }
-        } catch (Exception e) {
-          fail(e);
+          default -> fail(err);
         }
-
-        var ptr = hub.localDataSrcList.notSetupHead;
-        assertThat(ptr).isNotNull();
-        assertThat(ptr.name).isEqualTo("baz");
-        ptr = ptr.next;
-        assertThat(ptr).isNull();
-        ptr = hub.localDataSrcList.didSetupHead;
-        assertThat(ptr).isNotNull();
-        assertThat(ptr.name).isEqualTo("qux");
-        ptr = ptr.next;
-        assertThat(ptr).isNull();
-        assertThat(hub.dataSrcMap).hasSize(3);
-        assertThat(hub.dataConnMap).hasSize(0);
-        assertThat(hub.fixed).isTrue();
-
-        hub.end();
-
-        ptr = hub.localDataSrcList.notSetupHead;
-        assertThat(ptr).isNotNull();
-        assertThat(ptr.name).isEqualTo("baz");
-        ptr = ptr.next;
-        assertThat(ptr).isNull();
-        ptr = hub.localDataSrcList.didSetupHead;
-        assertThat(ptr).isNotNull();
-        assertThat(ptr.name).isEqualTo("qux");
-        ptr = ptr.next;
-        assertThat(ptr).isNull();
-        assertThat(hub.dataSrcMap).hasSize(3);
-        assertThat(hub.dataConnMap).hasSize(0);
-        assertThat(hub.fixed).isFalse();
-
-        hub.close();
       } catch (Exception e) {
         fail(e);
       }
 
-      assertThat(logger)
-          .containsExactly(
-              "SyncDataSrc 2 setupped",
-              "AsyncDataSrc 1 setupped",
-              "SyncDataSrc 4 setupped",
-              "AsyncDataSrc 3 failed to setup",
-              "SyncDataSrc 4 closed",
-              "SyncDataSrc 2 closed",
-              "AsyncDataSrc 1 closed");
+      assertThat(logger).hasSize(5);
+      var iter = logger.iterator();
+      assertThat(iter.next()).isEqualTo("MyDataSrc#setup 1");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#setup 2");
+      assertThat(iter.next()).isEqualTo("execute logic but fail");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#close 2");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#close 1");
+      assertThat(iter.hasNext()).isFalse();
     }
 
     @Test
-    void commit() {
+    void testRunButFailToCastToSpecifiedDataHub() {
       var logger = new ArrayList<String>();
 
-      DataHubInner.usesGlobal("foo", new AsyncDataSrc(1, FAIL__NOT, logger));
-      DataHubInner.usesGlobal("bar", new SyncDataSrc(2, FAIL__NOT, logger));
+      try (var hub = new DataHub()) {
+        hub.uses("foo", new MyDataSrc(1, Failure.None, logger));
+        hub.uses("bar", new MyDataSrc(2, Failure.None, logger));
 
-      try (var ac = DataHubInner.setupGlobals()) {
-        suppressWarnings_unused(ac);
-        var hub = new DataHubInner();
-
-        hub.uses("baz", new AsyncDataSrc(3, FAIL__NOT, logger));
-        hub.uses("qux", new SyncDataSrc(4, FAIL__NOT, logger));
-
-        try {
-          hub.begin();
-
-          var conn1 = hub.getDataConn("foo", AsyncDataConn.class);
-          assertThat(conn1).isNotNull();
-
-          var conn2 = hub.getDataConn("bar", SyncDataConn.class);
-          assertThat(conn2).isNotNull();
-
-          var conn3 = hub.getDataConn("baz", AsyncDataConn.class);
-          assertThat(conn3).isNotNull();
-
-          var conn4 = hub.getDataConn("qux", SyncDataConn.class);
-          assertThat(conn4).isNotNull();
-
-          ///
-
-          conn1 = hub.getDataConn("foo", AsyncDataConn.class);
-          assertThat(conn1).isNotNull();
-
-          conn2 = hub.getDataConn("bar", SyncDataConn.class);
-          assertThat(conn2).isNotNull();
-
-          conn3 = hub.getDataConn("baz", AsyncDataConn.class);
-          assertThat(conn3).isNotNull();
-
-          conn4 = hub.getDataConn("qux", SyncDataConn.class);
-          assertThat(conn4).isNotNull();
-
-          hub.commit();
-        } catch (Exception e) {
-          fail(e);
+        hub.run((FailToCastData data) -> {});
+      } catch (Err err) {
+        switch (err.getReason()) {
+          case FailToCastDataHub r -> {
+            assertThat(r.fromType()).isEqualTo(DataHub.class.getName());
+          }
+          default -> fail(err);
         }
-
-        hub.close();
       } catch (Exception e) {
         fail(e);
       }
 
-      assertThat(logger)
-          .containsExactly(
-              "SyncDataSrc 2 setupped",
-              "AsyncDataSrc 1 setupped",
-              "SyncDataSrc 4 setupped",
-              "AsyncDataSrc 3 setupped",
-              "AsyncDataSrc 1 created DataConn",
-              "SyncDataSrc 2 created DataConn",
-              "AsyncDataSrc 3 created DataConn",
-              "SyncDataSrc 4 created DataConn",
-              "AsyncDataConn 1 pre committed",
-              "SyncDataConn 2 pre committed",
-              "AsyncDataConn 3 pre committed",
-              "SyncDataConn 4 pre committed",
-              "AsyncDataConn 1 committed",
-              "SyncDataConn 2 committed",
-              "AsyncDataConn 3 committed",
-              "SyncDataConn 4 committed",
-              "AsyncDataConn 1 post committed",
-              "SyncDataConn 2 post committed",
-              "AsyncDataConn 3 post committed",
-              "SyncDataConn 4 post committed",
-              "SyncDataConn 4 closed",
-              "AsyncDataConn 3 closed",
-              "SyncDataConn 2 closed",
-              "AsyncDataConn 1 closed",
-              "SyncDataSrc 4 closed",
-              "AsyncDataSrc 3 closed",
-              "SyncDataSrc 2 closed",
-              "AsyncDataSrc 1 closed");
+      assertThat(logger).hasSize(4);
+      var iter = logger.iterator();
+      assertThat(iter.next()).isEqualTo("MyDataSrc#setup 1");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#setup 2");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#close 2");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#close 1");
+      assertThat(iter.hasNext()).isFalse();
     }
 
     @Test
-    void fail_to_cast_new_data_conn() {
+    void testRunButFailToSetup() {
       var logger = new ArrayList<String>();
 
-      DataHubInner.usesGlobal("foo", new AsyncDataSrc(1, FAIL__NOT, logger));
+      try (var hub = new DataHub()) {
+        hub.uses("foo", new MyDataSrc(1, Failure.Setup, logger));
 
-      try (var ac = DataHubInner.setupGlobals()) {
-        suppressWarnings_unused(ac);
-        var hub = new DataHubInner();
-
-        hub.uses("bar", new SyncDataSrc(2, FAIL__NOT, logger));
-
-        try {
-          hub.begin();
-        } catch (Exception e) {
-          fail(e);
+        hub.run(
+            data -> {
+              logger.add("execute logic");
+            });
+      } catch (Err err) {
+        switch (err.getReason()) {
+          case FailToSetupLocalDataSrcs r -> {
+            assertThat(r.errors()).hasSize(1);
+            assertThat(r.errors().get(0).index).isEqualTo(0);
+            assertThat(r.errors().get(0).name).isEqualTo("foo");
+            assertThat(r.errors().get(0).err.toString())
+                .isEqualTo(
+                    "com.github.sttk.errs.Err { reason = java.lang.String setup error, file = DataHubInnerTest.java, line = 123 }");
+          }
+          default -> fail(err);
         }
+      } catch (Exception e) {
+        fail(e);
+      }
 
-        try {
-          hub.getDataConn("foo", SyncDataConn.class);
+      assertThat(logger).hasSize(1);
+      var iter = logger.iterator();
+      assertThat(iter.next()).isEqualTo("MyDataSrc#setup 1 failed");
+      assertThat(iter.hasNext()).isFalse();
+    }
+  }
+
+  @Nested
+  class TxnTest {
+    @Test
+    void testTxnAndNoDataAccessAndOk() {
+      var logger = new ArrayList<String>();
+
+      try (var hub = new DataHub()) {
+        hub.uses("foo", new MyDataSrc(1, Failure.None, logger));
+        hub.uses("bar", new MyDataSrc(2, Failure.None, logger));
+
+        hub.txn(
+            data -> {
+              logger.add("execute logic");
+            });
+      } catch (Exception e) {
+        fail(e);
+      }
+
+      assertThat(logger).hasSize(5);
+      var iter = logger.iterator();
+      assertThat(iter.next()).isEqualTo("MyDataSrc#setup 1");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#setup 2");
+      assertThat(iter.next()).isEqualTo("execute logic");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#close 2");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#close 1");
+      assertThat(iter.hasNext()).isFalse();
+    }
+
+    @Test
+    void testTxnAndHasDataAccessAndOk() {
+      var logger = new ArrayList<String>();
+
+      try (var hub = new DataHub()) {
+        hub.uses("foo", new MyDataSrc(1, Failure.None, logger));
+        hub.uses("bar", new MyDataSrc(2, Failure.None, logger));
+
+        hub.txn(
+            (DataHub data) -> {
+              logger.add("execute logic");
+
+              @SuppressWarnings("unused")
+              var dc1 = data.getDataConn("foo", MyDataConn.class);
+
+              @SuppressWarnings("unused")
+              var dc2 = data.getDataConn("bar", MyDataConn.class);
+            });
+      } catch (Exception e) {
+        fail(e);
+      }
+
+      assertThat(logger).hasSize(15);
+      var iter = logger.iterator();
+      assertThat(iter.next()).isEqualTo("MyDataSrc#setup 1");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#setup 2");
+      assertThat(iter.next()).isEqualTo("execute logic");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#createDataConn 1");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#createDataConn 2");
+      assertThat(iter.next()).isEqualTo("MyDataConn#preCommit 1");
+      assertThat(iter.next()).isEqualTo("MyDataConn#preCommit 2");
+      assertThat(iter.next()).isEqualTo("MyDataConn#commit 1");
+      assertThat(iter.next()).isEqualTo("MyDataConn#commit 2");
+      assertThat(iter.next()).isEqualTo("MyDataConn#postCommit 1");
+      assertThat(iter.next()).isEqualTo("MyDataConn#postCommit 2");
+      assertThat(iter.next()).isEqualTo("MyDataConn#close 2");
+      assertThat(iter.next()).isEqualTo("MyDataConn#close 1");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#close 2");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#close 1");
+      assertThat(iter.hasNext()).isFalse();
+    }
+
+    @Test
+    void testTxnButFailedToRunLogic() {
+      var logger = new ArrayList<String>();
+
+      try (var hub = new DataHub()) {
+        hub.uses("foo", new MyDataSrc(1, Failure.None, logger));
+        hub.uses("bar", new MyDataSrc(2, Failure.None, logger));
+
+        hub.txn(
+            (DataHub data) -> {
+              logger.add("execute logic");
+
+              @SuppressWarnings("unused")
+              var dc1 = data.getDataConn("foo", MyDataConn.class);
+
+              @SuppressWarnings("unused")
+              var dc2 = data.getDataConn("bar", MyDataConn.class);
+
+              throw new Err("logic error");
+            });
+      } catch (Err err) {
+        switch (err.getReason()) {
+          case String s -> {
+            assertThat(s).isEqualTo("logic error");
+          }
+          default -> fail(err);
+        }
+      } catch (Exception e) {
+        fail(e);
+      }
+
+      assertThat(logger).hasSize(13);
+      var iter = logger.iterator();
+      assertThat(iter.next()).isEqualTo("MyDataSrc#setup 1");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#setup 2");
+      assertThat(iter.next()).isEqualTo("execute logic");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#createDataConn 1");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#createDataConn 2");
+      assertThat(iter.next()).isEqualTo("MyDataConn#rollback 1");
+      assertThat(iter.next()).isEqualTo("MyDataConn#rollback 2");
+      assertThat(iter.next()).isEqualTo("MyDataConn#onTxnFailure 1");
+      assertThat(iter.next()).isEqualTo("MyDataConn#onTxnFailure 2");
+      assertThat(iter.next()).isEqualTo("MyDataConn#close 2");
+      assertThat(iter.next()).isEqualTo("MyDataConn#close 1");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#close 2");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#close 1");
+      assertThat(iter.hasNext()).isFalse();
+    }
+
+    @Test
+    void testTxnButFailedToPreCommit() {
+      var logger = new ArrayList<String>();
+
+      try (var hub = new DataHub()) {
+        hub.uses("foo", new MyDataSrc(1, Failure.PreCommit, logger));
+        hub.uses("bar", new MyDataSrc(2, Failure.PreCommit, logger));
+
+        hub.txn(
+            (DataHub data) -> {
+              logger.add("execute logic");
+
+              @SuppressWarnings("unused")
+              var dc1 = data.getDataConn("foo", MyDataConn.class);
+
+              @SuppressWarnings("unused")
+              var dc2 = data.getDataConn("bar", MyDataConn.class);
+            });
+
+      } catch (Err err) {
+        switch (err.getReason()) {
+          case FailToPreCommitDataConn r -> {
+            assertThat(r.errors()).hasSize(1);
+            assertThat(r.errors().get(0).index).isEqualTo(0);
+            assertThat(r.errors().get(0).name).isEqualTo("foo");
+            assertThat(r.errors().get(0).err.getReason()).isEqualTo("pre commit error");
+          }
+          default -> fail(err);
+        }
+      } catch (Exception e) {
+        fail(e);
+      }
+
+      assertThat(logger).hasSize(14);
+      var iter = logger.iterator();
+      assertThat(iter.next()).isEqualTo("MyDataSrc#setup 1");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#setup 2");
+      assertThat(iter.next()).isEqualTo("execute logic");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#createDataConn 1");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#createDataConn 2");
+      assertThat(iter.next()).isEqualTo("MyDataConn#preCommit 1 failed");
+      assertThat(iter.next()).isEqualTo("MyDataConn#rollback 1");
+      assertThat(iter.next()).isEqualTo("MyDataConn#rollback 2");
+      assertThat(iter.next()).isEqualTo("MyDataConn#onTxnFailure 1");
+      assertThat(iter.next()).isEqualTo("MyDataConn#onTxnFailure 2");
+      assertThat(iter.next()).isEqualTo("MyDataConn#close 2");
+      assertThat(iter.next()).isEqualTo("MyDataConn#close 1");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#close 2");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#close 1");
+      assertThat(iter.hasNext()).isFalse();
+    }
+
+    @Test
+    void testTxnButFailedToCommit() {
+      var logger = new ArrayList<String>();
+
+      try (var hub = new DataHub()) {
+        hub.uses("foo", new MyDataSrc(1, Failure.Commit, logger));
+        hub.uses("bar", new MyDataSrc(2, Failure.Commit, logger));
+
+        hub.txn(
+            (DataHub data) -> {
+              logger.add("execute logic");
+
+              @SuppressWarnings("unused")
+              var dc1 = data.getDataConn("foo", MyDataConn.class);
+
+              @SuppressWarnings("unused")
+              var dc2 = data.getDataConn("bar", MyDataConn.class);
+            });
+
+      } catch (Err err) {
+        switch (err.getReason()) {
+          case FailToCommitDataConn r -> {
+            assertThat(r.errors()).hasSize(1);
+            assertThat(r.errors().get(0).index).isEqualTo(0);
+            assertThat(r.errors().get(0).name).isEqualTo("foo");
+            assertThat(r.errors().get(0).err.getReason()).isEqualTo("commit error");
+          }
+          default -> fail(err);
+        }
+      } catch (Exception e) {
+        fail(e);
+      }
+
+      assertThat(logger).hasSize(16);
+      var iter = logger.iterator();
+      assertThat(iter.next()).isEqualTo("MyDataSrc#setup 1");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#setup 2");
+      assertThat(iter.next()).isEqualTo("execute logic");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#createDataConn 1");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#createDataConn 2");
+      assertThat(iter.next()).isEqualTo("MyDataConn#preCommit 1");
+      assertThat(iter.next()).isEqualTo("MyDataConn#preCommit 2");
+      assertThat(iter.next()).isEqualTo("MyDataConn#commit 1 failed");
+      assertThat(iter.next()).isEqualTo("MyDataConn#rollback 1");
+      assertThat(iter.next()).isEqualTo("MyDataConn#rollback 2");
+      assertThat(iter.next()).isEqualTo("MyDataConn#onTxnFailure 1");
+      assertThat(iter.next()).isEqualTo("MyDataConn#onTxnFailure 2");
+      assertThat(iter.next()).isEqualTo("MyDataConn#close 2");
+      assertThat(iter.next()).isEqualTo("MyDataConn#close 1");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#close 2");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#close 1");
+      assertThat(iter.hasNext()).isFalse();
+    }
+
+    @Test
+    void testTxnButFailedToPostCommit() {
+      var logger = new ArrayList<String>();
+
+      try (var hub = new DataHub()) {
+        hub.uses("foo", new MyDataSrc(1, Failure.PostCommit, logger));
+        hub.uses("bar", new MyDataSrc(2, Failure.PostCommit, logger));
+
+        hub.txn(
+            (DataHub data) -> {
+              logger.add("execute logic");
+
+              @SuppressWarnings("unused")
+              var dc1 = data.getDataConn("foo", MyDataConn.class);
+
+              @SuppressWarnings("unused")
+              var dc2 = data.getDataConn("bar", MyDataConn.class);
+            });
+
+      } catch (Err err) {
+        switch (err.getReason()) {
+          case FailToPostCommitDataConn r -> {
+            assertThat(r.errors()).hasSize(2);
+            assertThat(r.errors().get(0).index).isEqualTo(0);
+            assertThat(r.errors().get(0).name).isEqualTo("foo");
+            assertThat(r.errors().get(0).err.getReason()).isEqualTo("post commit error");
+            assertThat(r.errors().get(1).index).isEqualTo(1);
+            assertThat(r.errors().get(1).name).isEqualTo("bar");
+            assertThat(r.errors().get(1).err.getReason()).isEqualTo("post commit error");
+          }
+          default -> fail(err);
+        }
+      } catch (Exception e) {
+        fail(e);
+      }
+
+      assertThat(logger).hasSize(17);
+      var iter = logger.iterator();
+      assertThat(iter.next()).isEqualTo("MyDataSrc#setup 1");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#setup 2");
+      assertThat(iter.next()).isEqualTo("execute logic");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#createDataConn 1");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#createDataConn 2");
+      assertThat(iter.next()).isEqualTo("MyDataConn#preCommit 1");
+      assertThat(iter.next()).isEqualTo("MyDataConn#preCommit 2");
+      assertThat(iter.next()).isEqualTo("MyDataConn#commit 1");
+      assertThat(iter.next()).isEqualTo("MyDataConn#commit 2");
+      assertThat(iter.next()).isEqualTo("MyDataConn#postCommit 1 failed");
+      assertThat(iter.next()).isEqualTo("MyDataConn#postCommit 2 failed");
+      assertThat(iter.next()).isEqualTo("MyDataConn#onTxnFailure 1");
+      assertThat(iter.next()).isEqualTo("MyDataConn#onTxnFailure 2");
+      assertThat(iter.next()).isEqualTo("MyDataConn#close 2");
+      assertThat(iter.next()).isEqualTo("MyDataConn#close 1");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#close 2");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#close 1");
+      assertThat(iter.hasNext()).isFalse();
+    }
+
+    @Test
+    void testButFailedToRollback() {
+      var logger = new ArrayList<String>();
+
+      try (var hub = new DataHub()) {
+        hub.uses("foo", new MyDataSrc(1, Failure.Rollback, logger));
+        hub.uses("bar", new MyDataSrc(2, Failure.Rollback, logger));
+
+        hub.txn(
+            (DataHub data) -> {
+              logger.add("execute logic");
+
+              @SuppressWarnings("unused")
+              var dc1 = data.getDataConn("foo", MyDataConn.class);
+
+              @SuppressWarnings("unused")
+              var dc2 = data.getDataConn("bar", MyDataConn.class);
+
+              throw new Err("logic error");
+            });
+
+      } catch (Err err) {
+        switch (err.getReason()) {
+          case String s -> {
+            assertThat(s).isEqualTo("logic error");
+          }
+          default -> fail(err);
+        }
+      } catch (Exception e) {
+        fail(e);
+      }
+
+      assertThat(logger).hasSize(13);
+      var iter = logger.iterator();
+      assertThat(iter.next()).isEqualTo("MyDataSrc#setup 1");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#setup 2");
+      assertThat(iter.next()).isEqualTo("execute logic");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#createDataConn 1");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#createDataConn 2");
+      assertThat(iter.next()).isEqualTo("MyDataConn#rollback 1 failed");
+      assertThat(iter.next()).isEqualTo("MyDataConn#rollback 2 failed");
+      assertThat(iter.next()).isEqualTo("MyDataConn#onTxnFailure 1");
+      assertThat(iter.next()).isEqualTo("MyDataConn#onTxnFailure 2");
+      assertThat(iter.next()).isEqualTo("MyDataConn#close 2");
+      assertThat(iter.next()).isEqualTo("MyDataConn#close 1");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#close 2");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#close 1");
+      assertThat(iter.hasNext()).isFalse();
+    }
+
+    @Test
+    void testWithCommitOrder() {
+      var logger = new ArrayList<String>();
+
+      try (var hub = new DataHub("bar", "foo")) {
+        hub.uses("foo", new MyDataSrc(1, Failure.Rollback, logger));
+        hub.uses("bar", new MyDataSrc(2, Failure.Rollback, logger));
+
+        hub.txn(
+            (DataHub data) -> {
+              logger.add("execute logic");
+
+              @SuppressWarnings("unused")
+              var dc1 = data.getDataConn("foo", MyDataConn.class);
+
+              @SuppressWarnings("unused")
+              var dc2 = data.getDataConn("bar", MyDataConn.class);
+            });
+
+      } catch (Exception e) {
+        fail(e);
+      }
+
+      assertThat(logger).hasSize(15);
+      var iter = logger.iterator();
+      assertThat(iter.next()).isEqualTo("MyDataSrc#setup 1");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#setup 2");
+      assertThat(iter.next()).isEqualTo("execute logic");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#createDataConn 1");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#createDataConn 2");
+      assertThat(iter.next()).isEqualTo("MyDataConn#preCommit 2");
+      assertThat(iter.next()).isEqualTo("MyDataConn#preCommit 1");
+      assertThat(iter.next()).isEqualTo("MyDataConn#commit 2");
+      assertThat(iter.next()).isEqualTo("MyDataConn#commit 1");
+      assertThat(iter.next()).isEqualTo("MyDataConn#postCommit 2");
+      assertThat(iter.next()).isEqualTo("MyDataConn#postCommit 1");
+      assertThat(iter.next()).isEqualTo("MyDataConn#close 1");
+      assertThat(iter.next()).isEqualTo("MyDataConn#close 2");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#close 2");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#close 1");
+      assertThat(iter.hasNext()).isFalse();
+    }
+
+    @Test
+    void testTxnButFailToCastToSpecifiedDataHub() {
+      var logger = new ArrayList<String>();
+
+      try (var hub = new DataHub()) {
+        hub.uses("foo", new MyDataSrc(1, Failure.None, logger));
+        hub.uses("bar", new MyDataSrc(2, Failure.None, logger));
+
+        hub.txn((FailToCastData data) -> {});
+      } catch (Err err) {
+        switch (err.getReason()) {
+          case FailToCastDataHub r -> {
+            assertThat(r.fromType()).isEqualTo(DataHub.class.getName());
+          }
+          default -> fail(err);
+        }
+      } catch (Exception e) {
+        fail(e);
+      }
+
+      assertThat(logger).hasSize(4);
+      var iter = logger.iterator();
+      assertThat(iter.next()).isEqualTo("MyDataSrc#setup 1");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#setup 2");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#close 2");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#close 1");
+      assertThat(iter.hasNext()).isFalse();
+    }
+
+    @Test
+    void testTxnButFailToSetup() {
+      var logger = new ArrayList<String>();
+
+      try (var hub = new DataHub()) {
+        hub.uses("foo", new MyDataSrc(1, Failure.Setup, logger));
+
+        hub.txn(
+            (FailToCastData data) -> {
+              logger.add("execute logic");
+            });
+      } catch (Err err) {
+        switch (err.getReason()) {
+          case FailToSetupLocalDataSrcs r -> {
+            assertThat(r.errors().get(0).index).isEqualTo(0);
+            assertThat(r.errors().get(0).name).isEqualTo("foo");
+            assertThat(r.errors().get(0).err.getReason()).isEqualTo("setup error");
+          }
+          default -> fail(err);
+        }
+      } catch (Exception e) {
+        fail(e);
+      }
+
+      assertThat(logger).hasSize(1);
+      var iter = logger.iterator();
+      assertThat(iter.next()).isEqualTo("MyDataSrc#setup 1 failed");
+      assertThat(iter.hasNext()).isFalse();
+    }
+
+    @Test
+    void testGetDataConnCached() {
+      var logger = new ArrayList<String>();
+
+      try (var hub = new DataHub()) {
+        hub.uses("foo", new MyDataSrc(1, Failure.None, logger));
+
+        hub.txn(
+            (DataHub data) -> {
+              logger.add("execute logic");
+
+              @SuppressWarnings("unused")
+              var dc1 = data.getDataConn("foo", MyDataConn.class);
+
+              @SuppressWarnings("unused")
+              var dc2 = data.getDataConn("foo", MyDataConn.class);
+            });
+      } catch (Exception e) {
+        fail(e);
+      }
+
+      assertThat(logger).hasSize(8);
+      var iter = logger.iterator();
+      assertThat(iter.next()).isEqualTo("MyDataSrc#setup 1");
+      assertThat(iter.next()).isEqualTo("execute logic");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#createDataConn 1");
+      assertThat(iter.next()).isEqualTo("MyDataConn#preCommit 1");
+      assertThat(iter.next()).isEqualTo("MyDataConn#commit 1");
+      assertThat(iter.next()).isEqualTo("MyDataConn#postCommit 1");
+      assertThat(iter.next()).isEqualTo("MyDataConn#close 1");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#close 1");
+      assertThat(iter.hasNext()).isFalse();
+    }
+
+    @Test
+    void testGetDataConnAndNoDataSrcToCreateDataConn() {
+      var logger = new ArrayList<String>();
+
+      try (var hub = new DataHub()) {
+        hub.txn(
+            (DataHub data) -> {
+              logger.add("execute logic");
+
+              @SuppressWarnings("unused")
+              var dc1 = data.getDataConn("foo", MyDataConn.class);
+            });
+      } catch (Err err) {
+        switch (err.getReason()) {
+          case NoDataSrcToCreateDataConn r -> {
+            assertThat(r.name()).isEqualTo("foo");
+            assertThat(r.dataConnType()).isEqualTo(MyDataConn.class.getName());
+          }
+          default -> fail(err);
+        }
+      } catch (Exception e) {
+        fail(e);
+      }
+
+      assertThat(logger).hasSize(1);
+      var iter = logger.iterator();
+      assertThat(iter.next()).isEqualTo("execute logic");
+      assertThat(iter.hasNext()).isFalse();
+    }
+
+    @Test
+    void testGetDataConnAndCreatedDataConnIsNull() {
+      var logger = new ArrayList<String>();
+
+      try (var hub = new DataHub()) {
+        hub.uses("foo", new MyDataSrc(1, Failure.CreatedDataConnIsNull, logger));
+
+        hub.txn(
+            (DataHub data) -> {
+              logger.add("execute logic");
+
+              @SuppressWarnings("unused")
+              var dc = data.getDataConn("foo", MyDataConn.class);
+            });
+      } catch (Err err) {
+        switch (err.getReason()) {
+          case CreatedDataConnIsNull r -> {
+            assertThat(r.name()).isEqualTo("foo");
+            assertThat(r.dataConnType()).isEqualTo(MyDataConn.class.getName());
+          }
+          default -> fail(err);
+        }
+      } catch (Exception e) {
+        fail(e);
+      }
+
+      assertThat(logger).hasSize(4);
+      var iter = logger.iterator();
+      assertThat(iter.next()).isEqualTo("MyDataSrc#setup 1");
+      assertThat(iter.next()).isEqualTo("execute logic");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#createDataConn 1 is null");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#close 1");
+      assertThat(iter.hasNext()).isFalse();
+    }
+
+    @Test
+    void testGetDataConnAndFailedToCreateDataConn() {
+      var logger = new ArrayList<String>();
+
+      try (var hub = new DataHub()) {
+        hub.uses("foo", new MyDataSrc(1, Failure.CreateDataConn, logger));
+
+        hub.txn(
+            (DataHub data) -> {
+              logger.add("execute logic");
+
+              @SuppressWarnings("unused")
+              var dc = data.getDataConn("foo", MyDataConn.class);
+            });
+      } catch (Err err) {
+        switch (err.getReason()) {
+          case FailToCreateDataConn r -> {
+            assertThat(r.name()).isEqualTo("foo");
+            assertThat(r.dataConnType()).isEqualTo(MyDataConn.class.getName());
+          }
+          default -> fail(err);
+        }
+      } catch (Exception e) {
+        fail(e);
+      }
+
+      assertThat(logger).hasSize(4);
+      var iter = logger.iterator();
+      assertThat(iter.next()).isEqualTo("MyDataSrc#setup 1");
+      assertThat(iter.next()).isEqualTo("execute logic");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#createDataConn 1 failed");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#close 1");
+      assertThat(iter.hasNext()).isFalse();
+    }
+
+    @Test
+    void testGetDataConnAndFailedToCastDataConn() {
+      var logger = new ArrayList<String>();
+
+      try (var hub = new DataHub()) {
+        hub.uses("foo", new MyDataSrc(1, Failure.None, logger));
+        hub.uses("bar", new MyDataSrc(2, Failure.None, logger));
+
+        hub.txn(
+            (DataHub data) -> {
+              logger.add("execute logic");
+
+              @SuppressWarnings("unused")
+              var dc1 = data.getDataConn("foo", MyDataConn.class);
+
+              @SuppressWarnings("unused")
+              var dc2 = data.getDataConn("bar", BadDataConn.class);
+            });
+      } catch (Err err) {
+        switch (err.getReason()) {
+          case FailToCastDataConn r -> {
+            assertThat(r.name()).isEqualTo("bar");
+            assertThat(r.fromDataConnType()).isEqualTo(MyDataConn.class.getName());
+            assertThat(r.toDataConnType()).isEqualTo(BadDataConn.class.getName());
+          }
+          default -> fail(err);
+        }
+      } catch (Exception e) {
+        fail(e);
+      }
+
+      assertThat(logger).hasSize(13);
+      var iter = logger.iterator();
+      assertThat(iter.next()).isEqualTo("MyDataSrc#setup 1");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#setup 2");
+      assertThat(iter.next()).isEqualTo("execute logic");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#createDataConn 1");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#createDataConn 2");
+      assertThat(iter.next()).isEqualTo("MyDataConn#rollback 1");
+      assertThat(iter.next()).isEqualTo("MyDataConn#rollback 2");
+      assertThat(iter.next()).isEqualTo("MyDataConn#onTxnFailure 1");
+      assertThat(iter.next()).isEqualTo("MyDataConn#onTxnFailure 2");
+      assertThat(iter.next()).isEqualTo("MyDataConn#close 2");
+      assertThat(iter.next()).isEqualTo("MyDataConn#close 1");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#close 2");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#close 1");
+      assertThat(iter.hasNext()).isFalse();
+    }
+  }
+
+  @Nested
+  class TestGlobals {
+
+    @Test
+    void testUsesAndSetupAndOk() {
+      var logger = new ArrayList<String>();
+      try {
+        resetGlobals();
+
+        assertThat(DataHubInner.GLOBAL_DATA_SRCS_FIXED.get()).isFalse();
+        assertThat(DataHubInner.GLOBAL_DATA_SRC_MANAGER.local).isFalse();
+        assertThat(DataHubInner.GLOBAL_DATA_SRC_MANAGER.listUnready).isEmpty();
+        assertThat(DataHubInner.GLOBAL_DATA_SRC_MANAGER.listReady).isEmpty();
+
+        uses("foo", new MyDataSrc(1, Failure.None, logger));
+
+        assertThat(DataHubInner.GLOBAL_DATA_SRCS_FIXED.get()).isFalse();
+        assertThat(DataHubInner.GLOBAL_DATA_SRC_MANAGER.local).isFalse();
+        assertThat(DataHubInner.GLOBAL_DATA_SRC_MANAGER.listUnready).hasSize(1);
+        assertThat(DataHubInner.GLOBAL_DATA_SRC_MANAGER.listReady).hasSize(0);
+
+        try (var ac = setup()) {
+          assertThat(DataHubInner.GLOBAL_DATA_SRCS_FIXED.get()).isTrue();
+          assertThat(DataHubInner.GLOBAL_DATA_SRC_MANAGER.local).isFalse();
+          assertThat(DataHubInner.GLOBAL_DATA_SRC_MANAGER.listUnready).hasSize(0);
+          assertThat(DataHubInner.GLOBAL_DATA_SRC_MANAGER.listReady).hasSize(1);
+        }
+      } catch (Exception e) {
+        fail(e);
+      } finally {
+        resetGlobals();
+      }
+
+      assertThat(logger).hasSize(2);
+      var iter = logger.iterator();
+      assertThat(iter.next()).isEqualTo("MyDataSrc#setup 1");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#close 1");
+      assertThat(iter.hasNext()).isFalse();
+    }
+
+    @Test
+    void testUsesAndSetupButFail() {
+      var logger = new ArrayList<String>();
+      try {
+        resetGlobals();
+
+        assertThat(DataHubInner.GLOBAL_DATA_SRCS_FIXED.get()).isFalse();
+        assertThat(DataHubInner.GLOBAL_DATA_SRC_MANAGER.local).isFalse();
+        assertThat(DataHubInner.GLOBAL_DATA_SRC_MANAGER.listUnready).isEmpty();
+        assertThat(DataHubInner.GLOBAL_DATA_SRC_MANAGER.listReady).isEmpty();
+
+        uses("foo", new MyDataSrc(1, Failure.Setup, logger));
+
+        assertThat(DataHubInner.GLOBAL_DATA_SRCS_FIXED.get()).isFalse();
+        assertThat(DataHubInner.GLOBAL_DATA_SRC_MANAGER.local).isFalse();
+        assertThat(DataHubInner.GLOBAL_DATA_SRC_MANAGER.listUnready).hasSize(1);
+        assertThat(DataHubInner.GLOBAL_DATA_SRC_MANAGER.listReady).hasSize(0);
+
+        try (var ac = setup()) {
           fail();
-        } catch (Err e) {
-          switch (e.getReason()) {
-            case DataHub.FailToCastDataConn rsn -> {
-              assertThat(rsn.name()).isEqualTo("foo");
-              assertThat(rsn.castToType())
-                  .isEqualTo("com.github.sttk.sabi.internal.DataHubInnerTest$SyncDataConn");
+        } catch (Err err) {
+          switch (err.getReason()) {
+            case FailToSetupGlobalDataSrcs r -> {
+              assertThat(r.errors()).hasSize(1);
+              assertThat(r.errors().get(0).index).isEqualTo(0);
+              assertThat(r.errors().get(0).name).isEqualTo("foo");
+              assertThat(r.errors().get(0).err.getReason()).isEqualTo("setup error");
             }
-            default -> fail(e);
+            default -> fail(err);
           }
-        } catch (Exception e) {
-          fail(e);
+          assertThat(DataHubInner.GLOBAL_DATA_SRCS_FIXED.get()).isTrue();
+          assertThat(DataHubInner.GLOBAL_DATA_SRC_MANAGER.local).isFalse();
+          assertThat(DataHubInner.GLOBAL_DATA_SRC_MANAGER.listUnready).hasSize(0);
+          assertThat(DataHubInner.GLOBAL_DATA_SRC_MANAGER.listReady).hasSize(0);
         }
+      } catch (Exception e) {
+        fail(e);
+      } finally {
+        resetGlobals();
+      }
 
-        try {
-          hub.getDataConn("bar", AsyncDataConn.class);
+      assertThat(logger).hasSize(1);
+      var iter = logger.iterator();
+      assertThat(iter.next()).isEqualTo("MyDataSrc#setup 1 failed");
+      assertThat(iter.hasNext()).isFalse();
+    }
+
+    @Test
+    void testUsesAndSetupButAlreadyFixedBefore() {
+      var logger = new ArrayList<String>();
+      try {
+        resetGlobals();
+
+        assertThat(DataHubInner.GLOBAL_DATA_SRCS_FIXED.get()).isFalse();
+        assertThat(DataHubInner.GLOBAL_DATA_SRC_MANAGER.local).isFalse();
+        assertThat(DataHubInner.GLOBAL_DATA_SRC_MANAGER.listUnready).isEmpty();
+        assertThat(DataHubInner.GLOBAL_DATA_SRC_MANAGER.listReady).isEmpty();
+
+        try (var ac = setup()) {
+          assertThat(DataHubInner.GLOBAL_DATA_SRCS_FIXED.get()).isTrue();
+          assertThat(DataHubInner.GLOBAL_DATA_SRC_MANAGER.local).isFalse();
+          assertThat(DataHubInner.GLOBAL_DATA_SRC_MANAGER.listUnready).isEmpty();
+          assertThat(DataHubInner.GLOBAL_DATA_SRC_MANAGER.listReady).isEmpty();
+
+          uses("foo", new MyDataSrc(1, Failure.Setup, logger));
+
+          assertThat(DataHubInner.GLOBAL_DATA_SRCS_FIXED.get()).isTrue();
+          assertThat(DataHubInner.GLOBAL_DATA_SRC_MANAGER.local).isFalse();
+          assertThat(DataHubInner.GLOBAL_DATA_SRC_MANAGER.listUnready).isEmpty();
+          assertThat(DataHubInner.GLOBAL_DATA_SRC_MANAGER.listReady).isEmpty();
+        }
+      } catch (Exception e) {
+        fail(e);
+      } finally {
+        resetGlobals();
+      }
+
+      assertThat(logger).hasSize(0);
+    }
+
+    @Test
+    void testUsesAndSetupWithOrderAndOk() {
+      var logger = new ArrayList<String>();
+      try {
+        resetGlobals();
+
+        assertThat(DataHubInner.GLOBAL_DATA_SRCS_FIXED.get()).isFalse();
+        assertThat(DataHubInner.GLOBAL_DATA_SRC_MANAGER.local).isFalse();
+        assertThat(DataHubInner.GLOBAL_DATA_SRC_MANAGER.listUnready).isEmpty();
+        assertThat(DataHubInner.GLOBAL_DATA_SRC_MANAGER.listReady).isEmpty();
+
+        uses("foo", new MyDataSrc(1, Failure.None, logger));
+        uses("bar", new MyDataSrc(2, Failure.None, logger));
+
+        assertThat(DataHubInner.GLOBAL_DATA_SRCS_FIXED.get()).isFalse();
+        assertThat(DataHubInner.GLOBAL_DATA_SRC_MANAGER.local).isFalse();
+        assertThat(DataHubInner.GLOBAL_DATA_SRC_MANAGER.listUnready).hasSize(2);
+        assertThat(DataHubInner.GLOBAL_DATA_SRC_MANAGER.listReady).hasSize(0);
+
+        try (var ac = setup("bar", "foo")) {
+          assertThat(DataHubInner.GLOBAL_DATA_SRCS_FIXED.get()).isTrue();
+          assertThat(DataHubInner.GLOBAL_DATA_SRC_MANAGER.local).isFalse();
+          assertThat(DataHubInner.GLOBAL_DATA_SRC_MANAGER.listUnready).hasSize(0);
+          assertThat(DataHubInner.GLOBAL_DATA_SRC_MANAGER.listReady).hasSize(2);
+        }
+      } catch (Exception e) {
+        fail(e);
+      } finally {
+        resetGlobals();
+      }
+
+      assertThat(logger).hasSize(4);
+      var iter = logger.iterator();
+      assertThat(iter.next()).isEqualTo("MyDataSrc#setup 2");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#setup 1");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#close 1");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#close 2");
+      assertThat(iter.hasNext()).isFalse();
+    }
+
+    @Test
+    void testUsesAndSetupWithOrderButFail() {
+      var logger = new ArrayList<String>();
+      try {
+        resetGlobals();
+
+        assertThat(DataHubInner.GLOBAL_DATA_SRCS_FIXED.get()).isFalse();
+        assertThat(DataHubInner.GLOBAL_DATA_SRC_MANAGER.local).isFalse();
+        assertThat(DataHubInner.GLOBAL_DATA_SRC_MANAGER.listUnready).isEmpty();
+        assertThat(DataHubInner.GLOBAL_DATA_SRC_MANAGER.listReady).isEmpty();
+
+        uses("foo", new MyDataSrc(1, Failure.Setup, logger));
+        uses("bar", new MyDataSrc(2, Failure.Setup, logger));
+
+        assertThat(DataHubInner.GLOBAL_DATA_SRCS_FIXED.get()).isFalse();
+        assertThat(DataHubInner.GLOBAL_DATA_SRC_MANAGER.local).isFalse();
+        assertThat(DataHubInner.GLOBAL_DATA_SRC_MANAGER.listUnready).hasSize(2);
+        assertThat(DataHubInner.GLOBAL_DATA_SRC_MANAGER.listReady).hasSize(0);
+
+        try (var ac = setup("bar", "foo")) {
           fail();
-        } catch (Err e) {
-          switch (e.getReason()) {
-            case DataHub.FailToCastDataConn rsn -> {
-              assertThat(rsn.name()).isEqualTo("bar");
-              assertThat(rsn.castToType())
-                  .isEqualTo("com.github.sttk.sabi.internal.DataHubInnerTest$AsyncDataConn");
+        } catch (Err err) {
+          switch (err.getReason()) {
+            case FailToSetupGlobalDataSrcs r -> {
+              assertThat(r.errors()).hasSize(1);
+              assertThat(r.errors().get(0).index).isEqualTo(0);
+              assertThat(r.errors().get(0).name).isEqualTo("bar");
+              assertThat(r.errors().get(0).err.getReason()).isEqualTo("setup error");
             }
-            default -> fail(e);
+            default -> fail(err);
           }
-        } catch (Exception e) {
-          fail(e);
+          assertThat(DataHubInner.GLOBAL_DATA_SRCS_FIXED.get()).isTrue();
+          assertThat(DataHubInner.GLOBAL_DATA_SRC_MANAGER.local).isFalse();
+          assertThat(DataHubInner.GLOBAL_DATA_SRC_MANAGER.listUnready).hasSize(0);
+          assertThat(DataHubInner.GLOBAL_DATA_SRC_MANAGER.listReady).hasSize(0);
         }
-
-        hub.end();
-
-        hub.close();
       } catch (Exception e) {
         fail(e);
+      } finally {
+        resetGlobals();
       }
 
-      assertThat(logger)
-          .containsExactly(
-              "AsyncDataSrc 1 setupped",
-              "SyncDataSrc 2 setupped",
-              "AsyncDataSrc 1 created DataConn",
-              "SyncDataSrc 2 created DataConn",
-              "SyncDataSrc 2 closed",
-              "AsyncDataSrc 1 closed");
+      assertThat(logger).hasSize(1);
+      var iter = logger.iterator();
+      assertThat(iter.next()).isEqualTo("MyDataSrc#setup 2 failed");
+      assertThat(iter.hasNext()).isFalse();
     }
 
     @Test
-    void fail_to_cast_reused_data_conn() {
+    void testUsesAndSetupWithOrderButAlreadyFixedBefore() {
       var logger = new ArrayList<String>();
+      try {
+        resetGlobals();
 
-      DataHubInner.usesGlobal("foo", new AsyncDataSrc(1, FAIL__NOT, logger));
+        assertThat(DataHubInner.GLOBAL_DATA_SRCS_FIXED.get()).isFalse();
+        assertThat(DataHubInner.GLOBAL_DATA_SRC_MANAGER.local).isFalse();
+        assertThat(DataHubInner.GLOBAL_DATA_SRC_MANAGER.listUnready).isEmpty();
+        assertThat(DataHubInner.GLOBAL_DATA_SRC_MANAGER.listReady).isEmpty();
 
-      try (var ac = DataHubInner.setupGlobals()) {
-        suppressWarnings_unused(ac);
-        var hub = new DataHubInner();
+        try (var ac = setup("bar", "foo")) {
+          assertThat(DataHubInner.GLOBAL_DATA_SRCS_FIXED.get()).isTrue();
+          assertThat(DataHubInner.GLOBAL_DATA_SRC_MANAGER.local).isFalse();
+          assertThat(DataHubInner.GLOBAL_DATA_SRC_MANAGER.listUnready).isEmpty();
+          assertThat(DataHubInner.GLOBAL_DATA_SRC_MANAGER.listReady).isEmpty();
 
-        hub.uses("bar", new SyncDataSrc(2, FAIL__NOT, logger));
+          uses("foo", new MyDataSrc(1, Failure.Setup, logger));
 
-        try {
-          hub.begin();
-        } catch (Exception e) {
-          fail(e);
+          assertThat(DataHubInner.GLOBAL_DATA_SRCS_FIXED.get()).isTrue();
+          assertThat(DataHubInner.GLOBAL_DATA_SRC_MANAGER.local).isFalse();
+          assertThat(DataHubInner.GLOBAL_DATA_SRC_MANAGER.listUnready).isEmpty();
+          assertThat(DataHubInner.GLOBAL_DATA_SRC_MANAGER.listReady).isEmpty();
         }
-
-        var conn1 = hub.getDataConn("foo", AsyncDataConn.class);
-        assertThat(conn1).isInstanceOf(AsyncDataConn.class);
-
-        var conn2 = hub.getDataConn("bar", SyncDataConn.class);
-        assertThat(conn2).isInstanceOf(SyncDataConn.class);
-
-        try {
-          hub.getDataConn("foo", SyncDataConn.class);
-          fail();
-        } catch (Err e) {
-          switch (e.getReason()) {
-            case DataHub.FailToCastDataConn rsn -> {
-              assertThat(rsn.name()).isEqualTo("foo");
-              assertThat(rsn.castToType())
-                  .isEqualTo("com.github.sttk.sabi.internal.DataHubInnerTest$SyncDataConn");
-            }
-            default -> fail(e);
-          }
-        } catch (Exception e) {
-          fail(e);
-        }
-
-        try {
-          hub.getDataConn("bar", AsyncDataConn.class);
-          fail();
-        } catch (Err e) {
-          switch (e.getReason()) {
-            case DataHub.FailToCastDataConn rsn -> {
-              assertThat(rsn.name()).isEqualTo("bar");
-              assertThat(rsn.castToType())
-                  .isEqualTo("com.github.sttk.sabi.internal.DataHubInnerTest$AsyncDataConn");
-            }
-            default -> fail(e);
-          }
-        } catch (Exception e) {
-          fail(e);
-        }
-
-        hub.close();
       } catch (Exception e) {
         fail(e);
+      } finally {
+        resetGlobals();
       }
-
-      assertThat(logger)
-          .containsExactly(
-              "AsyncDataSrc 1 setupped",
-              "SyncDataSrc 2 setupped",
-              "AsyncDataSrc 1 created DataConn",
-              "SyncDataSrc 2 created DataConn",
-              "SyncDataConn 2 closed",
-              "AsyncDataConn 1 closed",
-              "SyncDataSrc 2 closed",
-              "AsyncDataSrc 1 closed");
-    }
-
-    @Test
-    void fail_to_create_data_conn() {
-      var logger = new ArrayList<String>();
-
-      DataHubInner.usesGlobal("foo", new AsyncDataSrc(1, FAIL__NOT, logger));
-
-      try (var ac = DataHubInner.setupGlobals()) {
-        suppressWarnings_unused(ac);
-        var hub = new DataHubInner();
-
-        hub.uses("bar", new SyncDataSrc(2, FAIL__CREATE_DATA_CONN, logger));
-
-        try {
-          hub.begin();
-        } catch (Exception e) {
-          fail(e);
-        }
-
-        var conn1 = hub.getDataConn("foo", AsyncDataConn.class);
-        assertThat(conn1).isInstanceOf(AsyncDataConn.class);
-
-        try {
-          hub.getDataConn("bar", AsyncDataConn.class);
-          fail();
-        } catch (Err e) {
-          switch (e.getReason()) {
-            case DataHub.FailToCreateDataConn rsn -> {
-              assertThat(rsn.name()).isEqualTo("bar");
-              assertThat(rsn.dataConnType())
-                  .isEqualTo("com.github.sttk.sabi.internal.DataHubInnerTest$AsyncDataConn");
-            }
-            default -> fail(e);
-          }
-        } catch (Exception e) {
-          fail(e);
-        }
-
-        hub.close();
-      } catch (Exception e) {
-        fail(e);
-      }
-
-      assertThat(logger)
-          .containsExactly(
-              "AsyncDataSrc 1 setupped",
-              "SyncDataSrc 2 setupped",
-              "AsyncDataSrc 1 created DataConn",
-              "SyncDataSrc 2 failed to create a DataConn",
-              "AsyncDataConn 1 closed",
-              "SyncDataSrc 2 closed",
-              "AsyncDataSrc 1 closed");
-    }
-
-    @Test
-    void fail_to_create_data_conn_because_of_no_data_src() {
-      var logger = new ArrayList<String>();
-
-      DataHubInner.usesGlobal("foo", new AsyncDataSrc(1, FAIL__NOT, logger));
-
-      try (var ac = DataHubInner.setupGlobals()) {
-        suppressWarnings_unused(ac);
-        var hub = new DataHubInner();
-
-        hub.uses("bar", new SyncDataSrc(2, FAIL__NOT, logger));
-
-        try {
-          hub.begin();
-        } catch (Exception e) {
-          fail(e);
-        }
-
-        try {
-          hub.getDataConn("baz", SyncDataConn.class);
-          fail();
-        } catch (Err e) {
-          switch (e.getReason()) {
-            case DataHub.NoDataSrcToCreateDataConn rsn -> {
-              assertThat(rsn.name()).isEqualTo("baz");
-              assertThat(rsn.dataConnType())
-                  .isEqualTo("com.github.sttk.sabi.internal.DataHubInnerTest$SyncDataConn");
-            }
-            default -> fail(e);
-          }
-        } catch (Exception e) {
-          fail(e);
-        }
-
-        try {
-          hub.getDataConn("qux", AsyncDataConn.class);
-          fail();
-        } catch (Err e) {
-          switch (e.getReason()) {
-            case DataHub.NoDataSrcToCreateDataConn rsn -> {
-              assertThat(rsn.name()).isEqualTo("qux");
-              assertThat(rsn.dataConnType())
-                  .isEqualTo("com.github.sttk.sabi.internal.DataHubInnerTest$AsyncDataConn");
-            }
-            default -> fail(e);
-          }
-        } catch (Exception e) {
-          fail(e);
-        }
-
-        hub.close();
-      } catch (Exception e) {
-        fail(e);
-      }
-
-      assertThat(logger)
-          .containsExactly(
-              "AsyncDataSrc 1 setupped",
-              "SyncDataSrc 2 setupped",
-              "SyncDataSrc 2 closed",
-              "AsyncDataSrc 1 closed");
-    }
-
-    @Test
-    void commit_when_no_data_conn() {
-      var logger = new ArrayList<String>();
-
-      DataHubInner.usesGlobal("foo", new AsyncDataSrc(1, FAIL__NOT, logger));
-      DataHubInner.usesGlobal("bar", new SyncDataSrc(2, FAIL__NOT, logger));
-
-      try (var ac = DataHubInner.setupGlobals()) {
-        suppressWarnings_unused(ac);
-        var hub = new DataHubInner();
-
-        hub.uses("baz", new AsyncDataSrc(3, FAIL__NOT, logger));
-        hub.uses("qux", new SyncDataSrc(4, FAIL__NOT, logger));
-
-        try {
-          hub.begin();
-          hub.commit();
-          hub.end();
-        } catch (Exception e) {
-          fail(e);
-        }
-
-        hub.close();
-      } catch (Exception e) {
-        fail(e);
-      }
-
-      assertThat(logger)
-          .containsExactly(
-              "SyncDataSrc 2 setupped",
-              "AsyncDataSrc 1 setupped",
-              "SyncDataSrc 4 setupped",
-              "AsyncDataSrc 3 setupped",
-              "SyncDataSrc 4 closed",
-              "AsyncDataSrc 3 closed",
-              "SyncDataSrc 2 closed",
-              "AsyncDataSrc 1 closed");
-    }
-
-    @Test
-    void commit_but_fail_global_sync() {
-      var logger = new ArrayList<String>();
-
-      DataHubInner.usesGlobal("foo", new AsyncDataSrc(1, FAIL__NOT, logger));
-      DataHubInner.usesGlobal("bar", new SyncDataSrc(2, FAIL__COMMIT, logger));
-
-      try (var ac = DataHubInner.setupGlobals()) {
-        suppressWarnings_unused(ac);
-        var hub = new DataHubInner();
-
-        hub.uses("baz", new AsyncDataSrc(3, FAIL__NOT, logger));
-        hub.uses("qux", new SyncDataSrc(4, FAIL__NOT, logger));
-
-        hub.begin();
-
-        var conn1 = hub.getDataConn("foo", AsyncDataConn.class);
-        assertThat(conn1).isNotNull();
-
-        var conn2 = hub.getDataConn("bar", SyncDataConn.class);
-        assertThat(conn2).isNotNull();
-
-        var conn3 = hub.getDataConn("baz", AsyncDataConn.class);
-        assertThat(conn3).isNotNull();
-
-        var conn4 = hub.getDataConn("qux", SyncDataConn.class);
-        assertThat(conn4).isNotNull();
-
-        try {
-          hub.commit();
-        } catch (Err e) {
-          switch (e.getReason()) {
-            case DataHub.FailToCommitDataConn rsn -> {
-              assertThat(rsn.errors()).hasSize(1);
-              var e2 = rsn.errors().get("bar");
-              assertThat(e2.getReason()).isEqualTo("ZZZ");
-            }
-            default -> fail();
-          }
-        } catch (Exception e) {
-          fail(e);
-        }
-
-        hub.end();
-
-        hub.close();
-      } catch (Exception e) {
-        fail(e);
-      }
-
-      assertThat(logger)
-          .containsExactly(
-              "SyncDataSrc 2 setupped",
-              "AsyncDataSrc 1 setupped",
-              "SyncDataSrc 4 setupped",
-              "AsyncDataSrc 3 setupped",
-              "AsyncDataSrc 1 created DataConn",
-              "SyncDataSrc 2 created DataConn",
-              "AsyncDataSrc 3 created DataConn",
-              "SyncDataSrc 4 created DataConn",
-              "AsyncDataConn 1 pre committed",
-              "SyncDataConn 2 pre committed",
-              "AsyncDataConn 3 pre committed",
-              "SyncDataConn 4 pre committed",
-              "AsyncDataConn 1 committed",
-              "SyncDataConn 2 failed to commit",
-              "SyncDataConn 4 closed",
-              "AsyncDataConn 3 closed",
-              "SyncDataConn 2 closed",
-              "AsyncDataConn 1 closed",
-              "SyncDataSrc 4 closed",
-              "AsyncDataSrc 3 closed",
-              "SyncDataSrc 2 closed",
-              "AsyncDataSrc 1 closed");
-    }
-
-    @Test
-    void commit_but_fail_global_async() {
-      var logger = new ArrayList<String>();
-
-      DataHubInner.usesGlobal("foo", new AsyncDataSrc(1, FAIL__COMMIT, logger));
-      DataHubInner.usesGlobal("bar", new SyncDataSrc(2, FAIL__NOT, logger));
-
-      try (var ac = DataHubInner.setupGlobals()) {
-        suppressWarnings_unused(ac);
-        var hub = new DataHubInner();
-
-        hub.uses("baz", new AsyncDataSrc(3, FAIL__NOT, logger));
-        hub.uses("qux", new SyncDataSrc(4, FAIL__NOT, logger));
-
-        hub.begin();
-
-        var conn1 = hub.getDataConn("foo", AsyncDataConn.class);
-        assertThat(conn1).isNotNull();
-
-        var conn2 = hub.getDataConn("bar", SyncDataConn.class);
-        assertThat(conn2).isNotNull();
-
-        var conn3 = hub.getDataConn("baz", AsyncDataConn.class);
-        assertThat(conn3).isNotNull();
-
-        var conn4 = hub.getDataConn("qux", SyncDataConn.class);
-        assertThat(conn4).isNotNull();
-
-        try {
-          hub.commit();
-        } catch (Err e) {
-          switch (e.getReason()) {
-            case DataHub.FailToCommitDataConn rsn -> {
-              assertThat(rsn.errors()).hasSize(1);
-              var e2 = rsn.errors().get("foo");
-              assertThat(e2.getReason()).isEqualTo("VVV");
-            }
-            default -> fail();
-          }
-        } catch (Exception e) {
-          fail(e);
-        }
-
-        hub.end();
-
-        hub.close();
-      } catch (Exception e) {
-        fail(e);
-      }
-
-      assertThat(logger)
-          .containsExactly(
-              "SyncDataSrc 2 setupped",
-              "AsyncDataSrc 1 setupped",
-              "SyncDataSrc 4 setupped",
-              "AsyncDataSrc 3 setupped",
-              "AsyncDataSrc 1 created DataConn",
-              "SyncDataSrc 2 created DataConn",
-              "AsyncDataSrc 3 created DataConn",
-              "SyncDataSrc 4 created DataConn",
-              "AsyncDataConn 1 pre committed",
-              "SyncDataConn 2 pre committed",
-              "AsyncDataConn 3 pre committed",
-              "SyncDataConn 4 pre committed",
-              "AsyncDataConn 1 failed to commit",
-              "SyncDataConn 4 closed",
-              "AsyncDataConn 3 closed",
-              "SyncDataConn 2 closed",
-              "AsyncDataConn 1 closed",
-              "SyncDataSrc 4 closed",
-              "AsyncDataSrc 3 closed",
-              "SyncDataSrc 2 closed",
-              "AsyncDataSrc 1 closed");
-    }
-
-    @Test
-    void commit_but_fail_local_sync() {
-      var logger = new ArrayList<String>();
-
-      DataHubInner.usesGlobal("foo", new AsyncDataSrc(1, FAIL__NOT, logger));
-      DataHubInner.usesGlobal("bar", new SyncDataSrc(2, FAIL__NOT, logger));
-
-      try (var ac = DataHubInner.setupGlobals()) {
-        suppressWarnings_unused(ac);
-        var hub = new DataHubInner();
-
-        hub.uses("baz", new AsyncDataSrc(3, FAIL__NOT, logger));
-        hub.uses("qux", new SyncDataSrc(4, FAIL__COMMIT, logger));
-
-        hub.begin();
-
-        var conn1 = hub.getDataConn("foo", AsyncDataConn.class);
-        assertThat(conn1).isNotNull();
-
-        var conn2 = hub.getDataConn("bar", SyncDataConn.class);
-        assertThat(conn2).isNotNull();
-
-        var conn3 = hub.getDataConn("baz", AsyncDataConn.class);
-        assertThat(conn3).isNotNull();
-
-        var conn4 = hub.getDataConn("qux", SyncDataConn.class);
-        assertThat(conn4).isNotNull();
-
-        try {
-          hub.commit();
-        } catch (Err e) {
-          switch (e.getReason()) {
-            case DataHub.FailToCommitDataConn rsn -> {
-              assertThat(rsn.errors()).hasSize(1);
-              var e2 = rsn.errors().get("qux");
-              assertThat(e2.getReason()).isEqualTo("ZZZ");
-            }
-            default -> fail();
-          }
-        } catch (Exception e) {
-          fail(e);
-        }
-
-        hub.end();
-
-        hub.close();
-      } catch (Exception e) {
-        fail(e);
-      }
-
-      assertThat(logger)
-          .containsExactly(
-              "SyncDataSrc 2 setupped",
-              "AsyncDataSrc 1 setupped",
-              "SyncDataSrc 4 setupped",
-              "AsyncDataSrc 3 setupped",
-              "AsyncDataSrc 1 created DataConn",
-              "SyncDataSrc 2 created DataConn",
-              "AsyncDataSrc 3 created DataConn",
-              "SyncDataSrc 4 created DataConn",
-              "AsyncDataConn 1 pre committed",
-              "SyncDataConn 2 pre committed",
-              "AsyncDataConn 3 pre committed",
-              "SyncDataConn 4 pre committed",
-              "AsyncDataConn 1 committed",
-              "SyncDataConn 2 committed",
-              "AsyncDataConn 3 committed",
-              "SyncDataConn 4 failed to commit",
-              "SyncDataConn 4 closed",
-              "AsyncDataConn 3 closed",
-              "SyncDataConn 2 closed",
-              "AsyncDataConn 1 closed",
-              "SyncDataSrc 4 closed",
-              "AsyncDataSrc 3 closed",
-              "SyncDataSrc 2 closed",
-              "AsyncDataSrc 1 closed");
-    }
-
-    @Test
-    void commit_but_fail_local_async() {
-      var logger = new ArrayList<String>();
-
-      DataHubInner.usesGlobal("foo", new AsyncDataSrc(1, FAIL__NOT, logger));
-      DataHubInner.usesGlobal("bar", new SyncDataSrc(2, FAIL__NOT, logger));
-
-      try (var ac = DataHubInner.setupGlobals()) {
-        suppressWarnings_unused(ac);
-        var hub = new DataHubInner();
-
-        hub.uses("baz", new AsyncDataSrc(3, FAIL__COMMIT, logger));
-        hub.uses("qux", new SyncDataSrc(4, FAIL__NOT, logger));
-
-        hub.begin();
-
-        var conn1 = hub.getDataConn("foo", AsyncDataConn.class);
-        assertThat(conn1).isNotNull();
-
-        var conn2 = hub.getDataConn("bar", SyncDataConn.class);
-        assertThat(conn2).isNotNull();
-
-        var conn3 = hub.getDataConn("baz", AsyncDataConn.class);
-        assertThat(conn3).isNotNull();
-
-        var conn4 = hub.getDataConn("qux", SyncDataConn.class);
-        assertThat(conn4).isNotNull();
-
-        try {
-          hub.commit();
-        } catch (Err e) {
-          switch (e.getReason()) {
-            case DataHub.FailToCommitDataConn rsn -> {
-              assertThat(rsn.errors()).hasSize(1);
-              var e2 = rsn.errors().get("baz");
-              assertThat(e2.getReason()).isEqualTo("VVV");
-            }
-            default -> fail();
-          }
-        } catch (Exception e) {
-          fail(e);
-        }
-
-        hub.end();
-
-        hub.close();
-      } catch (Exception e) {
-        fail(e);
-      }
-
-      assertThat(logger)
-          .containsExactly(
-              "SyncDataSrc 2 setupped",
-              "AsyncDataSrc 1 setupped",
-              "SyncDataSrc 4 setupped",
-              "AsyncDataSrc 3 setupped",
-              "AsyncDataSrc 1 created DataConn",
-              "SyncDataSrc 2 created DataConn",
-              "AsyncDataSrc 3 created DataConn",
-              "SyncDataSrc 4 created DataConn",
-              "AsyncDataConn 1 pre committed",
-              "SyncDataConn 2 pre committed",
-              "AsyncDataConn 3 pre committed",
-              "SyncDataConn 4 pre committed",
-              "AsyncDataConn 1 committed",
-              "SyncDataConn 2 committed",
-              "AsyncDataConn 3 failed to commit",
-              "SyncDataConn 4 closed",
-              "AsyncDataConn 3 closed",
-              "SyncDataConn 2 closed",
-              "AsyncDataConn 1 closed",
-              "SyncDataSrc 4 closed",
-              "AsyncDataSrc 3 closed",
-              "SyncDataSrc 2 closed",
-              "AsyncDataSrc 1 closed");
-    }
-
-    @Test
-    void pre_commit_but_fail_global_sync() {
-      var logger = new ArrayList<String>();
-
-      DataHubInner.usesGlobal("foo", new AsyncDataSrc(1, FAIL__NOT, logger));
-      DataHubInner.usesGlobal("bar", new SyncDataSrc(2, FAIL__PRE_COMMIT, logger));
-
-      try (var ac = DataHubInner.setupGlobals()) {
-        suppressWarnings_unused(ac);
-        var hub = new DataHubInner();
-
-        hub.uses("baz", new AsyncDataSrc(3, FAIL__NOT, logger));
-        hub.uses("qux", new SyncDataSrc(4, FAIL__NOT, logger));
-
-        hub.begin();
-
-        var conn1 = hub.getDataConn("foo", AsyncDataConn.class);
-        assertThat(conn1).isNotNull();
-
-        var conn2 = hub.getDataConn("bar", SyncDataConn.class);
-        assertThat(conn2).isNotNull();
-
-        var conn3 = hub.getDataConn("baz", AsyncDataConn.class);
-        assertThat(conn3).isNotNull();
-
-        var conn4 = hub.getDataConn("qux", SyncDataConn.class);
-        assertThat(conn4).isNotNull();
-
-        try {
-          hub.commit();
-        } catch (Err e) {
-          switch (e.getReason()) {
-            case DataHub.FailToPreCommitDataConn rsn -> {
-              assertThat(rsn.errors()).hasSize(1);
-              var e2 = rsn.errors().get("bar");
-              assertThat(e2.getReason()).isEqualTo("zzz");
-            }
-            default -> fail();
-          }
-        } catch (Exception e) {
-          fail(e);
-        }
-
-        hub.end();
-
-        hub.close();
-      } catch (Exception e) {
-        fail(e);
-      }
-
-      assertThat(logger)
-          .containsExactly(
-              "SyncDataSrc 2 setupped",
-              "AsyncDataSrc 1 setupped",
-              "SyncDataSrc 4 setupped",
-              "AsyncDataSrc 3 setupped",
-              "AsyncDataSrc 1 created DataConn",
-              "SyncDataSrc 2 created DataConn",
-              "AsyncDataSrc 3 created DataConn",
-              "SyncDataSrc 4 created DataConn",
-              "AsyncDataConn 1 pre committed",
-              "SyncDataConn 2 failed to pre commit",
-              "SyncDataConn 4 closed",
-              "AsyncDataConn 3 closed",
-              "SyncDataConn 2 closed",
-              "AsyncDataConn 1 closed",
-              "SyncDataSrc 4 closed",
-              "AsyncDataSrc 3 closed",
-              "SyncDataSrc 2 closed",
-              "AsyncDataSrc 1 closed");
-    }
-
-    @Test
-    void pre_commit_but_fail_global_async() {
-      var logger = new ArrayList<String>();
-
-      DataHubInner.usesGlobal("foo", new AsyncDataSrc(1, FAIL__NOT, logger));
-      DataHubInner.usesGlobal("bar", new SyncDataSrc(2, FAIL__PRE_COMMIT, logger));
-
-      try (var ac = DataHubInner.setupGlobals()) {
-        suppressWarnings_unused(ac);
-        var hub = new DataHubInner();
-
-        hub.uses("baz", new AsyncDataSrc(3, FAIL__NOT, logger));
-        hub.uses("qux", new SyncDataSrc(4, FAIL__NOT, logger));
-
-        hub.begin();
-
-        var conn1 = hub.getDataConn("foo", AsyncDataConn.class);
-        assertThat(conn1).isNotNull();
-
-        var conn2 = hub.getDataConn("bar", SyncDataConn.class);
-        assertThat(conn2).isNotNull();
-
-        var conn3 = hub.getDataConn("baz", AsyncDataConn.class);
-        assertThat(conn3).isNotNull();
-
-        var conn4 = hub.getDataConn("qux", SyncDataConn.class);
-        assertThat(conn4).isNotNull();
-
-        try {
-          hub.commit();
-        } catch (Err e) {
-          switch (e.getReason()) {
-            case DataHub.FailToPreCommitDataConn rsn -> {
-              assertThat(rsn.errors()).hasSize(1);
-              var e2 = rsn.errors().get("bar");
-              assertThat(e2.getReason()).isEqualTo("zzz");
-            }
-            default -> fail();
-          }
-        } catch (Exception e) {
-          fail(e);
-        }
-
-        hub.end();
-
-        hub.close();
-      } catch (Exception e) {
-        fail(e);
-      }
-
-      assertThat(logger)
-          .containsExactly(
-              "SyncDataSrc 2 setupped",
-              "AsyncDataSrc 1 setupped",
-              "SyncDataSrc 4 setupped",
-              "AsyncDataSrc 3 setupped",
-              "AsyncDataSrc 1 created DataConn",
-              "SyncDataSrc 2 created DataConn",
-              "AsyncDataSrc 3 created DataConn",
-              "SyncDataSrc 4 created DataConn",
-              "AsyncDataConn 1 pre committed",
-              "SyncDataConn 2 failed to pre commit",
-              "SyncDataConn 4 closed",
-              "AsyncDataConn 3 closed",
-              "SyncDataConn 2 closed",
-              "AsyncDataConn 1 closed",
-              "SyncDataSrc 4 closed",
-              "AsyncDataSrc 3 closed",
-              "SyncDataSrc 2 closed",
-              "AsyncDataSrc 1 closed");
-    }
-
-    @Test
-    void pre_commit_but_fail_local_sync() {
-      var logger = new ArrayList<String>();
-
-      DataHubInner.usesGlobal("foo", new AsyncDataSrc(1, FAIL__NOT, logger));
-      DataHubInner.usesGlobal("bar", new SyncDataSrc(2, FAIL__NOT, logger));
-
-      try (var ac = DataHubInner.setupGlobals()) {
-        suppressWarnings_unused(ac);
-        var hub = new DataHubInner();
-
-        hub.uses("baz", new AsyncDataSrc(3, FAIL__NOT, logger));
-        hub.uses("qux", new SyncDataSrc(4, FAIL__PRE_COMMIT, logger));
-
-        hub.begin();
-
-        var conn1 = hub.getDataConn("foo", AsyncDataConn.class);
-        assertThat(conn1).isNotNull();
-
-        var conn2 = hub.getDataConn("bar", SyncDataConn.class);
-        assertThat(conn2).isNotNull();
-
-        var conn3 = hub.getDataConn("baz", AsyncDataConn.class);
-        assertThat(conn3).isNotNull();
-
-        var conn4 = hub.getDataConn("qux", SyncDataConn.class);
-        assertThat(conn4).isNotNull();
-
-        try {
-          hub.commit();
-        } catch (Err e) {
-          switch (e.getReason()) {
-            case DataHub.FailToPreCommitDataConn rsn -> {
-              assertThat(rsn.errors()).hasSize(1);
-              var e2 = rsn.errors().get("qux");
-              assertThat(e2.getReason()).isEqualTo("zzz");
-            }
-            default -> fail();
-          }
-        } catch (Exception e) {
-          fail(e);
-        }
-
-        hub.end();
-
-        hub.close();
-      } catch (Exception e) {
-        fail(e);
-      }
-
-      assertThat(logger)
-          .containsExactly(
-              "SyncDataSrc 2 setupped",
-              "AsyncDataSrc 1 setupped",
-              "SyncDataSrc 4 setupped",
-              "AsyncDataSrc 3 setupped",
-              "AsyncDataSrc 1 created DataConn",
-              "SyncDataSrc 2 created DataConn",
-              "AsyncDataSrc 3 created DataConn",
-              "SyncDataSrc 4 created DataConn",
-              "AsyncDataConn 1 pre committed",
-              "SyncDataConn 2 pre committed",
-              "AsyncDataConn 3 pre committed",
-              "SyncDataConn 4 failed to pre commit",
-              "SyncDataConn 4 closed",
-              "AsyncDataConn 3 closed",
-              "SyncDataConn 2 closed",
-              "AsyncDataConn 1 closed",
-              "SyncDataSrc 4 closed",
-              "AsyncDataSrc 3 closed",
-              "SyncDataSrc 2 closed",
-              "AsyncDataSrc 1 closed");
-    }
-
-    @Test
-    void pre_commit_but_fail_local_async() {
-      var logger = new ArrayList<String>();
-
-      DataHubInner.usesGlobal("foo", new AsyncDataSrc(1, FAIL__NOT, logger));
-      DataHubInner.usesGlobal("bar", new SyncDataSrc(2, FAIL__NOT, logger));
-
-      try (var ac = DataHubInner.setupGlobals()) {
-        suppressWarnings_unused(ac);
-        var hub = new DataHubInner();
-
-        hub.uses("baz", new AsyncDataSrc(3, FAIL__PRE_COMMIT, logger));
-        hub.uses("qux", new SyncDataSrc(4, FAIL__NOT, logger));
-
-        hub.begin();
-
-        var conn1 = hub.getDataConn("foo", AsyncDataConn.class);
-        assertThat(conn1).isNotNull();
-
-        var conn2 = hub.getDataConn("bar", SyncDataConn.class);
-        assertThat(conn2).isNotNull();
-
-        var conn3 = hub.getDataConn("baz", AsyncDataConn.class);
-        assertThat(conn3).isNotNull();
-
-        var conn4 = hub.getDataConn("qux", SyncDataConn.class);
-        assertThat(conn4).isNotNull();
-
-        try {
-          hub.commit();
-        } catch (Err e) {
-          switch (e.getReason()) {
-            case DataHub.FailToPreCommitDataConn rsn -> {
-              assertThat(rsn.errors()).hasSize(1);
-              var e2 = rsn.errors().get("baz");
-              assertThat(e2.getReason()).isEqualTo("vvv");
-            }
-            default -> fail();
-          }
-        } catch (Exception e) {
-          fail(e);
-        }
-
-        hub.end();
-
-        hub.close();
-      } catch (Exception e) {
-        fail(e);
-      }
-
-      assertThat(logger)
-          .containsExactly(
-              "SyncDataSrc 2 setupped",
-              "AsyncDataSrc 1 setupped",
-              "SyncDataSrc 4 setupped",
-              "AsyncDataSrc 3 setupped",
-              "AsyncDataSrc 1 created DataConn",
-              "SyncDataSrc 2 created DataConn",
-              "AsyncDataSrc 3 created DataConn",
-              "SyncDataSrc 4 created DataConn",
-              "AsyncDataConn 1 pre committed",
-              "SyncDataConn 2 pre committed",
-              "AsyncDataConn 3 failed to pre commit",
-              "SyncDataConn 4 closed",
-              "AsyncDataConn 3 closed",
-              "SyncDataConn 2 closed",
-              "AsyncDataConn 1 closed",
-              "SyncDataSrc 4 closed",
-              "AsyncDataSrc 3 closed",
-              "SyncDataSrc 2 closed",
-              "AsyncDataSrc 1 closed");
-    }
-
-    @Test
-    void rollback() {
-      var logger = new ArrayList<String>();
-
-      DataHubInner.usesGlobal("foo", new AsyncDataSrc(1, FAIL__NOT, logger));
-      DataHubInner.usesGlobal("bar", new SyncDataSrc(2, FAIL__NOT, logger));
-
-      try (var ac = DataHubInner.setupGlobals()) {
-        suppressWarnings_unused(ac);
-        var hub = new DataHubInner();
-
-        hub.uses("baz", new AsyncDataSrc(3, FAIL__NOT, logger));
-        hub.uses("qux", new SyncDataSrc(4, FAIL__NOT, logger));
-
-        hub.begin();
-
-        var conn1 = hub.getDataConn("foo", AsyncDataConn.class);
-        assertThat(conn1).isNotNull();
-
-        var conn2 = hub.getDataConn("bar", SyncDataConn.class);
-        assertThat(conn2).isNotNull();
-
-        var conn3 = hub.getDataConn("baz", AsyncDataConn.class);
-        assertThat(conn3).isNotNull();
-
-        var conn4 = hub.getDataConn("qux", SyncDataConn.class);
-        assertThat(conn4).isNotNull();
-
-        hub.rollback();
-        hub.end();
-
-        hub.close();
-      } catch (Exception e) {
-        fail(e);
-      }
-
-      assertThat(logger)
-          .containsExactly(
-              "SyncDataSrc 2 setupped",
-              "AsyncDataSrc 1 setupped",
-              "SyncDataSrc 4 setupped",
-              "AsyncDataSrc 3 setupped",
-              "AsyncDataSrc 1 created DataConn",
-              "SyncDataSrc 2 created DataConn",
-              "AsyncDataSrc 3 created DataConn",
-              "SyncDataSrc 4 created DataConn",
-              "AsyncDataConn 1 rollbacked",
-              "SyncDataConn 2 rollbacked",
-              "AsyncDataConn 3 rollbacked",
-              "SyncDataConn 4 rollbacked",
-              "SyncDataConn 4 closed",
-              "AsyncDataConn 3 closed",
-              "SyncDataConn 2 closed",
-              "AsyncDataConn 1 closed",
-              "SyncDataSrc 4 closed",
-              "AsyncDataSrc 3 closed",
-              "SyncDataSrc 2 closed",
-              "AsyncDataSrc 1 closed");
-    }
-
-    @Test
-    void force_back() {
-      var logger = new ArrayList<String>();
-
-      DataHubInner.usesGlobal("foo", new AsyncDataSrc(1, FAIL__NOT, logger));
-      DataHubInner.usesGlobal("bar", new SyncDataSrc(2, FAIL__NOT, logger));
-
-      try (var ac = DataHubInner.setupGlobals()) {
-        suppressWarnings_unused(ac);
-        var hub = new DataHubInner();
-
-        hub.uses("baz", new AsyncDataSrc(3, FAIL__NOT, logger));
-        hub.uses("qux", new SyncDataSrc(4, FAIL__NOT, logger));
-
-        hub.begin();
-
-        var conn1 = hub.getDataConn("foo", AsyncDataConn.class);
-        assertThat(conn1).isNotNull();
-
-        var conn2 = hub.getDataConn("bar", SyncDataConn.class);
-        assertThat(conn2).isNotNull();
-
-        var conn3 = hub.getDataConn("baz", AsyncDataConn.class);
-        assertThat(conn3).isNotNull();
-
-        var conn4 = hub.getDataConn("qux", SyncDataConn.class);
-        assertThat(conn4).isNotNull();
-
-        hub.commit();
-        hub.rollback();
-        hub.end();
-
-        hub.close();
-      } catch (Exception e) {
-        fail(e);
-      }
-
-      assertThat(logger)
-          .containsExactly(
-              "SyncDataSrc 2 setupped",
-              "AsyncDataSrc 1 setupped",
-              "SyncDataSrc 4 setupped",
-              "AsyncDataSrc 3 setupped",
-              "AsyncDataSrc 1 created DataConn",
-              "SyncDataSrc 2 created DataConn",
-              "AsyncDataSrc 3 created DataConn",
-              "SyncDataSrc 4 created DataConn",
-              "AsyncDataConn 1 pre committed",
-              "SyncDataConn 2 pre committed",
-              "AsyncDataConn 3 pre committed",
-              "SyncDataConn 4 pre committed",
-              "AsyncDataConn 1 committed",
-              "SyncDataConn 2 committed",
-              "AsyncDataConn 3 committed",
-              "SyncDataConn 4 committed",
-              "AsyncDataConn 1 post committed",
-              "SyncDataConn 2 post committed",
-              "AsyncDataConn 3 post committed",
-              "SyncDataConn 4 post committed",
-              "AsyncDataConn 1 forced back",
-              "SyncDataConn 2 forced back",
-              "AsyncDataConn 3 forced back",
-              "SyncDataConn 4 forced back",
-              "SyncDataConn 4 closed",
-              "AsyncDataConn 3 closed",
-              "SyncDataConn 2 closed",
-              "AsyncDataConn 1 closed",
-              "SyncDataSrc 4 closed",
-              "AsyncDataSrc 3 closed",
-              "SyncDataSrc 2 closed",
-              "AsyncDataSrc 1 closed");
     }
   }
 }

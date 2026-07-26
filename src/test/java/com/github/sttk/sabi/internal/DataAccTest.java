@@ -1,5 +1,7 @@
 package com.github.sttk.sabi.internal;
 
+import static com.github.sttk.sabi.Sabi.setup;
+import static com.github.sttk.sabi.Sabi.uses;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -10,7 +12,7 @@ import com.github.sttk.sabi.DataConn;
 import com.github.sttk.sabi.DataHub;
 import com.github.sttk.sabi.DataSrc;
 import com.github.sttk.sabi.Logic;
-import com.github.sttk.sabi.Sabi;
+import com.github.sttk.sabi.TxnFailureReport;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
@@ -19,212 +21,191 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 public class DataAccTest {
-  DataAccTest() {}
-
-  final void suppressWarnings_unused(Object a) {}
-
-  static class FooDataSrc implements DataSrc {
-    private int id;
-    private String text;
-    private List<String> logger;
-    private boolean willFail;
-
-    FooDataSrc(int id, String text, List<String> logger, boolean willFail) {
-      this.id = id;
-      this.text = text;
-      this.logger = logger;
-      this.willFail = willFail;
-    }
-
-    @Override
-    public void setup(AsyncGroup ag) throws Err {
-      if (this.willFail) {
-        this.logger.add(String.format("FooDataSrc %d failed to setup", this.id));
-        throw new Err("XXX");
-      }
-      this.logger.add(String.format("FooDataSrc %d setupped", this.id));
-    }
-
-    @Override
-    public void close() {
-      this.logger.add(String.format("FooDataSrc %d closed", this.id));
-    }
-
-    @Override
-    public DataConn createDataConn() throws Err {
-      this.logger.add(String.format("FooDataSrc %d created FooDataConn", this.id));
-      return new FooDataConn(this.id, this.text, this.logger);
-    }
-  }
+  private DataAccTest() {}
 
   static class FooDataConn implements DataConn {
-    private int id;
-    private String text;
-    private boolean committed;
-    private List<String> logger;
+    final int id;
+    final String text;
+    boolean committed;
+    List<String> logger;
 
-    FooDataConn(int id, String text, List<String> logger) {
+    FooDataConn(int id, String s, List<String> logger) {
       this.id = id;
-      this.text = text;
+      this.text = s;
       this.logger = logger;
+      logger.add(String.format("FooDataConn#new %d", id));
     }
 
-    String getText() {
+    public String getText() {
+      this.logger.add(String.format("FooDataConn#getText %d", this.id));
       return this.text;
     }
 
     @Override
     public void commit(AsyncGroup ag) throws Err {
       this.committed = true;
-      this.logger.add(String.format("FooDataConn %d committed", this.id));
+      this.logger.add(String.format("FooDataConn#commit %d", this.id));
     }
 
     @Override
     public void preCommit(AsyncGroup ag) throws Err {
-      this.logger.add(String.format("FooDataConn %d pre committed", this.id));
+      this.logger.add(String.format("FooDataConn#preCommit %d", this.id));
     }
 
     @Override
-    public void postCommit(AsyncGroup ag) {
-      this.logger.add(String.format("FooDataConn %d post committed", this.id));
+    public void postCommit(AsyncGroup ag) throws Err {
+      this.logger.add(String.format("FooDataConn#postCommit %d", this.id));
     }
 
     @Override
-    public boolean shouldForceBack() {
+    public boolean isCommitted() {
       return this.committed;
     }
 
     @Override
-    public void rollback(AsyncGroup ag) {
-      this.logger.add(String.format("FooDataConn %d rollbacked", this.id));
+    public void rollback(AsyncGroup ag) throws Err {
+      this.logger.add(String.format("FooDataConn#rollback %d", this.id));
     }
 
     @Override
-    public void forceBack(AsyncGroup ag) {
-      this.logger.add(String.format("FooDataConn %d forced back", this.id));
+    public void onTxnFailure(AsyncGroup ag, List<TxnFailureReport> reports) {
+      this.logger.add(String.format("FooDataConn#onTxnFailure %d", this.id));
     }
 
     @Override
     public void close() {
-      this.logger.add(String.format("FooDataConn %d closed", this.id));
+      this.logger.add(String.format("FooDataConn#close %d", this.id));
     }
   }
 
-  static class BarDataSrc implements DataSrc {
-    private int id;
-    private String text;
-    private List<String> logger;
-    private boolean willFail;
+  static class FooDataSrc implements DataSrc {
+    final int id;
+    final String text;
+    boolean failToSetup;
+    List<String> logger;
 
-    BarDataSrc(int id, List<String> logger, boolean willFail) {
+    FooDataSrc(int id, List<String> logger, boolean fail) {
       this.id = id;
-      this.text = null;
+      this.text = "hello";
       this.logger = logger;
-      this.willFail = willFail;
+      this.failToSetup = fail;
+      logger.add(String.format("FooDataSrc#new %d", id));
     }
 
     @Override
     public void setup(AsyncGroup ag) throws Err {
-      if (this.willFail) {
-        this.logger.add(String.format("BarDataSrc %d failed to setup", this.id));
-        throw new Err("XXX");
-      }
-      this.logger.add(String.format("BarDataSrc %d setupped", this.id));
+      this.logger.add(String.format("FooDataSrc#setup %d", this.id));
     }
 
     @Override
     public void close() {
-      this.logger.add(String.format("BarDataSrc.text = %s", this.text));
-      this.logger.add(String.format("BarDataSrc %d closed", this.id));
+      this.logger.add(String.format("FooDataSrc#close %d", this.id));
     }
 
     @Override
     public DataConn createDataConn() throws Err {
-      this.logger.add(String.format("BarDataSrc %d created BarDataConn", this.id));
-      return new BarDataConn(this.id, this.text, this.logger, this);
+      this.logger.add(String.format("FooDataSrc#createDataConn %d", this.id));
+      return new FooDataConn(this.id, this.text, this.logger);
     }
   }
 
   static class BarDataConn implements DataConn {
-    private int id;
-    private String text;
-    private boolean committed;
-    private List<String> logger;
-    private BarDataSrc ds;
+    final int id;
+    String text;
+    boolean committed;
+    List<String> logger;
 
-    BarDataConn(int id, String text, List<String> logger, BarDataSrc ds) {
+    BarDataConn(int id, List<String> logger) {
       this.id = id;
-      this.text = text;
-      this.committed = false;
+      this.text = "";
       this.logger = logger;
-      this.ds = ds;
+      logger.add(String.format("BarDataConn#new %d", id));
     }
 
-    void setText(String s) {
-      this.text = s;
+    public void setText(String v) {
+      logger.add(String.format("BarDataConn#setText %d", this.id));
+      this.text = v;
     }
 
     @Override
     public void commit(AsyncGroup ag) throws Err {
       this.committed = true;
-      this.ds.text = this.text;
-      this.logger.add(String.format("BarDataConn %d committed", this.id));
+      this.logger.add(String.format("BarDataConn#commit %d", this.id));
     }
 
     @Override
     public void preCommit(AsyncGroup ag) throws Err {
-      this.logger.add(String.format("BarDataConn %d pre committed", this.id));
+      this.logger.add(String.format("BarDataConn#preCommit %d", this.id));
     }
 
     @Override
-    public void postCommit(AsyncGroup ag) {
-      this.logger.add(String.format("BarDataConn %d post committed", this.id));
+    public void postCommit(AsyncGroup ag) throws Err {
+      this.logger.add(String.format("BarDataConn#postCommit %d", this.id));
     }
 
     @Override
-    public boolean shouldForceBack() {
+    public boolean isCommitted() {
       return this.committed;
     }
 
     @Override
-    public void rollback(AsyncGroup ag) {
-      this.logger.add(String.format("BarDataConn %d rollbacked", this.id));
+    public void rollback(AsyncGroup ag) throws Err {
+      this.logger.add(String.format("BarDataConn#rollback %d", this.id));
     }
 
     @Override
-    public void forceBack(AsyncGroup ag) {
-      this.logger.add(String.format("BarDataConn %d forced back", this.id));
+    public void onTxnFailure(AsyncGroup ag, List<TxnFailureReport> reports) {
+      this.logger.add(String.format("BarDataConn#onTxnFailure %d", this.id));
     }
 
     @Override
     public void close() {
-      this.logger.add(String.format("BarDataConn.text = %s", this.text));
-      this.logger.add(String.format("BarDataConn %d closed", this.id));
+      this.logger.add(String.format("BarDataConn#close %d", this.id));
     }
   }
 
-  ///
+  static class BarDataSrc implements DataSrc {
+    final int id;
+    List<String> logger;
+    boolean failToSetup;
+
+    BarDataSrc(int id, List<String> logger, boolean fail) {
+      this.id = id;
+      this.logger = logger;
+      this.failToSetup = fail;
+      logger.add(String.format("BarDataSrc#new %d", id));
+    }
+
+    @Override
+    public void setup(AsyncGroup ag) throws Err {
+      this.logger.add(String.format("BarDataSrc#setup %d", this.id));
+    }
+
+    @Override
+    public void close() {
+      this.logger.add(String.format("BarDataSrc#close %d", this.id));
+    }
+
+    @Override
+    public DataConn createDataConn() throws Err {
+      this.logger.add(String.format("BarDataSrc#createDataConn %d", this.id));
+      return new BarDataConn(this.id, this.logger);
+    }
+  }
 
   static interface SampleData {
     String getValue() throws Err;
 
-    void setValue(String text) throws Err;
+    void setValue(String v) throws Err;
   }
 
-  static class SampleLogic implements Logic<SampleData> {
-    @Override
-    public void run(SampleData data) throws Err {
-      var v = data.getValue();
-      data.setValue(v);
-    }
-  }
-
-  static class FailingLogic implements Logic<SampleData> {
-    @Override
-    public void run(SampleData data) throws Err {
-      throw new Err("ZZZ");
-    }
-  }
+  static Logic<SampleData> sampleLogic =
+      data -> {
+        String v = data.getValue();
+        data.setValue(v);
+        v = data.getValue();
+        data.setValue(v);
+      };
 
   static interface AllLogicData extends SampleData {}
 
@@ -238,437 +219,130 @@ public class DataAccTest {
 
   static interface BarDataAcc extends DataAcc, AllLogicData {
     @Override
-    default void setValue(String text) throws Err {
+    default void setValue(String v) throws Err {
       var conn = getDataConn("bar", BarDataConn.class);
-      conn.setText(text);
+      conn.setText(v);
+      assertThat(conn.text).isEqualTo("hello");
     }
   }
-
-  ///
 
   static class SampleDataHub extends DataHub implements FooDataAcc, BarDataAcc {}
 
   ///
 
   @Nested
-  class TestLogicArgument {
+  class RunTest {
     @BeforeEach
     void beforeEach() {
-      DataHubInnerTest.resetGlobalVariables();
+      DataHubInnerTest.resetGlobals();
     }
 
     @AfterEach
     void afterEach() {
-      DataHubInnerTest.resetGlobalVariables();
+      DataHubInnerTest.resetGlobals();
     }
 
     @Test
-    void test() {
+    void testMain() {
       var logger = new ArrayList<String>();
 
-      Sabi.uses("foo", new FooDataSrc(1, "hello", logger, false));
-      Sabi.uses("bar", new BarDataSrc(2, logger, false));
+      uses("foo", new FooDataSrc(1, logger, false));
 
-      try (var ac = Sabi.setup()) {
-        suppressWarnings_unused(ac);
-        try (var hub = new SampleDataHub()) {
-          new SampleLogic().run(hub);
-        } catch (Exception e) {
-          fail(e);
-        }
+      try (var ac = setup()) {
+        testApp(logger);
       } catch (Exception e) {
         fail(e);
       }
 
-      assertThat(logger)
-          .containsExactly(
-              "FooDataSrc 1 setupped",
-              "BarDataSrc 2 setupped",
-              "FooDataSrc 1 created FooDataConn",
-              "BarDataSrc 2 created BarDataConn",
-              "BarDataConn.text = hello",
-              "BarDataConn 2 closed",
-              "FooDataConn 1 closed",
-              "BarDataSrc.text = null",
-              "BarDataSrc 2 closed",
-              "FooDataSrc 1 closed");
+      assertThat(logger).hasSize(16);
+      var iter = logger.iterator();
+      assertThat(iter.next()).isEqualTo("FooDataSrc#new 1");
+      assertThat(iter.next()).isEqualTo("FooDataSrc#setup 1");
+      assertThat(iter.next()).isEqualTo("BarDataSrc#new 2");
+      assertThat(iter.next()).isEqualTo("BarDataSrc#setup 2");
+      assertThat(iter.next()).isEqualTo("FooDataSrc#createDataConn 1");
+      assertThat(iter.next()).isEqualTo("FooDataConn#new 1");
+      assertThat(iter.next()).isEqualTo("FooDataConn#getText 1");
+      assertThat(iter.next()).isEqualTo("BarDataSrc#createDataConn 2");
+      assertThat(iter.next()).isEqualTo("BarDataConn#new 2");
+      assertThat(iter.next()).isEqualTo("BarDataConn#setText 2");
+      assertThat(iter.next()).isEqualTo("FooDataConn#getText 1");
+      assertThat(iter.next()).isEqualTo("BarDataConn#setText 2");
+      assertThat(iter.next()).isEqualTo("BarDataConn#close 2");
+      assertThat(iter.next()).isEqualTo("FooDataConn#close 1");
+      assertThat(iter.next()).isEqualTo("BarDataSrc#close 2");
+      assertThat(iter.next()).isEqualTo("FooDataSrc#close 1");
+      assertThat(iter.hasNext()).isFalse();
+    }
+
+    void testApp(List<String> logger) throws Err {
+      try (var hub = new SampleDataHub()) {
+        hub.uses("bar", new BarDataSrc(2, logger, false));
+        hub.run(sampleLogic);
+      } catch (Exception e) {
+        fail(e);
+      }
     }
   }
 
   @Nested
-  class TestDataHubRunUsingGlobal {
+  class TxnTest {
     @BeforeEach
     void beforeEach() {
-      DataHubInnerTest.resetGlobalVariables();
+      DataHubInnerTest.resetGlobals();
     }
 
     @AfterEach
     void afterEach() {
-      DataHubInnerTest.resetGlobalVariables();
+      DataHubInnerTest.resetGlobals();
     }
 
     @Test
-    void test() {
+    void testMain() {
       var logger = new ArrayList<String>();
 
-      Sabi.uses("foo", new FooDataSrc(1, "hello", logger, false));
-      Sabi.uses("bar", new BarDataSrc(2, logger, false));
+      uses("foo", new FooDataSrc(1, logger, false));
 
-      try (var ac = Sabi.setup()) {
-        suppressWarnings_unused(ac);
-        try (var data = new SampleDataHub()) {
-          data.run(new SampleLogic());
-        } catch (Exception e) {
-          fail(e);
-        }
+      try (var ac = setup()) {
+        testApp(logger);
       } catch (Exception e) {
         fail(e);
       }
 
-      assertThat(logger)
-          .containsExactly(
-              "FooDataSrc 1 setupped",
-              "BarDataSrc 2 setupped",
-              "FooDataSrc 1 created FooDataConn",
-              "BarDataSrc 2 created BarDataConn",
-              "BarDataConn.text = hello",
-              "BarDataConn 2 closed",
-              "FooDataConn 1 closed",
-              "BarDataSrc.text = null",
-              "BarDataSrc 2 closed",
-              "FooDataSrc 1 closed");
+      assertThat(logger).hasSize(22);
+      var iter = logger.iterator();
+      assertThat(iter.next()).isEqualTo("FooDataSrc#new 1");
+      assertThat(iter.next()).isEqualTo("FooDataSrc#setup 1");
+      assertThat(iter.next()).isEqualTo("BarDataSrc#new 2");
+      assertThat(iter.next()).isEqualTo("BarDataSrc#setup 2");
+      assertThat(iter.next()).isEqualTo("FooDataSrc#createDataConn 1");
+      assertThat(iter.next()).isEqualTo("FooDataConn#new 1");
+      assertThat(iter.next()).isEqualTo("FooDataConn#getText 1");
+      assertThat(iter.next()).isEqualTo("BarDataSrc#createDataConn 2");
+      assertThat(iter.next()).isEqualTo("BarDataConn#new 2");
+      assertThat(iter.next()).isEqualTo("BarDataConn#setText 2");
+      assertThat(iter.next()).isEqualTo("FooDataConn#getText 1");
+      assertThat(iter.next()).isEqualTo("BarDataConn#setText 2");
+      assertThat(iter.next()).isEqualTo("FooDataConn#preCommit 1");
+      assertThat(iter.next()).isEqualTo("BarDataConn#preCommit 2");
+      assertThat(iter.next()).isEqualTo("FooDataConn#commit 1");
+      assertThat(iter.next()).isEqualTo("BarDataConn#commit 2");
+      assertThat(iter.next()).isEqualTo("FooDataConn#postCommit 1");
+      assertThat(iter.next()).isEqualTo("BarDataConn#postCommit 2");
+      assertThat(iter.next()).isEqualTo("BarDataConn#close 2");
+      assertThat(iter.next()).isEqualTo("FooDataConn#close 1");
+      assertThat(iter.next()).isEqualTo("BarDataSrc#close 2");
+      assertThat(iter.next()).isEqualTo("FooDataSrc#close 1");
+      assertThat(iter.hasNext()).isFalse();
     }
-  }
 
-  @Nested
-  class TestDataHubRunUsingLocal {
-    @BeforeEach
-    void beforeEach() {
-      DataHubInnerTest.resetGlobalVariables();
-    }
-
-    @AfterEach
-    void afterEach() {
-      DataHubInnerTest.resetGlobalVariables();
-    }
-
-    @Test
-    void test() {
-      var logger = new ArrayList<String>();
-
-      try (var ac = Sabi.setup()) {
-        suppressWarnings_unused(ac);
-        try (var data = new SampleDataHub()) {
-          data.uses("foo", new FooDataSrc(1, "hello", logger, false));
-          data.uses("bar", new BarDataSrc(2, logger, false));
-
-          data.run(new SampleLogic());
-        } catch (Exception e) {
-          fail(e);
-        }
+    void testApp(List<String> logger) throws Err {
+      try (var hub = new SampleDataHub()) {
+        hub.uses("bar", new BarDataSrc(2, logger, false));
+        hub.txn(sampleLogic);
       } catch (Exception e) {
         fail(e);
       }
-
-      assertThat(logger)
-          .containsExactly(
-              "FooDataSrc 1 setupped",
-              "BarDataSrc 2 setupped",
-              "FooDataSrc 1 created FooDataConn",
-              "BarDataSrc 2 created BarDataConn",
-              "BarDataConn.text = hello",
-              "BarDataConn 2 closed",
-              "FooDataConn 1 closed",
-              "BarDataSrc.text = null",
-              "BarDataSrc 2 closed",
-              "FooDataSrc 1 closed");
-    }
-
-    @Test
-    void test_not_run_logic_if_fail_to_setup_local_data_src() {
-      var logger = new ArrayList<String>();
-
-      try (var ac = Sabi.setup()) {
-        suppressWarnings_unused(ac);
-        try (var data = new SampleDataHub()) {
-          data.uses("foo", new FooDataSrc(1, "hello", logger, true));
-          data.uses("bar", new BarDataSrc(2, logger, false));
-
-          data.run(new SampleLogic());
-        } catch (Err e) {
-          switch (e.getReason()) {
-            case DataHub.FailToSetupLocalDataSrcs r -> {
-              var e2 = r.errors().get("foo");
-              assertThat(e2.getReason()).isEqualTo("XXX");
-            }
-            default -> fail(e);
-          }
-        } catch (Exception e) {
-          fail(e);
-        }
-      } catch (Exception e) {
-        fail(e);
-      }
-
-      assertThat(logger).containsExactly("FooDataSrc 1 failed to setup");
-    }
-  }
-
-  @Nested
-  class TestDataHubRunUsingGlobalAndLocal {
-    @BeforeEach
-    void beforeEach() {
-      DataHubInnerTest.resetGlobalVariables();
-    }
-
-    @AfterEach
-    void afterEach() {
-      DataHubInnerTest.resetGlobalVariables();
-    }
-
-    @Test
-    void test() {
-      var logger = new ArrayList<String>();
-
-      Sabi.uses("bar", new BarDataSrc(1, logger, false));
-
-      try (var ac = Sabi.setup()) {
-        suppressWarnings_unused(ac);
-        try (var data = new SampleDataHub()) {
-          data.uses("foo", new FooDataSrc(2, "Hello", logger, false));
-
-          data.run(new SampleLogic());
-        } catch (Exception e) {
-          fail(e);
-        }
-      } catch (Exception e) {
-        fail(e);
-      }
-
-      assertThat(logger)
-          .containsExactly(
-              "BarDataSrc 1 setupped",
-              "FooDataSrc 2 setupped",
-              "FooDataSrc 2 created FooDataConn",
-              "BarDataSrc 1 created BarDataConn",
-              "BarDataConn.text = Hello",
-              "BarDataConn 1 closed",
-              "FooDataConn 2 closed",
-              "FooDataSrc 2 closed",
-              "BarDataSrc.text = null",
-              "BarDataSrc 1 closed");
-    }
-  }
-
-  @Nested
-  class TestDataHubTxnUsingGlobal {
-    @BeforeEach
-    void beforeEach() {
-      DataHubInnerTest.resetGlobalVariables();
-    }
-
-    @AfterEach
-    void afterEach() {
-      DataHubInnerTest.resetGlobalVariables();
-    }
-
-    @Test
-    void test() {
-      var logger = new ArrayList<String>();
-
-      Sabi.uses("foo", new FooDataSrc(1, "Hello", logger, false));
-      Sabi.uses("bar", new BarDataSrc(2, logger, false));
-
-      try (var ac = Sabi.setup()) {
-        suppressWarnings_unused(ac);
-        try (var data = new SampleDataHub()) {
-          data.txn(new SampleLogic());
-        } catch (Exception e) {
-          fail(e);
-        }
-      } catch (Exception e) {
-        fail(e);
-      }
-
-      assertThat(logger)
-          .containsExactly(
-              "FooDataSrc 1 setupped",
-              "BarDataSrc 2 setupped",
-              "FooDataSrc 1 created FooDataConn",
-              "BarDataSrc 2 created BarDataConn",
-              "FooDataConn 1 pre committed",
-              "BarDataConn 2 pre committed",
-              "FooDataConn 1 committed",
-              "BarDataConn 2 committed",
-              "FooDataConn 1 post committed",
-              "BarDataConn 2 post committed",
-              "BarDataConn.text = Hello",
-              "BarDataConn 2 closed",
-              "FooDataConn 1 closed",
-              "BarDataSrc.text = Hello",
-              "BarDataSrc 2 closed",
-              "FooDataSrc 1 closed");
-    }
-  }
-
-  @Nested
-  class TestDataHubTxnUsingLocal {
-    @BeforeEach
-    void beforeEach() {
-      DataHubInnerTest.resetGlobalVariables();
-    }
-
-    @AfterEach
-    void afterEach() {
-      DataHubInnerTest.resetGlobalVariables();
-    }
-
-    @Test
-    void test() {
-      var logger = new ArrayList<String>();
-
-      try (var ac = Sabi.setup()) {
-        suppressWarnings_unused(ac);
-        try (var data = new SampleDataHub()) {
-          data.uses("foo", new FooDataSrc(1, "Hello", logger, false));
-          data.uses("bar", new BarDataSrc(2, logger, false));
-
-          data.txn(new SampleLogic());
-        } catch (Exception e) {
-          fail(e);
-        }
-      } catch (Exception e) {
-        fail(e);
-      }
-
-      assertThat(logger)
-          .containsExactly(
-              "FooDataSrc 1 setupped",
-              "BarDataSrc 2 setupped",
-              "FooDataSrc 1 created FooDataConn",
-              "BarDataSrc 2 created BarDataConn",
-              "FooDataConn 1 pre committed",
-              "BarDataConn 2 pre committed",
-              "FooDataConn 1 committed",
-              "BarDataConn 2 committed",
-              "FooDataConn 1 post committed",
-              "BarDataConn 2 post committed",
-              "BarDataConn.text = Hello",
-              "BarDataConn 2 closed",
-              "FooDataConn 1 closed",
-              "BarDataSrc.text = Hello",
-              "BarDataSrc 2 closed",
-              "FooDataSrc 1 closed");
-    }
-
-    @Test
-    void test_not_run_logic_if_fail_to_setup_local_data_src() {
-      var logger = new ArrayList<String>();
-
-      try (var ac = Sabi.setup()) {
-        suppressWarnings_unused(ac);
-        try (var data = new SampleDataHub()) {
-          data.uses("foo", new FooDataSrc(1, "Hello", logger, true));
-          data.uses("bar", new BarDataSrc(2, logger, false));
-
-          data.txn(new SampleLogic());
-        } catch (Err e) {
-          switch (e.getReason()) {
-            case DataHub.FailToSetupLocalDataSrcs r -> {
-              var e2 = r.errors().get("foo");
-              assertThat(e2.getReason()).isEqualTo("XXX");
-            }
-            default -> fail(e);
-          }
-        } catch (Exception e) {
-          fail(e);
-        }
-      } catch (Exception e) {
-        fail(e);
-      }
-
-      assertThat(logger).containsExactly("FooDataSrc 1 failed to setup");
-    }
-
-    @Test
-    void test_not_run_logic_in_txn_and_rollback() {
-      var logger = new ArrayList<String>();
-
-      try (var ac = Sabi.setup()) {
-        suppressWarnings_unused(ac);
-        try (var data = new SampleDataHub()) {
-          data.uses("foo", new FooDataSrc(1, "Hello", logger, false));
-          data.uses("bar", new BarDataSrc(2, logger, false));
-
-          data.txn(new FailingLogic());
-        } catch (Err e) {
-          assertThat(e.getReason()).isEqualTo("ZZZ");
-        } catch (Exception e) {
-          fail(e);
-        }
-      } catch (Exception e) {
-        fail(e);
-      }
-
-      assertThat(logger)
-          .containsExactly(
-              "FooDataSrc 1 setupped",
-              "BarDataSrc 2 setupped",
-              "BarDataSrc.text = null",
-              "BarDataSrc 2 closed",
-              "FooDataSrc 1 closed");
-    }
-  }
-
-  @Nested
-  class TestDataHubTxnUsingGlobalAndLocal {
-    @BeforeEach
-    void beforeEach() {
-      DataHubInnerTest.resetGlobalVariables();
-    }
-
-    @AfterEach
-    void afterEach() {
-      DataHubInnerTest.resetGlobalVariables();
-    }
-
-    @Test
-    void test() {
-      var logger = new ArrayList<String>();
-
-      Sabi.uses("bar", new BarDataSrc(1, logger, false));
-
-      try (var ac = Sabi.setup()) {
-        suppressWarnings_unused(ac);
-        try (var data = new SampleDataHub()) {
-          data.uses("foo", new FooDataSrc(2, "Hello", logger, false));
-
-          data.txn(new SampleLogic());
-        } catch (Exception e) {
-          fail(e);
-        }
-      } catch (Exception e) {
-        fail(e);
-      }
-
-      assertThat(logger)
-          .containsExactly(
-              "BarDataSrc 1 setupped",
-              "FooDataSrc 2 setupped",
-              "FooDataSrc 2 created FooDataConn",
-              "BarDataSrc 1 created BarDataConn",
-              "FooDataConn 2 pre committed",
-              "BarDataConn 1 pre committed",
-              "FooDataConn 2 committed",
-              "BarDataConn 1 committed",
-              "FooDataConn 2 post committed",
-              "BarDataConn 1 post committed",
-              "BarDataConn.text = Hello",
-              "BarDataConn 1 closed",
-              "FooDataConn 2 closed",
-              "FooDataSrc 2 closed",
-              "BarDataSrc.text = Hello",
-              "BarDataSrc 1 closed");
     }
   }
 }

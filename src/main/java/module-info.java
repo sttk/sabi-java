@@ -4,10 +4,11 @@
  */
 
 /**
- * Defines the APIs of Sabi framework.
+ * Defines the module APIs of the Sabi framework.
  *
- * <p>This module includes the interfaces that abstracts data accesses to the external data stores
- * and the classes to execute a logic function with or without transaction operations.
+ * <p>This module provides interfaces and classes to abstract data access to external data stores,
+ * manage data source and connection lifecycles, and execute logic functions in transactional or
+ * non-transactional scopes.
  *
  * @version 0.8
  */

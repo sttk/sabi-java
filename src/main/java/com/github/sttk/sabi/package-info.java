@@ -4,7 +4,7 @@
  */
 
 /**
- * Provides classes and interfaces of sabi framework.
+ * Provides core interfaces and classes for the sabi framework.
  *
  * @version 0.8
  */

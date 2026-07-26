@@ -6,239 +6,212 @@ package com.github.sttk.sabi;
 
 import com.github.sttk.errs.Err;
 import com.github.sttk.sabi.internal.DataHubInner;
-import java.util.Map;
+import com.github.sttk.sabi.internal.TxnFailureReportBuilder;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * {@code DataHub} is a central component in the Sabi framework that manages {@link DataSrc} and
- * {@link DataConn} instances, facilitating data access and transaction management. It implements
- * both {@link DataAcc} for data access operations and {@link AutoCloseable} for resource
- * management.
+ * Manages local data sources and data connections, and executes business logic in transactional or
+ * non-transactional scopes.
  *
- * <p>This class allows for the registration and unregistration of local {@link DataSrc} objects,
- * and provides methods to execute application logic with or without transactional boundaries.
+ * <p>A {@code DataHub} acts as a container for local {@link DataSrc} instances and provides access
+ * to connections implementing {@link DataConn}. It supports executing logic functions through
+ * {@link #run(Logic)} for non-transactional operations and {@link #txn(Logic)} for transactional
+ * operations. In a transaction, connection commits, rollbacks, and failure reporting are handled
+ * automatically.
  */
 public class DataHub implements DataAcc, AutoCloseable {
-  /**
-   * Represents an error reason that occurred when failing to set up global {@link DataSrc}
-   * instances.
-   *
-   * @param errors A map containing the names of the data sources and the corresponding exceptions
-   *     that occurred during their setup.
-   */
-  public record FailToSetupGlobalDataSrcs(Map<String, Err> errors) {}
 
   /**
-   * Represents an error reason that occurred when failing to set up local {@link DataSrc}
-   * instances.
+   * Represents an error when setting up global data sources fails.
    *
-   * @param errors A map containing the names of the data sources and the corresponding exceptions
-   *     that occurred during their setup.
+   * @param errors the list of error entries during global data source setup
    */
-  public record FailToSetupLocalDataSrcs(Map<String, Err> errors) {}
+  public record FailToSetupGlobalDataSrcs(List<ErrEntry> errors) {}
 
   /**
-   * Represents an error reason that occurred when failing to commit one or more {@link DataConn}
-   * instances.
+   * Represents an error when setting up local data sources fails.
    *
-   * @param errors A map containing the names of the data connections and the corresponding
-   *     exceptions that occurred during their commit.
+   * @param errors the list of error entries during local data source setup
    */
-  public record FailToCommitDataConn(Map<String, Err> errors) {}
+  public record FailToSetupLocalDataSrcs(List<ErrEntry> errors) {}
 
   /**
-   * Represents an error reason that occurred when failing to pre-commit one or more {@link
-   * DataConn} instances.
+   * Represents an error when no data source with the specified name is found.
    *
-   * @param errors A map containing the names of the data connections and the corresponding
-   *     exceptions that occurred during their pre-commit.
-   */
-  public record FailToPreCommitDataConn(Map<String, Err> errors) {}
-
-  /**
-   * Represents an error reason where no {@link DataSrc} was found to create a {@link DataConn} with
-   * the specified name and type.
-   *
-   * @param name The name of the data source requested.
-   * @param dataConnType The type of the data connection requested.
+   * @param name the logical name of the data source
+   * @param dataConnType the expected data connection class name
    */
   public record NoDataSrcToCreateDataConn(String name, String dataConnType) {}
 
   /**
-   * Represents an error reason that occurred when failing to create a {@link DataConn} instance.
+   * Represents an error when creating a data connection fails.
    *
-   * @param name The name of the data source from which the connection was attempted.
-   * @param dataConnType The type of the data connection that failed to be created.
+   * @param name the logical name of the data source
+   * @param dataConnType the expected data connection class name
    */
   public record FailToCreateDataConn(String name, String dataConnType) {}
 
   /**
-   * Represents an error reason where the created {@link DataConn} instance was null.
+   * Represents an error when a created data connection instance is null.
    *
-   * @param name The name of the data source.
-   * @param dataConnType The type of the data connection expected.
+   * @param name the logical name of the data source
+   * @param dataConnType the expected data connection class name
    */
   public record CreatedDataConnIsNull(String name, String dataConnType) {}
 
   /**
-   * Represents an error reason that occurred when failing to cast a {@link DataConn} to the
-   * requested type.
+   * Represents an error when a connection cannot be cast to the target connection type.
    *
-   * @param name The name of the data connection.
-   * @param castToType The type to which the data connection was attempted to be cast.
+   * @param name the logical name of the data source
+   * @param fromDataConnType the actual connection class name
+   * @param toDataConnType the target connection class name
    */
-  public record FailToCastDataConn(String name, String castToType) {}
+  public record FailToCastDataConn(String name, String fromDataConnType, String toDataConnType) {}
 
   /**
-   * Represents an unexpected {@link RuntimeException} that occurred during pre-commit or commit
-   * operations.
+   * Represents an error when casting this {@code DataHub} instance to the generic data context
+   * fails.
+   *
+   * @param fromType the class name of this DataHub instance
    */
+  public record FailToCastDataHub(String fromType) {}
+
+  /** Represents an error when an unhandled runtime exception occurs during logic execution. */
   public record RuntimeExceptionOccurred() {}
 
+  ///
+
+  private final DataHubInner inner;
+
+  /** Constructs a new, default {@code DataHub} instance. */
+  public DataHub() {
+    this.inner = new DataHubInner();
+  }
+
   /**
-   * Represents an error reason that occurred when failing to cast the {@code DataHub} instance
-   * itself to the expected data access interface type for a {@link Logic}.
+   * Constructs a new {@code DataHub} instance configured to use specified global data sources.
    *
-   * @param castFromType The actual type of the {@code DataHub} instance that failed to cast.
+   * @param names the list of global data source names to bind to this hub
    */
-  public record FailToCastDataHub(String castFromType) {}
-
-  private final DataHubInner inner = new DataHubInner();
-
-  /** Constructs a new {@code DataHub} instance. */
-  public DataHub() {}
+  public DataHub(List<String> names) {
+    this.inner = new DataHubInner(names);
+  }
 
   /**
-   * Registers a local {@link DataSrc} with the specified name for use within this {@code DataHub}
-   * instance. This allows specific data sources to be managed independently from globally
-   * registered ones.
+   * Constructs a new {@code DataHub} instance configured to use specified global data sources.
    *
-   * @param name The unique name for the {@link DataSrc}.
-   * @param ds The {@link DataSrc} instance to register.
+   * @param names varargs array of global data source names to bind to this hub
+   */
+  public DataHub(String... names) {
+    this(List.of(names));
+  }
+
+  /**
+   * Registers a local {@link DataSrc} with a specific name in this hub.
+   *
+   * @param name the logical name for the data source
+   * @param ds the {@link DataSrc} instance to register
    */
   public void uses(String name, DataSrc ds) {
-    inner.uses(name, ds);
+    this.inner.useLocal(name, ds);
   }
 
   /**
-   * Unregisters a local {@link DataSrc} with the given name from this {@code DataHub} instance.
+   * Unregisters a local {@link DataSrc} associated with the given name from this hub.
    *
-   * @param name The name of the {@link DataSrc} to unregister.
+   * @param name the logical name of the data source to remove
    */
   public void disuses(String name) {
-    inner.disuses(name);
+    this.inner.disuseLocal(name);
+  }
+
+  /** Closes all local data sources registered in this hub and releases their resources. */
+  @Override
+  public void close() {
+    this.inner.closeLocals();
   }
 
   /**
-   * Retrieves a {@link DataConn} instance from the managed data sources. This method is part of the
-   * {@link DataAcc} interface implementation.
+   * {@inheritDoc}
    *
-   * @param <C> The type of the {@link DataConn} to retrieve, which must extend {@link DataConn}.
-   * @param name The name of the data source from which to get the connection.
-   * @param cls The {@link Class} object representing the desired type of the data connection.
-   * @return A {@link DataConn} instance of the specified type.
-   * @throws Err if no data source is found, if the connection cannot be created, if the created
-   *     connection is null, or if the connection cannot be cast to the specified class.
+   * @throws Err if the data source is not found, connection creation fails or returns null, or
+   *     casting to {@code cls} fails
    */
   @Override
   public <C extends DataConn> C getDataConn(String name, Class<C> cls) throws Err {
-    return inner.getDataConn(name, cls);
+    return this.inner.getDataConn(name, cls);
   }
 
   /**
-   * Closes all {@link DataConn} instances managed by this {@code DataHub}, releasing their
-   * resources. This method is part of the {@link AutoCloseable} interface and should be called to
-   * ensure proper resource cleanup, ideally in a try-with-resources statement.
-   */
-  @Override
-  public void close() {
-    inner.close();
-  }
-
-  void begin() throws Err {
-    inner.begin();
-  }
-
-  void commit() throws Err {
-    inner.commit();
-  }
-
-  void rollback() {
-    inner.rollback();
-  }
-
-  void end() {
-    inner.end();
-  }
-
-  /**
-   * Executes the provided application {@link Logic} without transactional boundaries. The {@code
-   * DataHub} instance is treated as the data access object {@code D} to the {@link Logic}'s {@code
-   * run} method.
+   * Executes business logic in a non-transactional scope.
    *
-   * @param <D> The type of the data access object, which typically is {@code DataHub} or an
-   *     interface implemented by {@code DataHub} that {@link Logic} expects.
-   * @param logic The application logic to execute.
-   * @throws Err if an {@link Err} or {@link RuntimeException} occurs during logic execution or if
-   *     the {@code DataHub} cannot be cast to the expected data access type.
+   * <p>This method passes this hub instance (cast to type {@code D}) to {@link Logic#run(Object)}.
+   * Connections acquired during execution are managed within the scope.
+   *
+   * @param <D> the type of data context expected by the logic, typically {@code DataHub} or a
+   *     subclass/interface
+   * @param logic the business logic to execute
+   * @throws Err if the logic throws {@code Err}, if casting to {@code D} fails (wrapping {@link
+   *     FailToCastDataHub}), or if an unhandled runtime exception occurs (wrapping {@link
+   *     RuntimeExceptionOccurred})
    */
   public <D> void run(Logic<D> logic) throws Err {
-    D data;
     try {
       @SuppressWarnings("unchecked")
-      D d = (D) this;
-      data = d;
-    } catch (Exception e) {
-      throw new Err(new FailToCastDataHub(this.getClass().getName()));
-    }
-    try {
-      this.begin();
+      D data = (D) this;
+
+      this.inner.begin();
       logic.run(data);
-    } catch (Err e) {
-      throw e;
-    } catch (RuntimeException e) {
-      throw new Err(new RuntimeExceptionOccurred(), e);
+    } catch (Err err) {
+      throw err;
+    } catch (ClassCastException e) {
+      throw new Err(new FailToCastDataHub(this.getClass().getName()), e);
+    } catch (RuntimeException re) {
+      throw new Err(new RuntimeExceptionOccurred(), re);
     } finally {
-      this.end();
+      this.inner.end();
     }
   }
 
   /**
-   * Executes the provided application {@link Logic} within a transactional context. The {@code
-   * DataHub} instance is treated as the data access object {@code D} to the {@link Logic}'s {@code
-   * run} method. If the logic completes successfully, a commit operation is attempted. If any
-   * {@link Err}, {@link RuntimeException}, or {@link Error} occurs, a rollback operation is
-   * performed.
+   * Executes business logic within a transactional boundary.
    *
-   * @param <D> The type of the data access object, which typically is {@code DataHub} or an
-   *     interface implemented by {@code DataHub} that {@link Logic} expects.
-   * @param logic The application logic to execute transactionally.
-   * @throws Err if an {@link Err}, {@link RuntimeException}, or {@link Error} occurs during logic
-   *     execution, pre-commit, or commit. The original exception is re-thrown after rollback.
+   * <p>Upon successful completion of {@link Logic#run(Object)}, all acquired data connections are
+   * committed. If an exception occurs, all connections are automatically rolled back, transaction
+   * failure reports are dispatched to connections, and the exception is rethrown wrapped in {@link
+   * Err}.
+   *
+   * @param <D> the type of data context expected by the logic
+   * @param logic the business logic to execute transactionally
+   * @throws Err if the logic throws {@code Err}, connection commit or rollback fails, casting to
+   *     {@code D} fails, or a runtime exception occurs
    */
   public <D> void txn(Logic<D> logic) throws Err {
-    D data;
+    final var reportBuilders = new ArrayList<TxnFailureReportBuilder>(0);
     try {
-      @SuppressWarnings("unchecked")
-      D d = (D) this;
-      data = d;
-    } catch (Exception e) {
-      throw new Err(new FailToCastDataHub(this.getClass().getName()));
-    }
-    try {
-      this.begin();
-      logic.run(data);
-      this.commit();
-    } catch (Err e) {
-      this.rollback();
-      throw e;
-    } catch (RuntimeException e) {
-      this.rollback();
-      throw new Err(new RuntimeExceptionOccurred(), e);
-    } catch (Error e) {
-      this.rollback();
-      throw e;
+      try {
+        @SuppressWarnings("unchecked")
+        D data = (D) this;
+
+        this.inner.begin();
+        logic.run(data);
+      } finally {
+        this.inner.prepareTxnFailureReportBuilders(reportBuilders);
+      }
+
+      this.inner.commit(reportBuilders);
+    } catch (Err err) {
+      this.inner.rollback(reportBuilders);
+      throw err;
+    } catch (ClassCastException e) {
+      this.inner.rollback(reportBuilders);
+      throw new Err(new FailToCastDataHub(this.getClass().getName()), e);
+    } catch (RuntimeException re) {
+      this.inner.rollback(reportBuilders);
+      throw new Err(new RuntimeExceptionOccurred(), re);
     } finally {
-      this.end();
+      this.inner.end();
     }
   }
 }
