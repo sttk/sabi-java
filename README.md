@@ -110,7 +110,7 @@ interface AllLogicData extends MyData {}
 import com.github.sttk.errs.Err;
 import com.github.sttk.sabi.DataAcc;
 
-interface GettingDataAcc implements DataAcc, AllLogicData {
+interface GettingDataAcc extends DataAcc, AllLogicData {
   default String getText() throws Err {
     return "output text";
   }
@@ -125,7 +125,7 @@ import com.github.sttk.sabi_stdio.StdioDataConn;  // This is a conceptual, non-e
 import java.io.InputStream;
 import java.io.PrintStream;
 
-interface SettingDataAcc implements DataAcc, AllLogicData {
+interface SettingDataAcc extends DataAcc, AllLogicData {
   default void setText(String text) throws Err {
     var redisDc = getDataConn("redis", RedisDataConn.class);
     var redisConn = redisDc.getConnection();
