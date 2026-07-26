@@ -126,12 +126,12 @@ import java.io.InputStream;
 import java.io.PrintStream;
 
 interface SettingDataAcc implements DataAcc, AllLogicData {
-  default String setText(String text) throws Err {
+  default void setText(String text) throws Err {
     var redisDc = getDataConn("redis", RedisDataConn.class);
     var redisConn = redisDc.getConnection();
     var commands = redisConn.sync();
     try {
-      commands.set("sample", val);
+      commands.set("sample", text);
     } catch (Exception e) {
       throw new Err("fail to set value", e);
     }
@@ -139,7 +139,7 @@ interface SettingDataAcc implements DataAcc, AllLogicData {
     redisDc.addRollback(rConn -> {
       var cmd = rConn.sync();
       try {
-        var cmd.del("sample");
+        cmd.del("sample");
       } catch (Exception e) {
         throw new Err("fail to roll back", e);
       }
@@ -147,7 +147,7 @@ interface SettingDataAcc implements DataAcc, AllLogicData {
 
     var stdioDc = getDataConn("stdio", StdioDataConn.class);
     stdioDc.addPostCommit((InputStream in, PrintStream out, PrintStream err) -> {
-      out.printf(""%s", text);
+      out.printf("%s", text);
     });
   }
 }
@@ -157,7 +157,7 @@ interface SettingDataAcc implements DataAcc, AllLogicData {
 
 The `DataHub` is the central component that manages all `DataSrc` and `DataConn`,
 providing access to them for your application logic.
-By implementing the data interface (`MyData`) from step 1. and the `DataAcc` classs
+By implementing the data interface (`MyData`) from step 1. and the `DataAcc` classes
 from step 2. on `DataHub`, you integrate them.
 
 ```java
@@ -199,7 +199,7 @@ public class Main {
     try (var ac = Sabi.setup()) {
       
       // Creates a new instance of DataHub.
-      try (var data := new MyDataHub()) {
+      try (var data = new MyDataHub()) {
 
         // Register session-local DataSrc with DataHub
         data.uses("bar", new BarDataSrc());
