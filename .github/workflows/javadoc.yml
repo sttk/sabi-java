@@ -1,5 +1,8 @@
 name: Javadoc
 
+permissions:
+  contents: write
+
 on:
   release:
     types: [ created ]
