@@ -19,6 +19,8 @@ import java.util.List;
  * {@link #run(Logic)} for non-transactional operations and {@link #txn(Logic)} for transactional
  * operations. In a transaction, connection commits, rollbacks, and failure reporting are handled
  * automatically.
+ *
+ * @since 1.0
  */
 public class DataHub implements DataAcc, AutoCloseable {
 

@@ -12,6 +12,8 @@ import com.github.sttk.errs.Err;
  * <p>Tasks implementing this interface are added to an {@link AsyncGroup} (via {@link
  * AsyncGroup#add(Runner)}) during data source or data connection lifecycle events (such as setup,
  * commit, or rollback) to perform parallel background processing.
+ *
+ * @since 1.0
  */
 @FunctionalInterface
 public interface Runner {

@@ -4,7 +4,11 @@
  */
 package com.github.sttk.sabi;
 
-/** Defines recommended recovery actions to handle transaction failures. */
+/**
+ * Defines recommended recovery actions to handle transaction failures.
+ *
+ * @since 1.0
+ */
 public enum TxnFailureRecovery {
 
   /** Indicates that no recovery action is required. */

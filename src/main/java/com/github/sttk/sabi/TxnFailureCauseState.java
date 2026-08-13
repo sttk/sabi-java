@@ -4,7 +4,11 @@
  */
 package com.github.sttk.sabi;
 
-/** Defines the states representing causes of transaction failures or successful states. */
+/**
+ * Defines the states representing causes of transaction failures or successful states.
+ *
+ * @since 1.0
+ */
 public enum TxnFailureCauseState {
 
   /** Indicates no failure occurred and the connection was committed successfully. */

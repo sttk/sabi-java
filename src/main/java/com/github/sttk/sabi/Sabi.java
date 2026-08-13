@@ -15,6 +15,8 @@ import java.util.List;
  * startup, and then call {@link #setup()} or {@link #setup(String...)} to set them up. The returned
  * {@link AutoCloseable} handles shutting down and closing global data sources when the application
  * terminates or finishes using them.
+ *
+ * @since 1.0
  */
 public final class Sabi {
   private Sabi() {}

@@ -12,6 +12,8 @@ package com.github.sttk.sabi;
  * and passed to {@link DataConn#onTxnFailure(AsyncGroup, java.util.List)}. It details the
  * connection's name, type, failure cause ({@link TxnFailureCause}), and rollback status ({@link
  * TxnFailureRollback}), and provides methods to determine recommended recovery strategies.
+ *
+ * @since 1.0
  */
 public class TxnFailureReport {
 

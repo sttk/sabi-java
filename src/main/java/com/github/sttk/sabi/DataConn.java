@@ -15,6 +15,8 @@ import java.util.List;
  * relational databases, NoSQL stores, or web services. During a transaction, connections progress
  * through pre-commit, commit, and post-commit phases, and support rollback and failure reporting
  * when errors occur.
+ *
+ * @since 1.0
  */
 public interface DataConn {
 
