@@ -10,7 +10,7 @@
  * manage data source and connection lifecycles, and execute logic functions in transactional or
  * non-transactional scopes.
  *
- * @version 0.8
+ * @version 0.9
  */
 module com.github.sttk.sabi {
   exports com.github.sttk.sabi;
