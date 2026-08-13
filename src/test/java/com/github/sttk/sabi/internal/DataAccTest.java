@@ -231,6 +231,7 @@ public class DataAccTest {
   ///
 
   @Nested
+  @SuppressWarnings("try")
   class RunTest {
     @BeforeEach
     void beforeEach() {
@@ -286,6 +287,7 @@ public class DataAccTest {
   }
 
   @Nested
+  @SuppressWarnings("try")
   class TxnTest {
     @BeforeEach
     void beforeEach() {

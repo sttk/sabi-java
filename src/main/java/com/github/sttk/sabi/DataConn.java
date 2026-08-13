@@ -39,7 +39,7 @@ public interface DataConn {
    */
   public record FailToPostCommitDataConn(List<ErrEntry> errors) {}
 
-  ///
+  //
 
   /**
    * Commits changes made through this connection.
