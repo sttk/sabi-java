@@ -1355,6 +1355,7 @@ public class DataHubInnerTest {
   }
 
   @Nested
+  @SuppressWarnings("try")
   class TestGlobals {
 
     @Test
