@@ -13,6 +13,8 @@ import com.github.sttk.errs.Err;
  * specific names within a data access scope (such as a {@link DataHub}). Application business logic
  * uses this interface to obtain connection objects required to perform database or external service
  * operations.
+ *
+ * @since 1.0
  */
 public interface DataAcc {
 

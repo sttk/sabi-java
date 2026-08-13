@@ -13,6 +13,8 @@ import com.github.sttk.errs.Err;
  * <p>Instances of this class record the positional index, logical name, and cause of an error when
  * batch operations (such as global/local data source setup or connection pre-commit, commit, and
  * post-commit phases) encounter errors across multiple connections.
+ *
+ * @since 1.0
  */
 public class ErrEntry {
 

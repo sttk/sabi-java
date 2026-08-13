@@ -19,6 +19,8 @@ import com.github.sttk.sabi.internal.AsyncGroupImpl;
  * <p>All registered {@link Runner} tasks are managed by this group and executed asynchronously. If
  * any registered task fails, is interrupted, or throws an unhandled runtime exception,
  * corresponding error records defined in this interface are produced to report the failure.
+ *
+ * @since 1.0
  */
 public sealed interface AsyncGroup permits AsyncGroupImpl {
 

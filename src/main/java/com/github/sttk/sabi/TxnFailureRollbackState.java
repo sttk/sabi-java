@@ -4,7 +4,11 @@
  */
 package com.github.sttk.sabi;
 
-/** Defines the states representing outcomes of transaction rollback attempts. */
+/**
+ * Defines the states representing outcomes of transaction rollback attempts.
+ *
+ * @since 1.0
+ */
 public enum TxnFailureRollbackState {
 
   /** Indicates that the connection was successfully rolled back without error. */

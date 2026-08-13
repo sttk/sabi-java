@@ -12,6 +12,8 @@ import com.github.sttk.errs.Err;
  *
  * <p>This class encapsulates the phase or status in which a transaction failure occurred (via
  * {@link TxnFailureCauseState}) and the specific {@link Err} instance detailing the failure.
+ *
+ * @since 1.0
  */
 public class TxnFailureCause {
 

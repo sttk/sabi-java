@@ -15,6 +15,8 @@ import com.github.sttk.errs.Err;
  * interface {@code data} gives access to data connections and resources needed during execution.
  *
  * @param <D> the type of data access interface passed to the logic execution method
+ *
+ * @since 1.0
  */
 @FunctionalInterface
 public interface Logic<D> {

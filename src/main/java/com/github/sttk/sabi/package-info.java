@@ -6,6 +6,7 @@
 /**
  * Provides core interfaces and classes for the sabi framework.
  *
- * @version 0.8
+ * @version 1.0
+ * @since 1.0
  */
 package com.github.sttk.sabi;

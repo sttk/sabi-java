@@ -14,6 +14,8 @@ import com.github.sttk.errs.Err;
  * for specific data stores or external services (such as relational databases, HTTP clients, or
  * caching services). Data sources can be registered globally via {@link Sabi#uses(String, DataSrc)}
  * or bound locally to a {@link DataHub}.
+ *
+ * @since 1.0
  */
 public interface DataSrc {
 

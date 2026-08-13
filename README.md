@@ -56,7 +56,7 @@ The examples of declaring that repository and the dependency on this package in 
     <dependency>
       <groupId>io.github.sttk</groupId>
       <artifactId>sabi</artifactId>
-      <version>0.8.0</version>
+      <version>1.0.0</version>
     </dependency>
   </dependencies>
 ```
@@ -68,7 +68,7 @@ repositories {
   mavenCentral()
 }
 dependencies {
-  implementation 'io.github.sttk:sabi:0.8.0'
+  implementation 'io.github.sttk:sabi:1.0.0'
 }
 ```
 
@@ -254,9 +254,9 @@ This program is free software under MIT License.<br>
 See the file LICENSE in this distribution for more details.
 
 
-[mvn-img]: https://img.shields.io/badge/maven_central-0.8.0-276bdd.svg
-[mvn-url]: https://central.sonatype.com/artifact/io.github.sttk/sabi/0.8.0
-[mvnrepo-img]: https://img.shields.io/badge/mvn_repository-0.8.0-498df4.svg
+[mvn-img]: https://img.shields.io/badge/maven_central-1.0.0-276bdd.svg
+[mvn-url]: https://central.sonatype.com/artifact/io.github.sttk/sabi/1.0.0
+[mvnrepo-img]: https://img.shields.io/badge/mvn_repository-1.0.0-498df4.svg
 [mvnrepo-url]: https://mvnrepository.com/artifact/io.github.sttk/sabi
 [io-img]: https://img.shields.io/badge/github.io-Javadoc-4d7a97.svg
 [io-url]: https://sttk.github.io/sabi-java/
