@@ -9,7 +9,7 @@ import com.github.sttk.sabi.DataSrc;
 public class DataSrcContainer {
   final boolean local;
   final String name;
-  DataSrc ds;
+  final DataSrc ds;
 
   DataSrcContainer(boolean local, String name, DataSrc ds) {
     this.local = local;
