@@ -109,7 +109,7 @@ public class DataSrcManager {
     }
 
     var indexedMap = new HashMap<String, Integer>(names.size());
-    // Becuase earlier ones take precedence when names overlap
+    // Because earlier ones take precedence when names overlap
     for (int i = names.size() - 1; i >= 0; i--) {
       indexedMap.put(names.get(i), i);
     }
