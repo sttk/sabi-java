@@ -512,7 +512,7 @@ public class DataSrcManagerTest {
   }
 
   @Test
-  void setupWithOrderContainingDuplicatedNameAndOk2() {
+  void setupWithOrderContainingDuplicatedNameAndOk_2() {
     var logger = new ArrayList<String>();
 
     var manager = new DataSrcManager(true);
@@ -606,6 +606,33 @@ public class DataSrcManagerTest {
   }
 
   @Test
+  void setupWithOrderButOneOfNamesIsNotUsed_2() {
+    var logger = new ArrayList<String>();
+
+    var manager = new DataSrcManager(true);
+    try {
+      var ds1 = new SyncDataSrc(1, logger, Fail.Not);
+      manager.add("foo", ds1);
+
+      var ds2 = new SyncDataSrc(2, logger, Fail.Not);
+      manager.add("bar", ds2);
+
+      assertThat(manager.local).isTrue();
+      assertThat(manager.listUnready).hasSize(2);
+      assertThat(manager.listReady).hasSize(0);
+
+      var errors = manager.setupWithOrder(List.of("baz", "xxx", "foo"));
+
+      assertThat(manager.local).isTrue();
+      assertThat(manager.listUnready).hasSize(0);
+      assertThat(manager.listReady).hasSize(2);
+      assertThat(errors).isEmpty();
+    } finally {
+      manager.close();
+    }
+  }
+
+  @Test
   void testCopyDsReadyToMap() {
     var logger = new ArrayList<String>();
 
@@ -656,5 +683,45 @@ public class DataSrcManagerTest {
     assertThat(contMap.get("bar").name).isEqualTo("bar");
     assertThat(contMap.get("baz").local).isFalse();
     assertThat(contMap.get("baz").name).isEqualTo("baz");
+  }
+
+  @Test
+  void add_copyDsReadyToMap_remove_copyDsReadyToMap() {
+    var logger = new ArrayList<String>();
+
+    var manager = new DataSrcManager(true);
+    try {
+      var ds1 = new SyncDataSrc(1, logger, Fail.Not);
+      manager.add("foo", ds1);
+
+      var ds2 = new SyncDataSrc(2, logger, Fail.Not);
+      manager.add("bar", ds2);
+
+      var errors = manager.setup();
+      assertThat(errors).isEmpty();
+
+      var contMap = new HashMap<String, DataSrcContainer>();
+      manager.copyDsReadyToMap(contMap);
+      assertThat(contMap).hasSize(2);
+      assertThat(contMap.get("foo").local).isTrue();
+      assertThat(contMap.get("foo").name).isEqualTo("foo");
+      assertThat(contMap.get("foo").ds).isNotNull();
+      assertThat(contMap.get("bar").local).isTrue();
+      assertThat(contMap.get("bar").name).isEqualTo("bar");
+      assertThat(contMap.get("bar").ds).isNotNull();
+
+      manager.remove("foo");
+      errors = manager.setup();
+      assertThat(errors).isEmpty();
+
+      contMap = new HashMap<String, DataSrcContainer>();
+      manager.copyDsReadyToMap(contMap);
+      assertThat(contMap).hasSize(1);
+      assertThat(contMap.get("bar").local).isTrue();
+      assertThat(contMap.get("bar").name).isEqualTo("bar");
+      assertThat(contMap.get("bar").ds).isNotNull();
+    } finally {
+      manager.close();
+    }
   }
 }

@@ -16,8 +16,8 @@ import java.util.Objects;
 
 public class DataSrcManager {
   final boolean local;
-  final List<DataSrcContainer> listUnready;
-  final List<DataSrcContainer> listReady;
+  final List<DataSrcContainer> listUnready; // Elements whose .ds is null are possible.
+  final List<DataSrcContainer> listReady; // Elements whose .ds is null are impossible.
 
   DataSrcManager(boolean local) {
     this.local = local;
@@ -30,32 +30,25 @@ public class DataSrcManager {
   }
 
   void remove(String name) {
-    for (var cont : this.listReady) {
-      if (Objects.equals(cont.name, name) && cont.ds != null) {
-        cont.ds.close();
-        cont.ds = null;
-      }
-    }
-    for (var cont : this.listUnready) {
-      if (Objects.equals(cont.name, name) && cont.ds != null) {
-        cont.ds = null;
-      }
-    }
+    this.listReady.removeIf(
+        cont -> {
+          if (Objects.equals(cont.name, name)) {
+            cont.ds.close();
+            return true;
+          } else {
+            return false;
+          }
+        });
+    this.listUnready.removeIf(
+        cont -> {
+          return (Objects.equals(cont.name, name) || cont.ds == null);
+        });
   }
 
   void close() {
     for (int i = this.listReady.size() - 1; i >= 0; i--) {
       var cont = this.listReady.get(i);
-      if (cont.ds != null) {
-        cont.ds.close();
-        cont.ds = null;
-      }
-    }
-    for (int i = this.listUnready.size() - 1; i >= 0; i--) {
-      var cont = this.listUnready.get(i);
-      if (cont.ds != null) {
-        cont.ds = null;
-      }
+      cont.ds.close();
     }
     this.listReady.clear();
     this.listUnready.clear();
@@ -121,7 +114,7 @@ public class DataSrcManager {
       indexedMap.put(names.get(i), i);
     }
 
-    var orderedIndexes = new ArrayList<Integer>(this.listUnready.size());
+    var orderedIndexes = new ArrayList<Integer>(Math.max(names.size(), this.listUnready.size()));
     for (int i = 0, n = names.size(); i < n; i++) {
       orderedIndexes.add(null); // null indicates unset
     }
@@ -147,9 +140,9 @@ public class DataSrcManager {
         continue;
       }
       var cont = this.listUnready.get(listIndex);
-      if (cont == null || cont.ds == null) {
-        continue;
-      }
+      // if (cont == null || cont.ds == null) { // impossible
+      //  continue;
+      // }
       ag._name = cont.name;
       ag._index = ii;
       ii++;
@@ -173,9 +166,9 @@ public class DataSrcManager {
           continue;
         }
         var cont = this.listUnready.get(listIndex);
-        if (cont == null || cont.ds == null) {
-          continue;
-        }
+        // if (cont == null || cont.ds == null) { // impossible
+        //  continue;
+        // }
         this.listReady.add(cont);
       }
       this.listUnready.clear();
@@ -185,9 +178,10 @@ public class DataSrcManager {
         Integer listIndex = orderedIndexes.get(orderIndex);
         if (listIndex != null) { // Ignore unset
           var cont = this.listUnready.get(listIndex);
-          if (cont.ds != null) {
-            cont.ds.close();
-          }
+          // if (cont.ds == null) { // impossible
+          //  continue
+          // }
+          cont.ds.close();
         }
       }
       return errors;
