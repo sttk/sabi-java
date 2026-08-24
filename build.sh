@@ -66,6 +66,7 @@ deploy() {
 if [[ "$#" == "0" ]]; then
   clean
   format
+  test
   jar
   javadoc
   native_test

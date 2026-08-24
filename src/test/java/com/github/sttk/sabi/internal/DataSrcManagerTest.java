@@ -20,6 +20,7 @@ public class DataSrcManagerTest {
     Not,
     Setup,
     CreateDataConn,
+    SetupByRuntimeException,
   }
 
   static class SyncDataSrc implements DataSrc {
@@ -39,6 +40,10 @@ public class DataSrcManagerTest {
       if (this.fail == Fail.Setup) {
         this.logger.add(String.format("SyncDataSrc#setup %d failed", this.id));
         throw new Err("XXX");
+      }
+      if (this.fail == Fail.SetupByRuntimeException) {
+        this.logger.add(String.format("SyncDataSrc#setup %d runtime error", this.id));
+        throw new RuntimeException();
       }
       this.logger.add(String.format("SyncDataSrc#setup %d", this.id));
     }
@@ -78,6 +83,10 @@ public class DataSrcManagerTest {
             if (this.fail == Fail.Setup) {
               this.logger.add(String.format("AsyncDataSrc#setup %d failed", this.id));
               throw new Err("XXX");
+            }
+            if (this.fail == Fail.SetupByRuntimeException) {
+              this.logger.add(String.format("AsyncDataSrc#setup %d runtime error", this.id));
+              throw new RuntimeException();
             }
             this.logger.add(String.format("AsyncDataSrc#setup %d", this.id));
           });
@@ -331,7 +340,7 @@ public class DataSrcManagerTest {
       assertThat(errors.get(0).name).isEqualTo("bar");
       assertThat(errors.get(0).err.toString())
           .isEqualTo(
-              "com.github.sttk.errs.Err { reason = java.lang.String XXX, file = DataSrcManagerTest.java, line = 41 }");
+              "com.github.sttk.errs.Err { reason = java.lang.String XXX, file = DataSrcManagerTest.java, line = 42 }");
     } finally {
       manager.close();
     }
@@ -348,7 +357,65 @@ public class DataSrcManagerTest {
   }
 
   @Test
-  void setupWithOrderNoDtaSrc() {
+  void setupButRuntimeException() {
+    var logger = new ArrayList<String>();
+
+    var manager = new DataSrcManager(true);
+    try {
+      var ds1 = new SyncDataSrc(1, logger, Fail.SetupByRuntimeException);
+      manager.add("foo", ds1);
+
+      var ds2 = new SyncDataSrc(2, logger, Fail.Not);
+      manager.add("bar", ds2);
+
+      assertThat(manager.local).isTrue();
+      assertThat(manager.listUnready).hasSize(2);
+      assertThat(manager.listReady).hasSize(0);
+
+      var errors = manager.setup();
+
+      assertThat(manager.local).isTrue();
+      assertThat(manager.listUnready).hasSize(2);
+      assertThat(manager.listReady).hasSize(0);
+
+      assertThat(errors).hasSize(1);
+      assertThat(errors.get(0).index).isEqualTo(0);
+      assertThat(errors.get(0).name).isEqualTo("foo");
+      assertThat(errors.get(0).err.toString())
+          .isEqualTo(
+              "com.github.sttk.errs.Err { reason = com.github.sttk.sabi.AsyncGroup$RuntimeExceptionOccured RuntimeExceptionOccured[], file = AsyncGroupImpl.java, line = 58, cause = java.lang.RuntimeException }");
+    } finally {
+      manager.close();
+    }
+  }
+
+  @Test
+  void setupButDsIsNull() {
+    var logger = new ArrayList<String>();
+
+    var manager = new DataSrcManager(true);
+    try {
+      manager.add("foo", null);
+
+      assertThat(manager.local).isTrue();
+      assertThat(manager.listUnready).hasSize(1);
+      assertThat(manager.listReady).hasSize(0);
+
+      var errors = manager.setup();
+      assertThat(errors).hasSize(0);
+
+      assertThat(manager.local).isTrue();
+      assertThat(manager.listUnready).hasSize(0);
+      assertThat(manager.listReady).hasSize(0);
+    } finally {
+      manager.close();
+    }
+
+    assertThat(logger).hasSize(0);
+  }
+
+  @Test
+  void setupWithOrderNoDataSrc() {
     var logger = new ArrayList<String>();
 
     var manager = new DataSrcManager(true);
@@ -448,7 +515,7 @@ public class DataSrcManagerTest {
       assertThat(errors.get(0).name).isEqualTo("foo");
       assertThat(errors.get(0).err.toString())
           .isEqualTo(
-              "com.github.sttk.errs.Err { reason = java.lang.String XXX, file = DataSrcManagerTest.java, line = 41 }");
+              "com.github.sttk.errs.Err { reason = java.lang.String XXX, file = DataSrcManagerTest.java, line = 42 }");
     } finally {
       manager.close();
     }
@@ -627,6 +694,62 @@ public class DataSrcManagerTest {
       assertThat(manager.listUnready).hasSize(0);
       assertThat(manager.listReady).hasSize(2);
       assertThat(errors).isEmpty();
+    } finally {
+      manager.close();
+    }
+  }
+
+  @Test
+  void setupWithOrderButRuntimeException() {
+    var logger = new ArrayList<String>();
+
+    var manager = new DataSrcManager(true);
+    try {
+      var ds1 = new SyncDataSrc(1, logger, Fail.SetupByRuntimeException);
+      manager.add("foo", ds1);
+
+      var ds2 = new SyncDataSrc(2, logger, Fail.Not);
+      manager.add("bar", ds2);
+
+      assertThat(manager.local).isTrue();
+      assertThat(manager.listUnready).hasSize(2);
+      assertThat(manager.listReady).hasSize(0);
+
+      var errors = manager.setupWithOrder(List.of("bar", "foo"));
+
+      assertThat(manager.local).isTrue();
+      assertThat(manager.listUnready).hasSize(2);
+      assertThat(manager.listReady).hasSize(0);
+
+      assertThat(errors).hasSize(1);
+      assertThat(errors.get(0).index).isEqualTo(1);
+      assertThat(errors.get(0).name).isEqualTo("foo");
+      assertThat(errors.get(0).err.toString())
+          .isEqualTo(
+              "com.github.sttk.errs.Err { reason = com.github.sttk.sabi.AsyncGroup$RuntimeExceptionOccured RuntimeExceptionOccured[], file = AsyncGroupImpl.java, line = 58, cause = java.lang.RuntimeException }");
+    } finally {
+      manager.close();
+    }
+  }
+
+  @Test
+  void setupWithOrderButDsIsNull() {
+    var logger = new ArrayList<String>();
+
+    var manager = new DataSrcManager(true);
+    try {
+      manager.add("foo", null);
+
+      assertThat(manager.local).isTrue();
+      assertThat(manager.listUnready).hasSize(1);
+      assertThat(manager.listReady).hasSize(0);
+
+      var errors = manager.setupWithOrder(List.of("xxx", "foo"));
+      assertThat(errors).hasSize(0);
+
+      assertThat(manager.local).isTrue();
+      assertThat(manager.listUnready).hasSize(0);
+      assertThat(manager.listReady).hasSize(0);
     } finally {
       manager.close();
     }

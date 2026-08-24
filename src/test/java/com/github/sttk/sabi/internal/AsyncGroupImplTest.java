@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 
 import com.github.sttk.errs.Err;
+import com.github.sttk.sabi.AsyncGroup;
 import com.github.sttk.sabi.Runner;
 import org.junit.jupiter.api.Test;
 
@@ -133,16 +134,85 @@ public class AsyncGroupImplTest {
     assertThat(errors.get(0).name).isEqualTo("foo2");
     assertThat(errors.get(0).err.toString())
         .isEqualTo(
-            "com.github.sttk.errs.Err { reason = com.github.sttk.sabi.internal.AsyncGroupImplTest$1Reason2 Reason2[], file = AsyncGroupImplTest.java, line = 114 }");
+            "com.github.sttk.errs.Err { reason = com.github.sttk.sabi.internal.AsyncGroupImplTest$1Reason2 Reason2[], file = AsyncGroupImplTest.java, line = 115 }");
     assertThat(errors.get(1).index).isEqualTo(123);
     assertThat(errors.get(1).name).isEqualTo("foo0");
     assertThat(errors.get(1).err.toString())
         .isEqualTo(
-            "com.github.sttk.errs.Err { reason = com.github.sttk.sabi.internal.AsyncGroupImplTest$1Reason0 Reason0[], file = AsyncGroupImplTest.java, line = 96 }");
+            "com.github.sttk.errs.Err { reason = com.github.sttk.sabi.internal.AsyncGroupImplTest$1Reason0 Reason0[], file = AsyncGroupImplTest.java, line = 97 }");
     assertThat(errors.get(2).index).isEqualTo(456);
     assertThat(errors.get(2).name).isEqualTo("foo1");
     assertThat(errors.get(2).err.toString())
         .isEqualTo(
-            "com.github.sttk.errs.Err { reason = com.github.sttk.sabi.internal.AsyncGroupImplTest$1Reason1 Reason1[], file = AsyncGroupImplTest.java, line = 105 }");
+            "com.github.sttk.errs.Err { reason = com.github.sttk.sabi.internal.AsyncGroupImplTest$1Reason1 Reason1[], file = AsyncGroupImplTest.java, line = 106 }");
+  }
+
+  @Test
+  void runButRuntimeExceptionIsThrown() {
+    var ag = new AsyncGroupImpl();
+
+    boolean[] executed = {false};
+    Runner fn =
+        () -> {
+          try {
+            Thread.sleep(50);
+          } catch (Exception e) {
+            fail(e);
+          }
+          executed[0] = true;
+          throw new RuntimeException("error");
+        };
+
+    ag._index = 123;
+    ag._name = "foo";
+    ag.add(fn);
+    assertThat(executed[0]).isFalse();
+
+    var errors = ag.join();
+    assertThat(executed[0]).isTrue();
+    assertThat(errors).hasSize(1);
+
+    assertThat(errors.get(0).index).isEqualTo(123);
+    assertThat(errors.get(0).name).isEqualTo("foo");
+    switch (errors.get(0).err.getReason()) {
+      case AsyncGroup.RuntimeExceptionOccured r -> {}
+      default -> fail();
+    }
+    assertThat(errors.get(0).err.getCause().getMessage()).isEqualTo("error");
+    assertThat(errors.get(0).err.getCause()).isInstanceOf(RuntimeException.class);
+  }
+
+  @Test
+  void runButInterruptedExceptionIsThrown() {
+    var ag = new AsyncGroupImpl();
+
+    final var mainThread = Thread.currentThread();
+    boolean[] executed = {false};
+    Runner fn =
+        () -> {
+          try {
+            Thread.sleep(500);
+          } catch (Exception e) {
+          }
+          executed[0] = true;
+          mainThread.interrupt();
+        };
+
+    ag._index = 123;
+    ag._name = "foo";
+    ag.add(fn);
+    assertThat(executed[0]).isFalse();
+
+    var errors = ag.join();
+    assertThat(executed[0]).isTrue();
+    assertThat(errors).hasSize(1);
+
+    assertThat(errors.get(0).index).isEqualTo(123);
+    assertThat(errors.get(0).name).isEqualTo("foo");
+    switch (errors.get(0).err.getReason()) {
+      case AsyncGroup.RunnerInterrupted r -> {}
+      default -> fail();
+    }
+    assertThat(errors.get(0).err.getCause()).isInstanceOf(InterruptedException.class);
   }
 }

@@ -63,7 +63,7 @@ public class DataSrcManager {
     int ii = 0, nDone = 0;
     for (int i = 0, n = this.listUnready.size(); i < n; i++) {
       var cont = this.listUnready.get(i);
-      if (cont == null || cont.ds == null) {
+      if (cont.ds == null) {
         continue;
       }
       ag._name = cont.name;
@@ -121,7 +121,7 @@ public class DataSrcManager {
 
     for (int listIndex = 0, n = this.listUnready.size(); listIndex < n; listIndex++) {
       var cont = this.listUnready.get(listIndex);
-      if (cont != null && cont.ds != null) {
+      if (cont.ds != null) {
         Integer orderIndex = indexedMap.get(cont.name);
         if (orderIndex != null) {
           orderedIndexes.set(orderIndex, listIndex);
