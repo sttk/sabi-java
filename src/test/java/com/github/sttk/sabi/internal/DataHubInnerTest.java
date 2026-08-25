@@ -610,6 +610,16 @@ public class DataHubInnerTest {
     assertThat(iter.hasNext()).isFalse();
   }
 
+  @Test
+  void testUseAndDisuses() {
+    var logger = new ArrayList<String>();
+
+    try (var hub = new DataHub()) {
+      hub.uses("foo", new MyDataSrc(1, Failure.None, logger));
+      hub.disuses("foo");
+    }
+  }
+
   @Nested
   class RunTest {
     @Test
@@ -688,6 +698,37 @@ public class DataHubInnerTest {
           }
           default -> fail(err);
         }
+      } catch (Exception e) {
+        fail(e);
+      }
+
+      assertThat(logger).hasSize(4);
+      var iter = logger.iterator();
+      assertThat(iter.next()).isEqualTo("MyDataSrc#setup 1");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#setup 2");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#close 2");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#close 1");
+      assertThat(iter.hasNext()).isFalse();
+    }
+
+    @Test
+    void testRunButDataHubThrowsRuntimeException() {
+      var logger = new ArrayList<String>();
+
+      try (var hub = new DataHub()) {
+        hub.uses("foo", new MyDataSrc(1, Failure.None, logger));
+        hub.uses("bar", new MyDataSrc(2, Failure.None, logger));
+
+        hub.run(
+            data -> {
+              throw new RuntimeException();
+            });
+      } catch (Err err) {
+        switch (err.getReason()) {
+          case DataHub.RuntimeExceptionOccurred r -> {}
+          default -> fail(err);
+        }
+        assertThat(err.getCause()).isInstanceOf(RuntimeException.class);
       } catch (Exception e) {
         fail(e);
       }
@@ -1141,6 +1182,37 @@ public class DataHubInnerTest {
     }
 
     @Test
+    void testTxnButDataHubThrowsRuntimeException() {
+      var logger = new ArrayList<String>();
+
+      try (var hub = new DataHub()) {
+        hub.uses("foo", new MyDataSrc(1, Failure.None, logger));
+        hub.uses("bar", new MyDataSrc(2, Failure.None, logger));
+
+        hub.txn(
+            data -> {
+              throw new RuntimeException();
+            });
+      } catch (Err err) {
+        switch (err.getReason()) {
+          case DataHub.RuntimeExceptionOccurred r -> {}
+          default -> fail(err);
+        }
+        assertThat(err.getCause()).isInstanceOf(RuntimeException.class);
+      } catch (Exception e) {
+        fail(e);
+      }
+
+      assertThat(logger).hasSize(4);
+      var iter = logger.iterator();
+      assertThat(iter.next()).isEqualTo("MyDataSrc#setup 1");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#setup 2");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#close 2");
+      assertThat(iter.next()).isEqualTo("MyDataSrc#close 1");
+      assertThat(iter.hasNext()).isFalse();
+    }
+
+    @Test
     void testTxnButFailToSetup() {
       var logger = new ArrayList<String>();
 
@@ -1319,38 +1391,38 @@ public class DataHubInnerTest {
               @SuppressWarnings("unused")
               var dc1 = data.getDataConn("foo", MyDataConn.class);
 
+              try {
+                data.getDataConn("bar", BadDataConn.class);
+              } catch (Err err) {
+                switch (err.getReason()) {
+                  case FailToCastDataConn r -> {
+                    assertThat(r.name()).isEqualTo("bar");
+                    assertThat(r.fromDataConnType()).isEqualTo(MyDataConn.class.getName());
+                    assertThat(r.toDataConnType()).isEqualTo(BadDataConn.class.getName());
+                  }
+                  default -> fail(err);
+                }
+              }
+
               @SuppressWarnings("unused")
-              var dc2 = data.getDataConn("bar", BadDataConn.class);
+              var dc2 = data.getDataConn("bar", MyDataConn.class);
+
+              try {
+                data.getDataConn("bar", BadDataConn.class);
+              } catch (Err err) {
+                switch (err.getReason()) {
+                  case FailToCastDataConn r -> {
+                    assertThat(r.name()).isEqualTo("bar");
+                    assertThat(r.fromDataConnType()).isEqualTo(MyDataConn.class.getName());
+                    assertThat(r.toDataConnType()).isEqualTo(BadDataConn.class.getName());
+                  }
+                  default -> fail(err);
+                }
+              }
             });
-      } catch (Err err) {
-        switch (err.getReason()) {
-          case FailToCastDataConn r -> {
-            assertThat(r.name()).isEqualTo("bar");
-            assertThat(r.fromDataConnType()).isEqualTo(MyDataConn.class.getName());
-            assertThat(r.toDataConnType()).isEqualTo(BadDataConn.class.getName());
-          }
-          default -> fail(err);
-        }
       } catch (Exception e) {
         fail(e);
       }
-
-      assertThat(logger).hasSize(13);
-      var iter = logger.iterator();
-      assertThat(iter.next()).isEqualTo("MyDataSrc#setup 1");
-      assertThat(iter.next()).isEqualTo("MyDataSrc#setup 2");
-      assertThat(iter.next()).isEqualTo("execute logic");
-      assertThat(iter.next()).isEqualTo("MyDataSrc#createDataConn 1");
-      assertThat(iter.next()).isEqualTo("MyDataSrc#createDataConn 2");
-      assertThat(iter.next()).isEqualTo("MyDataConn#rollback 1");
-      assertThat(iter.next()).isEqualTo("MyDataConn#rollback 2");
-      assertThat(iter.next()).isEqualTo("MyDataConn#onTxnFailure 1");
-      assertThat(iter.next()).isEqualTo("MyDataConn#onTxnFailure 2");
-      assertThat(iter.next()).isEqualTo("MyDataConn#close 2");
-      assertThat(iter.next()).isEqualTo("MyDataConn#close 1");
-      assertThat(iter.next()).isEqualTo("MyDataSrc#close 2");
-      assertThat(iter.next()).isEqualTo("MyDataSrc#close 1");
-      assertThat(iter.hasNext()).isFalse();
     }
   }
 

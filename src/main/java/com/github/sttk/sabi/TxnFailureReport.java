@@ -88,54 +88,42 @@ public class TxnFailureReport {
     switch (this.cause.state) {
       case NoneByUncommitted:
         switch (this.rollback.state) {
-          case NoneByNotRolledBack:
-            return TxnFailureRecovery.InvestigateBecauseImpossible;
           case NoneByRolledBack:
             return TxnFailureRecovery.RerunLogicAndCommit;
           case RollbackFailure:
             return TxnFailureRecovery.ResolveCauseAndInconsistency;
-          default:
-            return TxnFailureRecovery.InvestigateBecauseImpossible;
         }
+        break;
       case NoneByCommitted:
         switch (this.rollback.state) {
           case NoneByNotRolledBack:
             return TxnFailureRecovery.NoActionRequired;
-          default:
-            return TxnFailureRecovery.InvestigateBecauseImpossible;
         }
+        break;
       case LogicFailure:
         switch (this.rollback.state) {
-          case NoneByNotRolledBack:
-            return TxnFailureRecovery.InvestigateBecauseImpossible;
           case NoneByRolledBack:
             return TxnFailureRecovery.ResolveCauseThenRerunLogicAndCommit;
           case RollbackFailure:
             return TxnFailureRecovery.ResolveCauseAndInconsistency;
-          default:
-            return TxnFailureRecovery.InvestigateBecauseImpossible;
         }
+        break;
       case CommitFailure:
         switch (this.rollback.state) {
-          case NoneByNotRolledBack:
-            return TxnFailureRecovery.InvestigateBecauseImpossible;
           case NoneByRolledBack:
             return TxnFailureRecovery.ResolveCauseThenRerunLogicAndCommit;
           case RollbackFailure:
             return TxnFailureRecovery.ResolveCauseAndInconsistency;
-          default:
-            return TxnFailureRecovery.InvestigateBecauseImpossible;
         }
+        break;
       case PostCommitFailure:
         switch (this.rollback.state) {
           case NoneByNotRolledBack:
             return TxnFailureRecovery.ResolveCauseThenRerunPostCommit;
-          default:
-            return TxnFailureRecovery.InvestigateBecauseImpossible;
         }
-      default:
-        return TxnFailureRecovery.InvestigateBecauseImpossible;
+        break;
     }
+    return TxnFailureRecovery.InvestigateBecauseImpossible;
   }
 
   /**
@@ -148,53 +136,41 @@ public class TxnFailureReport {
     switch (this.cause.state) {
       case NoneByUncommitted:
         switch (this.rollback.state) {
-          case NoneByNotRolledBack:
-            return TxnFailureRecovery.InvestigateBecauseImpossible;
           case NoneByRolledBack:
             return TxnFailureRecovery.NoActionRequired;
           case RollbackFailure:
             return TxnFailureRecovery.ResolveCauseAndInconsistency;
-          default:
-            return TxnFailureRecovery.InvestigateBecauseImpossible;
         }
+        break;
       case NoneByCommitted:
         switch (this.rollback.state) {
           case NoneByNotRolledBack:
             return TxnFailureRecovery.ManualRollbackRequired;
-          default:
-            return TxnFailureRecovery.InvestigateBecauseImpossible;
         }
+        break;
       case LogicFailure:
         switch (this.rollback.state) {
-          case NoneByNotRolledBack:
-            return TxnFailureRecovery.InvestigateBecauseImpossible;
           case NoneByRolledBack:
             return TxnFailureRecovery.NoActionRequired;
           case RollbackFailure:
             return TxnFailureRecovery.ResolveCauseAndInconsistency;
-          default:
-            return TxnFailureRecovery.InvestigateBecauseImpossible;
         }
+        break;
       case CommitFailure:
         switch (this.rollback.state) {
-          case NoneByNotRolledBack:
-            return TxnFailureRecovery.InvestigateBecauseImpossible;
           case NoneByRolledBack:
             return TxnFailureRecovery.NoActionRequired;
           case RollbackFailure:
             return TxnFailureRecovery.ResolveCauseAndInconsistency;
-          default:
-            return TxnFailureRecovery.InvestigateBecauseImpossible;
         }
+        break;
       case PostCommitFailure:
         switch (this.rollback.state) {
           case NoneByNotRolledBack:
             return TxnFailureRecovery.ManualRollbackRequired;
-          default:
-            return TxnFailureRecovery.InvestigateBecauseImpossible;
         }
-      default:
-        return TxnFailureRecovery.InvestigateBecauseImpossible;
+        break;
     }
+    return TxnFailureRecovery.InvestigateBecauseImpossible;
   }
 }

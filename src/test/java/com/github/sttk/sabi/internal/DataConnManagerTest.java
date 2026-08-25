@@ -25,6 +25,10 @@ public class DataConnManagerTest {
     PostCommit,
     Rollback,
     PreCommitBecomeCommitted,
+    PreCommitByRuntimeException,
+    CommitByRuntimeException,
+    PostCommitByRuntimeException,
+    RollbackByRuntimeException,
   }
 
   static class SyncDataConn implements DataConn {
@@ -46,6 +50,10 @@ public class DataConnManagerTest {
         this.logger.add(String.format("SyncDataConn#commit %d failed", this.id));
         throw new Err("ZZZ");
       }
+      if (this.fail == Fail.CommitByRuntimeException) {
+        this.logger.add(String.format("SyncDataConn#commit %d runtime error", this.id));
+        throw new RuntimeException("R");
+      }
       this.committed = true;
       this.logger.add(String.format("SyncDataConn#commit %d", this.id));
     }
@@ -55,6 +63,10 @@ public class DataConnManagerTest {
       if (this.fail == Fail.PreCommit) {
         this.logger.add(String.format("SyncDataConn#preCommit %d failed", this.id));
         throw new Err("zzz");
+      }
+      if (this.fail == Fail.PreCommitByRuntimeException) {
+        this.logger.add(String.format("SyncDataConn#preCommit %d runtime error", this.id));
+        throw new RuntimeException("RR");
       }
       this.logger.add(String.format("SyncDataConn#preCommit %d", this.id));
       if (this.fail == Fail.PreCommitBecomeCommitted) {
@@ -67,6 +79,10 @@ public class DataConnManagerTest {
       if (this.fail == Fail.PostCommit) {
         this.logger.add(String.format("SyncDataConn#postCommit %d failed", this.id));
         throw new Err("!!!");
+      }
+      if (this.fail == Fail.PostCommitByRuntimeException) {
+        this.logger.add(String.format("SyncDataConn#postCommit %d runtime error", this.id));
+        throw new RuntimeException("RRR");
       }
       this.logger.add(String.format("SyncDataConn#postCommit %d", this.id));
     }
@@ -81,6 +97,10 @@ public class DataConnManagerTest {
       if (this.fail == Fail.Rollback) {
         this.logger.add(String.format("SyncDataConn#rollback %d failed", this.id));
         throw new Err("???");
+      }
+      if (this.fail == Fail.RollbackByRuntimeException) {
+        this.logger.add(String.format("SyncDataConn#rollback %d runtime error", this.id));
+        throw new RuntimeException("RRRR");
       }
       this.logger.add(String.format("SyncDataConn#rollback %d", this.id));
     }
@@ -122,6 +142,10 @@ public class DataConnManagerTest {
               this.logger.add(String.format("AsyncDataConn#commit %d failed", this.id));
               throw new Err("YYY");
             }
+            if (this.fail == Fail.CommitByRuntimeException) {
+              this.logger.add(String.format("AsyncDataConn#commit %d runtime error", this.id));
+              throw new RuntimeException("r");
+            }
             this.committed = true;
             this.logger.add(String.format("AsyncDataConn#commit %d", this.id));
           });
@@ -138,6 +162,10 @@ public class DataConnManagerTest {
             if (this.fail == Fail.PreCommit) {
               this.logger.add(String.format("AsyncDataConn#preCommit %d failed", this.id));
               throw new Err("yyy");
+            }
+            if (this.fail == Fail.PreCommitByRuntimeException) {
+              this.logger.add(String.format("AsyncDataConn#preCommit %d runtime error", this.id));
+              throw new RuntimeException("rr");
             }
             this.logger.add(String.format("AsyncDataConn#preCommit %d", this.id));
             if (this.fail == Fail.PreCommitBecomeCommitted) {
@@ -157,6 +185,10 @@ public class DataConnManagerTest {
             if (this.fail == Fail.PostCommit) {
               this.logger.add(String.format("AsyncDataConn#postCommit %d failed", this.id));
               throw new Err("!!!");
+            }
+            if (this.fail == Fail.PostCommitByRuntimeException) {
+              this.logger.add(String.format("AsyncDataConn#postCommit %d runtime error", this.id));
+              throw new RuntimeException("rrr");
             }
             this.logger.add(String.format("AsyncDataConn#postCommit %d", this.id));
           });
@@ -178,6 +210,10 @@ public class DataConnManagerTest {
             if (this.fail == Fail.Rollback) {
               this.logger.add(String.format("AsyncDataConn#rollback %d failed", this.id));
               throw new Err("???");
+            }
+            if (this.fail == Fail.RollbackByRuntimeException) {
+              this.logger.add(String.format("AsyncDataConn#rollback %d runtime error", this.id));
+              throw new RuntimeException("rrrr");
             }
             this.logger.add(String.format("AsyncDataConn#rollback %d", this.id));
           });
@@ -515,11 +551,11 @@ public class DataConnManagerTest {
     assertThat(iter.next()).isEqualTo("SyncDataConn#onTxnFailure 1");
     assertThat(iter.next())
         .isEqualTo(
-            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:LogicFailure Err:com.github.sttk.errs.Err { reason = java.lang.String zzz, file = DataConnManagerTest.java, line = 57 }} rollback:{State:NoneByRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:NoneByUncommitted Err:null} rollback:{State:NoneByRolledBack Err:null}}]");
+            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:LogicFailure Err:com.github.sttk.errs.Err { reason = java.lang.String zzz, file = DataConnManagerTest.java, line = 65 }} rollback:{State:NoneByRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:NoneByUncommitted Err:null} rollback:{State:NoneByRolledBack Err:null}}]");
     assertThat(iter.next()).isEqualTo("AsyncDataConn#onTxnFailure 2");
     assertThat(iter.next())
         .isEqualTo(
-            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:LogicFailure Err:com.github.sttk.errs.Err { reason = java.lang.String zzz, file = DataConnManagerTest.java, line = 57 }} rollback:{State:NoneByRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:NoneByUncommitted Err:null} rollback:{State:NoneByRolledBack Err:null}}]");
+            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:LogicFailure Err:com.github.sttk.errs.Err { reason = java.lang.String zzz, file = DataConnManagerTest.java, line = 65 }} rollback:{State:NoneByRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:NoneByUncommitted Err:null} rollback:{State:NoneByRolledBack Err:null}}]");
     assertThat(iter.next()).isEqualTo("AsyncDataConn#close 2");
     assertThat(iter.next()).isEqualTo("SyncDataConn#close 1");
     assertThat(iter.hasNext()).isFalse();
@@ -574,13 +610,69 @@ public class DataConnManagerTest {
     assertThat(iter.next()).isEqualTo("SyncDataConn#onTxnFailure 2");
     assertThat(iter.next())
         .isEqualTo(
-            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:LogicFailure Err:com.github.sttk.errs.Err { reason = java.lang.String yyy, file = DataConnManagerTest.java, line = 140 }} rollback:{State:NoneByRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:LogicFailure Err:com.github.sttk.errs.Err { reason = java.lang.String zzz, file = DataConnManagerTest.java, line = 57 }} rollback:{State:NoneByRolledBack Err:null}}]");
+            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:LogicFailure Err:com.github.sttk.errs.Err { reason = java.lang.String yyy, file = DataConnManagerTest.java, line = 164 }} rollback:{State:NoneByRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:LogicFailure Err:com.github.sttk.errs.Err { reason = java.lang.String zzz, file = DataConnManagerTest.java, line = 65 }} rollback:{State:NoneByRolledBack Err:null}}]");
     assertThat(iter.next()).isEqualTo("AsyncDataConn#onTxnFailure 1");
     assertThat(iter.next())
         .isEqualTo(
-            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:LogicFailure Err:com.github.sttk.errs.Err { reason = java.lang.String yyy, file = DataConnManagerTest.java, line = 140 }} rollback:{State:NoneByRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:LogicFailure Err:com.github.sttk.errs.Err { reason = java.lang.String zzz, file = DataConnManagerTest.java, line = 57 }} rollback:{State:NoneByRolledBack Err:null}}]");
+            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:LogicFailure Err:com.github.sttk.errs.Err { reason = java.lang.String yyy, file = DataConnManagerTest.java, line = 164 }} rollback:{State:NoneByRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:LogicFailure Err:com.github.sttk.errs.Err { reason = java.lang.String zzz, file = DataConnManagerTest.java, line = 65 }} rollback:{State:NoneByRolledBack Err:null}}]");
     assertThat(iter.next()).isEqualTo("SyncDataConn#close 2");
     assertThat(iter.next()).isEqualTo("AsyncDataConn#close 1");
+    assertThat(iter.hasNext()).isFalse();
+  }
+
+  @Test
+  void testCommitAndRollbackButFirstSyncPreCommitThrowsRuntimeException() {
+    var logger = new ArrayList<String>();
+
+    var manager = new DataConnManager();
+    try {
+      var conn1 = new SyncDataConn(1, logger, Fail.PreCommitByRuntimeException);
+      manager.add(new DataConnContainer("foo", conn1));
+
+      var conn2 = new AsyncDataConn(2, logger, Fail.Not);
+      manager.add(new DataConnContainer("bar", conn2));
+
+      var reportBuilders = new ArrayList<TxnFailureReportBuilder>();
+      manager.prepareTxnFailureReportBuilders(reportBuilders);
+
+      try {
+        manager.commit(reportBuilders);
+      } catch (Err err) {
+        switch (err.getReason()) {
+          case FailToPreCommitDataConn rsn -> {
+            assertThat(rsn.errors()).hasSize(1);
+            var ee = rsn.errors().get(0);
+            assertThat(ee.index).isEqualTo(0);
+            assertThat(ee.name).isEqualTo("foo");
+            assertThat(ee.err.getReason()).isInstanceOf(AsyncGroup.RuntimeExceptionOccured.class);
+            assertThat(ee.err.getCause()).isInstanceOf(RuntimeException.class);
+            assertThat(ee.err.getCause().getMessage()).isEqualTo("RR");
+          }
+          default -> fail(err);
+        }
+        manager.rollback(reportBuilders);
+      } catch (Exception e) {
+        fail(e);
+      }
+    } finally {
+      manager.close();
+    }
+
+    assertThat(logger).hasSize(9);
+    var iter = logger.iterator();
+    assertThat(iter.next()).isEqualTo("SyncDataConn#preCommit 1 runtime error");
+    assertThat(iter.next()).isEqualTo("SyncDataConn#rollback 1");
+    assertThat(iter.next()).isEqualTo("AsyncDataConn#rollback 2");
+    assertThat(iter.next()).isEqualTo("SyncDataConn#onTxnFailure 1");
+    assertThat(iter.next())
+        .isEqualTo(
+            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:LogicFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.AsyncGroup$RuntimeExceptionOccured RuntimeExceptionOccured[], file = AsyncGroupImpl.java, line = 58, cause = java.lang.RuntimeException: RR }} rollback:{State:NoneByRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:NoneByUncommitted Err:null} rollback:{State:NoneByRolledBack Err:null}}]");
+    assertThat(iter.next()).isEqualTo("AsyncDataConn#onTxnFailure 2");
+    assertThat(iter.next())
+        .isEqualTo(
+            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:LogicFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.AsyncGroup$RuntimeExceptionOccured RuntimeExceptionOccured[], file = AsyncGroupImpl.java, line = 58, cause = java.lang.RuntimeException: RR }} rollback:{State:NoneByRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:NoneByUncommitted Err:null} rollback:{State:NoneByRolledBack Err:null}}]");
+    assertThat(iter.next()).isEqualTo("AsyncDataConn#close 2");
+    assertThat(iter.next()).isEqualTo("SyncDataConn#close 1");
     assertThat(iter.hasNext()).isFalse();
   }
 
@@ -629,11 +721,11 @@ public class DataConnManagerTest {
     assertThat(iter.next()).isEqualTo("SyncDataConn#onTxnFailure 1");
     assertThat(iter.next())
         .isEqualTo(
-            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:NoneByUncommitted Err:null} rollback:{State:NoneByRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:LogicFailure Err:com.github.sttk.errs.Err { reason = java.lang.String yyy, file = DataConnManagerTest.java, line = 140 }} rollback:{State:NoneByRolledBack Err:null}}]");
+            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:NoneByUncommitted Err:null} rollback:{State:NoneByRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:LogicFailure Err:com.github.sttk.errs.Err { reason = java.lang.String yyy, file = DataConnManagerTest.java, line = 164 }} rollback:{State:NoneByRolledBack Err:null}}]");
     assertThat(iter.next()).isEqualTo("AsyncDataConn#onTxnFailure 2");
     assertThat(iter.next())
         .isEqualTo(
-            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:NoneByUncommitted Err:null} rollback:{State:NoneByRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:LogicFailure Err:com.github.sttk.errs.Err { reason = java.lang.String yyy, file = DataConnManagerTest.java, line = 140 }} rollback:{State:NoneByRolledBack Err:null}}]");
+            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:NoneByUncommitted Err:null} rollback:{State:NoneByRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:LogicFailure Err:com.github.sttk.errs.Err { reason = java.lang.String yyy, file = DataConnManagerTest.java, line = 164 }} rollback:{State:NoneByRolledBack Err:null}}]");
     assertThat(iter.next()).isEqualTo("AsyncDataConn#close 2");
     assertThat(iter.next()).isEqualTo("SyncDataConn#close 1");
     assertThat(iter.hasNext()).isFalse();
@@ -685,11 +777,11 @@ public class DataConnManagerTest {
     assertThat(iter.next()).isEqualTo("SyncDataConn#onTxnFailure 1");
     assertThat(iter.next())
         .isEqualTo(
-            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:CommitFailure Err:com.github.sttk.errs.Err { reason = java.lang.String ZZZ, file = DataConnManagerTest.java, line = 47 }} rollback:{State:NoneByRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:NoneByUncommitted Err:null} rollback:{State:NoneByRolledBack Err:null}}]");
+            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:CommitFailure Err:com.github.sttk.errs.Err { reason = java.lang.String ZZZ, file = DataConnManagerTest.java, line = 51 }} rollback:{State:NoneByRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:NoneByUncommitted Err:null} rollback:{State:NoneByRolledBack Err:null}}]");
     assertThat(iter.next()).isEqualTo("AsyncDataConn#onTxnFailure 2");
     assertThat(iter.next())
         .isEqualTo(
-            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:CommitFailure Err:com.github.sttk.errs.Err { reason = java.lang.String ZZZ, file = DataConnManagerTest.java, line = 47 }} rollback:{State:NoneByRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:NoneByUncommitted Err:null} rollback:{State:NoneByRolledBack Err:null}}]");
+            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:CommitFailure Err:com.github.sttk.errs.Err { reason = java.lang.String ZZZ, file = DataConnManagerTest.java, line = 51 }} rollback:{State:NoneByRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:NoneByUncommitted Err:null} rollback:{State:NoneByRolledBack Err:null}}]");
     assertThat(iter.next()).isEqualTo("AsyncDataConn#close 2");
     assertThat(iter.next()).isEqualTo("SyncDataConn#close 1");
     assertThat(iter.hasNext()).isFalse();
@@ -746,11 +838,11 @@ public class DataConnManagerTest {
     assertThat(iter.next()).isEqualTo("SyncDataConn#onTxnFailure 2");
     assertThat(iter.next())
         .isEqualTo(
-            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:CommitFailure Err:com.github.sttk.errs.Err { reason = java.lang.String YYY, file = DataConnManagerTest.java, line = 123 }} rollback:{State:NoneByRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:CommitFailure Err:com.github.sttk.errs.Err { reason = java.lang.String ZZZ, file = DataConnManagerTest.java, line = 47 }} rollback:{State:NoneByRolledBack Err:null}}]");
+            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:CommitFailure Err:com.github.sttk.errs.Err { reason = java.lang.String YYY, file = DataConnManagerTest.java, line = 143 }} rollback:{State:NoneByRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:CommitFailure Err:com.github.sttk.errs.Err { reason = java.lang.String ZZZ, file = DataConnManagerTest.java, line = 51 }} rollback:{State:NoneByRolledBack Err:null}}]");
     assertThat(iter.next()).isEqualTo("AsyncDataConn#onTxnFailure 1");
     assertThat(iter.next())
         .isEqualTo(
-            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:CommitFailure Err:com.github.sttk.errs.Err { reason = java.lang.String YYY, file = DataConnManagerTest.java, line = 123 }} rollback:{State:NoneByRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:CommitFailure Err:com.github.sttk.errs.Err { reason = java.lang.String ZZZ, file = DataConnManagerTest.java, line = 47 }} rollback:{State:NoneByRolledBack Err:null}}]");
+            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:CommitFailure Err:com.github.sttk.errs.Err { reason = java.lang.String YYY, file = DataConnManagerTest.java, line = 143 }} rollback:{State:NoneByRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:CommitFailure Err:com.github.sttk.errs.Err { reason = java.lang.String ZZZ, file = DataConnManagerTest.java, line = 51 }} rollback:{State:NoneByRolledBack Err:null}}]");
     assertThat(iter.next()).isEqualTo("SyncDataConn#close 2");
     assertThat(iter.next()).isEqualTo("AsyncDataConn#close 1");
     assertThat(iter.hasNext()).isFalse();
@@ -802,11 +894,69 @@ public class DataConnManagerTest {
     assertThat(iter.next()).isEqualTo("SyncDataConn#onTxnFailure 1");
     assertThat(iter.next())
         .isEqualTo(
-            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:NoneByCommitted Err:null} rollback:{State:NoneByNotRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:CommitFailure Err:com.github.sttk.errs.Err { reason = java.lang.String YYY, file = DataConnManagerTest.java, line = 123 }} rollback:{State:NoneByRolledBack Err:null}}]");
+            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:NoneByCommitted Err:null} rollback:{State:NoneByNotRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:CommitFailure Err:com.github.sttk.errs.Err { reason = java.lang.String YYY, file = DataConnManagerTest.java, line = 143 }} rollback:{State:NoneByRolledBack Err:null}}]");
     assertThat(iter.next()).isEqualTo("AsyncDataConn#onTxnFailure 2");
     assertThat(iter.next())
         .isEqualTo(
-            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:NoneByCommitted Err:null} rollback:{State:NoneByNotRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:CommitFailure Err:com.github.sttk.errs.Err { reason = java.lang.String YYY, file = DataConnManagerTest.java, line = 123 }} rollback:{State:NoneByRolledBack Err:null}}]");
+            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:NoneByCommitted Err:null} rollback:{State:NoneByNotRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:CommitFailure Err:com.github.sttk.errs.Err { reason = java.lang.String YYY, file = DataConnManagerTest.java, line = 143 }} rollback:{State:NoneByRolledBack Err:null}}]");
+    assertThat(iter.next()).isEqualTo("AsyncDataConn#close 2");
+    assertThat(iter.next()).isEqualTo("SyncDataConn#close 1");
+    assertThat(iter.hasNext()).isFalse();
+  }
+
+  @Test
+  void testCommitAndRollbackButFirstCommitThrowsRuntimeException() {
+    var logger = new ArrayList<String>();
+
+    var manager = new DataConnManager();
+    try {
+      var conn1 = new SyncDataConn(1, logger, Fail.CommitByRuntimeException);
+      manager.add(new DataConnContainer("foo", conn1));
+
+      var conn2 = new AsyncDataConn(2, logger, Fail.Not);
+      manager.add(new DataConnContainer("bar", conn2));
+
+      var reportBuilders = new ArrayList<TxnFailureReportBuilder>();
+      manager.prepareTxnFailureReportBuilders(reportBuilders);
+
+      try {
+        manager.commit(reportBuilders);
+      } catch (Err err) {
+        switch (err.getReason()) {
+          case FailToCommitDataConn rsn -> {
+            assertThat(rsn.errors()).hasSize(1);
+            var ee = rsn.errors().get(0);
+            assertThat(ee.index).isEqualTo(0);
+            assertThat(ee.name).isEqualTo("foo");
+            assertThat(ee.err.getReason()).isInstanceOf(AsyncGroup.RuntimeExceptionOccured.class);
+            assertThat(ee.err.getCause()).isInstanceOf(RuntimeException.class);
+            assertThat(ee.err.getCause().getMessage()).isEqualTo("R");
+          }
+          default -> fail(err);
+        }
+        manager.rollback(reportBuilders);
+      } catch (Exception e) {
+        fail(e);
+      }
+    } finally {
+      manager.close();
+    }
+
+    assertThat(logger).hasSize(11);
+    var iter = logger.iterator();
+    assertThat(iter.next()).isEqualTo("SyncDataConn#preCommit 1");
+    assertThat(iter.next()).isEqualTo("AsyncDataConn#preCommit 2");
+    assertThat(iter.next()).isEqualTo("SyncDataConn#commit 1 runtime error");
+    assertThat(iter.next()).isEqualTo("SyncDataConn#rollback 1");
+    assertThat(iter.next()).isEqualTo("AsyncDataConn#rollback 2");
+    assertThat(iter.next()).isEqualTo("SyncDataConn#onTxnFailure 1");
+    assertThat(iter.next())
+        .isEqualTo(
+            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:CommitFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.AsyncGroup$RuntimeExceptionOccured RuntimeExceptionOccured[], file = AsyncGroupImpl.java, line = 58, cause = java.lang.RuntimeException: R }} rollback:{State:NoneByRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:NoneByUncommitted Err:null} rollback:{State:NoneByRolledBack Err:null}}]");
+    assertThat(iter.next()).isEqualTo("AsyncDataConn#onTxnFailure 2");
+    assertThat(iter.next())
+        .isEqualTo(
+            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:CommitFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.AsyncGroup$RuntimeExceptionOccured RuntimeExceptionOccured[], file = AsyncGroupImpl.java, line = 58, cause = java.lang.RuntimeException: R }} rollback:{State:NoneByRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:NoneByUncommitted Err:null} rollback:{State:NoneByRolledBack Err:null}}]");
     assertThat(iter.next()).isEqualTo("AsyncDataConn#close 2");
     assertThat(iter.next()).isEqualTo("SyncDataConn#close 1");
     assertThat(iter.hasNext()).isFalse();
@@ -863,11 +1013,11 @@ public class DataConnManagerTest {
     assertThat(iter.next()).isEqualTo("SyncDataConn#onTxnFailure 1");
     assertThat(iter.next())
         .isEqualTo(
-            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:PostCommitFailure Err:com.github.sttk.errs.Err { reason = java.lang.String !!!, file = DataConnManagerTest.java, line = 69 }} rollback:{State:NoneByNotRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:PostCommitFailure Err:com.github.sttk.errs.Err { reason = java.lang.String !!!, file = DataConnManagerTest.java, line = 159 }} rollback:{State:NoneByNotRolledBack Err:null}}]");
+            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:PostCommitFailure Err:com.github.sttk.errs.Err { reason = java.lang.String !!!, file = DataConnManagerTest.java, line = 81 }} rollback:{State:NoneByNotRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:PostCommitFailure Err:com.github.sttk.errs.Err { reason = java.lang.String !!!, file = DataConnManagerTest.java, line = 187 }} rollback:{State:NoneByNotRolledBack Err:null}}]");
     assertThat(iter.next()).isEqualTo("AsyncDataConn#onTxnFailure 2");
     assertThat(iter.next())
         .isEqualTo(
-            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:PostCommitFailure Err:com.github.sttk.errs.Err { reason = java.lang.String !!!, file = DataConnManagerTest.java, line = 69 }} rollback:{State:NoneByNotRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:PostCommitFailure Err:com.github.sttk.errs.Err { reason = java.lang.String !!!, file = DataConnManagerTest.java, line = 159 }} rollback:{State:NoneByNotRolledBack Err:null}}]");
+            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:PostCommitFailure Err:com.github.sttk.errs.Err { reason = java.lang.String !!!, file = DataConnManagerTest.java, line = 81 }} rollback:{State:NoneByNotRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:PostCommitFailure Err:com.github.sttk.errs.Err { reason = java.lang.String !!!, file = DataConnManagerTest.java, line = 187 }} rollback:{State:NoneByNotRolledBack Err:null}}]");
     assertThat(iter.next()).isEqualTo("AsyncDataConn#close 2");
     assertThat(iter.next()).isEqualTo("SyncDataConn#close 1");
     assertThat(iter.hasNext()).isFalse();
@@ -924,11 +1074,11 @@ public class DataConnManagerTest {
     assertThat(iter.next()).isEqualTo("SyncDataConn#onTxnFailure 1");
     assertThat(iter.next())
         .isEqualTo(
-            "TxnFailureReports=[{dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:PostCommitFailure Err:com.github.sttk.errs.Err { reason = java.lang.String !!!, file = DataConnManagerTest.java, line = 159 }} rollback:{State:NoneByNotRolledBack Err:null}}, {dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:PostCommitFailure Err:com.github.sttk.errs.Err { reason = java.lang.String !!!, file = DataConnManagerTest.java, line = 69 }} rollback:{State:NoneByNotRolledBack Err:null}}]");
+            "TxnFailureReports=[{dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:PostCommitFailure Err:com.github.sttk.errs.Err { reason = java.lang.String !!!, file = DataConnManagerTest.java, line = 187 }} rollback:{State:NoneByNotRolledBack Err:null}}, {dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:PostCommitFailure Err:com.github.sttk.errs.Err { reason = java.lang.String !!!, file = DataConnManagerTest.java, line = 81 }} rollback:{State:NoneByNotRolledBack Err:null}}]");
     assertThat(iter.next()).isEqualTo("AsyncDataConn#onTxnFailure 2");
     assertThat(iter.next())
         .isEqualTo(
-            "TxnFailureReports=[{dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:PostCommitFailure Err:com.github.sttk.errs.Err { reason = java.lang.String !!!, file = DataConnManagerTest.java, line = 159 }} rollback:{State:NoneByNotRolledBack Err:null}}, {dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:PostCommitFailure Err:com.github.sttk.errs.Err { reason = java.lang.String !!!, file = DataConnManagerTest.java, line = 69 }} rollback:{State:NoneByNotRolledBack Err:null}}]");
+            "TxnFailureReports=[{dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:PostCommitFailure Err:com.github.sttk.errs.Err { reason = java.lang.String !!!, file = DataConnManagerTest.java, line = 187 }} rollback:{State:NoneByNotRolledBack Err:null}}, {dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:PostCommitFailure Err:com.github.sttk.errs.Err { reason = java.lang.String !!!, file = DataConnManagerTest.java, line = 81 }} rollback:{State:NoneByNotRolledBack Err:null}}]");
     assertThat(iter.next()).isEqualTo("SyncDataConn#close 1");
     assertThat(iter.next()).isEqualTo("AsyncDataConn#close 2");
     assertThat(iter.hasNext()).isFalse();
@@ -981,11 +1131,70 @@ public class DataConnManagerTest {
     assertThat(iter.next()).isEqualTo("SyncDataConn#onTxnFailure 1");
     assertThat(iter.next())
         .isEqualTo(
-            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:NoneByCommitted Err:null} rollback:{State:NoneByNotRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:PostCommitFailure Err:com.github.sttk.errs.Err { reason = java.lang.String !!!, file = DataConnManagerTest.java, line = 159 }} rollback:{State:NoneByNotRolledBack Err:null}}]");
+            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:NoneByCommitted Err:null} rollback:{State:NoneByNotRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:PostCommitFailure Err:com.github.sttk.errs.Err { reason = java.lang.String !!!, file = DataConnManagerTest.java, line = 187 }} rollback:{State:NoneByNotRolledBack Err:null}}]");
     assertThat(iter.next()).isEqualTo("AsyncDataConn#onTxnFailure 2");
     assertThat(iter.next())
         .isEqualTo(
-            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:NoneByCommitted Err:null} rollback:{State:NoneByNotRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:PostCommitFailure Err:com.github.sttk.errs.Err { reason = java.lang.String !!!, file = DataConnManagerTest.java, line = 159 }} rollback:{State:NoneByNotRolledBack Err:null}}]");
+            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:NoneByCommitted Err:null} rollback:{State:NoneByNotRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:PostCommitFailure Err:com.github.sttk.errs.Err { reason = java.lang.String !!!, file = DataConnManagerTest.java, line = 187 }} rollback:{State:NoneByNotRolledBack Err:null}}]");
+    assertThat(iter.next()).isEqualTo("AsyncDataConn#close 2");
+    assertThat(iter.next()).isEqualTo("SyncDataConn#close 1");
+    assertThat(iter.hasNext()).isFalse();
+  }
+
+  @Test
+  void testCommitAndRollbackButSecondPostCommitThrowsRuntimException() {
+    var logger = new ArrayList<String>();
+
+    var manager = new DataConnManager();
+    try {
+      var conn1 = new SyncDataConn(1, logger, Fail.PostCommitByRuntimeException);
+      manager.add(new DataConnContainer("foo", conn1));
+
+      var conn2 = new AsyncDataConn(2, logger, Fail.Not);
+      manager.add(new DataConnContainer("bar", conn2));
+
+      var reportBuilders = new ArrayList<TxnFailureReportBuilder>();
+      manager.prepareTxnFailureReportBuilders(reportBuilders);
+
+      try {
+        manager.commit(reportBuilders);
+      } catch (Err err) {
+        switch (err.getReason()) {
+          case FailToPostCommitDataConn rsn -> {
+            assertThat(rsn.errors()).hasSize(1);
+            var ee = rsn.errors().get(0);
+            assertThat(ee.index).isEqualTo(0);
+            assertThat(ee.name).isEqualTo("foo");
+            assertThat(ee.err.getReason()).isInstanceOf(AsyncGroup.RuntimeExceptionOccured.class);
+            assertThat(ee.err.getCause()).isInstanceOf(RuntimeException.class);
+            assertThat(ee.err.getCause().getMessage()).isEqualTo("RRR");
+          }
+          default -> fail(err);
+        }
+        manager.rollback(reportBuilders);
+      } catch (Exception e) {
+        fail(e);
+      }
+    } finally {
+      manager.close();
+    }
+
+    assertThat(logger).hasSize(12);
+    var iter = logger.iterator();
+    assertThat(iter.next()).isEqualTo("SyncDataConn#preCommit 1");
+    assertThat(iter.next()).isEqualTo("AsyncDataConn#preCommit 2");
+    assertThat(iter.next()).isEqualTo("SyncDataConn#commit 1");
+    assertThat(iter.next()).isEqualTo("AsyncDataConn#commit 2");
+    assertThat(iter.next()).isEqualTo("SyncDataConn#postCommit 1 runtime error");
+    assertThat(iter.next()).isEqualTo("AsyncDataConn#postCommit 2");
+    assertThat(iter.next()).isEqualTo("SyncDataConn#onTxnFailure 1");
+    assertThat(iter.next())
+        .isEqualTo(
+            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:PostCommitFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.AsyncGroup$RuntimeExceptionOccured RuntimeExceptionOccured[], file = AsyncGroupImpl.java, line = 58, cause = java.lang.RuntimeException: RRR }} rollback:{State:NoneByNotRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:NoneByCommitted Err:null} rollback:{State:NoneByNotRolledBack Err:null}}]");
+    assertThat(iter.next()).isEqualTo("AsyncDataConn#onTxnFailure 2");
+    assertThat(iter.next())
+        .isEqualTo(
+            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:PostCommitFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.AsyncGroup$RuntimeExceptionOccured RuntimeExceptionOccured[], file = AsyncGroupImpl.java, line = 58, cause = java.lang.RuntimeException: RRR }} rollback:{State:NoneByNotRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:NoneByCommitted Err:null} rollback:{State:NoneByNotRolledBack Err:null}}]");
     assertThat(iter.next()).isEqualTo("AsyncDataConn#close 2");
     assertThat(iter.next()).isEqualTo("SyncDataConn#close 1");
     assertThat(iter.hasNext()).isFalse();
@@ -1092,11 +1301,11 @@ public class DataConnManagerTest {
     assertThat(iter.next()).isEqualTo("SyncDataConn#onTxnFailure 2");
     assertThat(iter.next())
         .isEqualTo(
-            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:NoneByUncommitted Err:null} rollback:{State:NoneByRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:NoneByUncommitted Err:null} rollback:{State:RollbackFailure Err:com.github.sttk.errs.Err { reason = java.lang.String ???, file = DataConnManagerTest.java, line = 83 }}}]");
+            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:NoneByUncommitted Err:null} rollback:{State:NoneByRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:NoneByUncommitted Err:null} rollback:{State:RollbackFailure Err:com.github.sttk.errs.Err { reason = java.lang.String ???, file = DataConnManagerTest.java, line = 99 }}}]");
     assertThat(iter.next()).isEqualTo("AsyncDataConn#onTxnFailure 1");
     assertThat(iter.next())
         .isEqualTo(
-            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:NoneByUncommitted Err:null} rollback:{State:NoneByRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:NoneByUncommitted Err:null} rollback:{State:RollbackFailure Err:com.github.sttk.errs.Err { reason = java.lang.String ???, file = DataConnManagerTest.java, line = 83 }}}]");
+            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:NoneByUncommitted Err:null} rollback:{State:NoneByRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:NoneByUncommitted Err:null} rollback:{State:RollbackFailure Err:com.github.sttk.errs.Err { reason = java.lang.String ???, file = DataConnManagerTest.java, line = 99 }}}]");
     assertThat(iter.next()).isEqualTo("SyncDataConn#close 2");
     assertThat(iter.next()).isEqualTo("AsyncDataConn#close 1");
     assertThat(iter.hasNext()).isFalse();
@@ -1129,11 +1338,48 @@ public class DataConnManagerTest {
     assertThat(iter.next()).isEqualTo("SyncDataConn#onTxnFailure 1");
     assertThat(iter.next())
         .isEqualTo(
-            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:NoneByUncommitted Err:null} rollback:{State:RollbackFailure Err:com.github.sttk.errs.Err { reason = java.lang.String ???, file = DataConnManagerTest.java, line = 83 }}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:NoneByUncommitted Err:null} rollback:{State:NoneByRolledBack Err:null}}]");
+            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:NoneByUncommitted Err:null} rollback:{State:RollbackFailure Err:com.github.sttk.errs.Err { reason = java.lang.String ???, file = DataConnManagerTest.java, line = 99 }}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:NoneByUncommitted Err:null} rollback:{State:NoneByRolledBack Err:null}}]");
     assertThat(iter.next()).isEqualTo("AsyncDataConn#onTxnFailure 2");
     assertThat(iter.next())
         .isEqualTo(
-            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:NoneByUncommitted Err:null} rollback:{State:RollbackFailure Err:com.github.sttk.errs.Err { reason = java.lang.String ???, file = DataConnManagerTest.java, line = 83 }}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:NoneByUncommitted Err:null} rollback:{State:NoneByRolledBack Err:null}}]");
+            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:NoneByUncommitted Err:null} rollback:{State:RollbackFailure Err:com.github.sttk.errs.Err { reason = java.lang.String ???, file = DataConnManagerTest.java, line = 99 }}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:NoneByUncommitted Err:null} rollback:{State:NoneByRolledBack Err:null}}]");
+    assertThat(iter.next()).isEqualTo("AsyncDataConn#close 2");
+    assertThat(iter.next()).isEqualTo("SyncDataConn#close 1");
+    assertThat(iter.hasNext()).isFalse();
+  }
+
+  @Test
+  void testOnlyRollbackAndFirstRollbackThrowsRuntimeException() {
+    var logger = new ArrayList<String>();
+
+    var manager = new DataConnManager();
+    try {
+      var conn1 = new SyncDataConn(1, logger, Fail.RollbackByRuntimeException);
+      manager.add(new DataConnContainer("foo", conn1));
+
+      var conn2 = new AsyncDataConn(2, logger, Fail.Not);
+      manager.add(new DataConnContainer("bar", conn2));
+
+      var reportBuilders = new ArrayList<TxnFailureReportBuilder>();
+      manager.prepareTxnFailureReportBuilders(reportBuilders);
+
+      manager.rollback(reportBuilders);
+    } finally {
+      manager.close();
+    }
+
+    assertThat(logger).hasSize(8);
+    var iter = logger.iterator();
+    assertThat(iter.next()).isEqualTo("SyncDataConn#rollback 1 runtime error");
+    assertThat(iter.next()).isEqualTo("AsyncDataConn#rollback 2");
+    assertThat(iter.next()).isEqualTo("SyncDataConn#onTxnFailure 1");
+    assertThat(iter.next())
+        .isEqualTo(
+            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:NoneByUncommitted Err:null} rollback:{State:RollbackFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.AsyncGroup$RuntimeExceptionOccured RuntimeExceptionOccured[], file = AsyncGroupImpl.java, line = 58, cause = java.lang.RuntimeException: RRRR }}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:NoneByUncommitted Err:null} rollback:{State:NoneByRolledBack Err:null}}]");
+    assertThat(iter.next()).isEqualTo("AsyncDataConn#onTxnFailure 2");
+    assertThat(iter.next())
+        .isEqualTo(
+            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:NoneByUncommitted Err:null} rollback:{State:RollbackFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.AsyncGroup$RuntimeExceptionOccured RuntimeExceptionOccured[], file = AsyncGroupImpl.java, line = 58, cause = java.lang.RuntimeException: RRRR }}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:NoneByUncommitted Err:null} rollback:{State:NoneByRolledBack Err:null}}]");
     assertThat(iter.next()).isEqualTo("AsyncDataConn#close 2");
     assertThat(iter.next()).isEqualTo("SyncDataConn#close 1");
     assertThat(iter.hasNext()).isFalse();
@@ -1185,11 +1431,11 @@ public class DataConnManagerTest {
     assertThat(iter.next()).isEqualTo("SyncDataConn#onTxnFailure 1");
     assertThat(iter.next())
         .isEqualTo(
-            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:CommitFailure Err:com.github.sttk.errs.Err { reason = java.lang.String ZZZ, file = DataConnManagerTest.java, line = 47 }} rollback:{State:NoneByRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:NoneByUncommitted Err:null} rollback:{State:RollbackFailure Err:com.github.sttk.errs.Err { reason = java.lang.String ???, file = DataConnManagerTest.java, line = 180 }}}]");
+            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:CommitFailure Err:com.github.sttk.errs.Err { reason = java.lang.String ZZZ, file = DataConnManagerTest.java, line = 51 }} rollback:{State:NoneByRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:NoneByUncommitted Err:null} rollback:{State:RollbackFailure Err:com.github.sttk.errs.Err { reason = java.lang.String ???, file = DataConnManagerTest.java, line = 212 }}}]");
     assertThat(iter.next()).isEqualTo("AsyncDataConn#onTxnFailure 2");
     assertThat(iter.next())
         .isEqualTo(
-            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:CommitFailure Err:com.github.sttk.errs.Err { reason = java.lang.String ZZZ, file = DataConnManagerTest.java, line = 47 }} rollback:{State:NoneByRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:NoneByUncommitted Err:null} rollback:{State:RollbackFailure Err:com.github.sttk.errs.Err { reason = java.lang.String ???, file = DataConnManagerTest.java, line = 180 }}}]");
+            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:CommitFailure Err:com.github.sttk.errs.Err { reason = java.lang.String ZZZ, file = DataConnManagerTest.java, line = 51 }} rollback:{State:NoneByRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:NoneByUncommitted Err:null} rollback:{State:RollbackFailure Err:com.github.sttk.errs.Err { reason = java.lang.String ???, file = DataConnManagerTest.java, line = 212 }}}]");
     assertThat(iter.next()).isEqualTo("AsyncDataConn#close 2");
     assertThat(iter.next()).isEqualTo("SyncDataConn#close 1");
     assertThat(iter.hasNext()).isFalse();
@@ -1241,11 +1487,11 @@ public class DataConnManagerTest {
     assertThat(iter.next()).isEqualTo("SyncDataConn#onTxnFailure 1");
     assertThat(iter.next())
         .isEqualTo(
-            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:NoneByCommitted Err:null} rollback:{State:NoneByNotRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:CommitFailure Err:com.github.sttk.errs.Err { reason = java.lang.String YYY, file = DataConnManagerTest.java, line = 123 }} rollback:{State:NoneByRolledBack Err:null}}]");
+            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:NoneByCommitted Err:null} rollback:{State:NoneByNotRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:CommitFailure Err:com.github.sttk.errs.Err { reason = java.lang.String YYY, file = DataConnManagerTest.java, line = 143 }} rollback:{State:NoneByRolledBack Err:null}}]");
     assertThat(iter.next()).isEqualTo("AsyncDataConn#onTxnFailure 2");
     assertThat(iter.next())
         .isEqualTo(
-            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:NoneByCommitted Err:null} rollback:{State:NoneByNotRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:CommitFailure Err:com.github.sttk.errs.Err { reason = java.lang.String YYY, file = DataConnManagerTest.java, line = 123 }} rollback:{State:NoneByRolledBack Err:null}}]");
+            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:NoneByCommitted Err:null} rollback:{State:NoneByNotRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:CommitFailure Err:com.github.sttk.errs.Err { reason = java.lang.String YYY, file = DataConnManagerTest.java, line = 143 }} rollback:{State:NoneByRolledBack Err:null}}]");
     assertThat(iter.next()).isEqualTo("AsyncDataConn#close 2");
     assertThat(iter.next()).isEqualTo("SyncDataConn#close 1");
     assertThat(iter.hasNext()).isFalse();
@@ -1340,13 +1586,40 @@ public class DataConnManagerTest {
     assertThat(iter.next()).isEqualTo("SyncDataConn#onTxnFailure 1");
     assertThat(iter.next())
         .isEqualTo(
-            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:NoneByCommitted Err:null} rollback:{State:NoneByNotRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:CommitFailure Err:com.github.sttk.errs.Err { reason = java.lang.String YYY, file = DataConnManagerTest.java, line = 123 }} rollback:{State:NoneByRolledBack Err:null}}]");
+            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:NoneByCommitted Err:null} rollback:{State:NoneByNotRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:CommitFailure Err:com.github.sttk.errs.Err { reason = java.lang.String YYY, file = DataConnManagerTest.java, line = 143 }} rollback:{State:NoneByRolledBack Err:null}}]");
     assertThat(iter.next()).isEqualTo("AsyncDataConn#onTxnFailure 2");
     assertThat(iter.next())
         .isEqualTo(
-            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:NoneByCommitted Err:null} rollback:{State:NoneByNotRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:CommitFailure Err:com.github.sttk.errs.Err { reason = java.lang.String YYY, file = DataConnManagerTest.java, line = 123 }} rollback:{State:NoneByRolledBack Err:null}}]");
+            "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$SyncDataConn cause:{State:NoneByCommitted Err:null} rollback:{State:NoneByNotRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.internal.DataConnManagerTest$AsyncDataConn cause:{State:CommitFailure Err:com.github.sttk.errs.Err { reason = java.lang.String YYY, file = DataConnManagerTest.java, line = 143 }} rollback:{State:NoneByRolledBack Err:null}}]");
     assertThat(iter.next()).isEqualTo("AsyncDataConn#close 2");
     assertThat(iter.next()).isEqualTo("SyncDataConn#close 1");
     assertThat(iter.hasNext()).isFalse();
+  }
+
+  @Test
+  void testDefaultMethodOfDataConn() throws Err {
+    var conn =
+        new DataConn() {
+          @Override
+          public void commit(AsyncGroup ag) throws Err {}
+
+          @Override
+          public void rollback(AsyncGroup ag) throws Err {}
+
+          @Override
+          public void close() {}
+
+          @Override
+          public boolean isCommitted() {
+            return true;
+          }
+        };
+
+    conn.preCommit(null);
+    conn.commit(null);
+    conn.postCommit(null);
+    conn.rollback(null);
+    conn.onTxnFailure(null, null);
+    conn.close();
   }
 }
