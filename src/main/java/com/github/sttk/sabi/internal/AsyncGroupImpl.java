@@ -4,16 +4,16 @@
  */
 package com.github.sttk.sabi.internal;
 
-import static com.github.sttk.sabi.AsyncGroup.RunnerInterrupted;
+import static com.github.sttk.sabi.AsyncGroup.FunctionInterrupted;
 
 import com.github.sttk.errs.Err;
 import com.github.sttk.sabi.AsyncGroup;
 import com.github.sttk.sabi.ErrEntry;
-import com.github.sttk.sabi.Runner;
+import com.github.sttk.sabi.Function;
 import java.util.ArrayList;
 import java.util.List;
 
-public final class AsyncGroupImpl implements AsyncGroup {
+public final class AsyncGroupImpl extends AsyncGroup {
   private List<ErrEntry> eeList = new ArrayList<>();
   private VthEntry vthHead;
   private VthEntry vthLast;
@@ -23,7 +23,7 @@ public final class AsyncGroupImpl implements AsyncGroup {
   AsyncGroupImpl() {}
 
   @Override
-  public void add(Runner runner) {
+  public void add(Function fn) {
     var index = this._index;
     var name = this._name;
     var vth =
@@ -31,7 +31,7 @@ public final class AsyncGroupImpl implements AsyncGroup {
             .start(
                 () -> {
                   try {
-                    runner.run();
+                    fn.apply();
                   } catch (Err err) {
                     addErr(index, name, err);
                   } catch (RuntimeException e) {
@@ -65,7 +65,7 @@ public final class AsyncGroupImpl implements AsyncGroup {
       try {
         ve.thread.join();
       } catch (InterruptedException e) {
-        addErr(ve.index, ve.name, new Err(new RunnerInterrupted(), e));
+        addErr(ve.index, ve.name, new Err(new FunctionInterrupted(), e));
       }
     }
     return this.eeList;

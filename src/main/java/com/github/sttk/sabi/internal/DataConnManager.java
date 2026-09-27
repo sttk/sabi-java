@@ -195,10 +195,11 @@ public class DataConnManager {
       }
     }
 
+    var reports = builders.stream().map(TxnFailureReportBuilder::build).toList();
+
     ag = new AsyncGroupImpl();
     for (var cont : this.list) {
       if (cont.conn != null) {
-        var reports = builders.stream().map(TxnFailureReportBuilder::build).toList();
         cont.conn.onTxnFailure(ag, reports);
       }
     }

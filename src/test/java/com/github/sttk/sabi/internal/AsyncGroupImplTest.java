@@ -5,7 +5,7 @@ import static org.assertj.core.api.Assertions.fail;
 
 import com.github.sttk.errs.Err;
 import com.github.sttk.sabi.AsyncGroup;
-import com.github.sttk.sabi.Runner;
+import com.github.sttk.sabi.Function;
 import org.junit.jupiter.api.Test;
 
 public class AsyncGroupImplTest {
@@ -24,7 +24,7 @@ public class AsyncGroupImplTest {
     var ag = new AsyncGroupImpl();
 
     boolean[] executed = {false};
-    Runner fn =
+    Function fn =
         () -> {
           try {
             Thread.sleep(50);
@@ -50,7 +50,7 @@ public class AsyncGroupImplTest {
     record FailToDoSomething() {}
 
     boolean[] executed = {false};
-    Runner fn =
+    Function fn =
         () -> {
           try {
             Thread.sleep(50);
@@ -87,7 +87,7 @@ public class AsyncGroupImplTest {
 
     boolean[] executed = {false, false, false};
 
-    Runner fn0 =
+    Function fn0 =
         () -> {
           try {
             Thread.sleep(200);
@@ -96,7 +96,7 @@ public class AsyncGroupImplTest {
           executed[0] = true;
           throw new Err(new Reason0());
         };
-    Runner fn1 =
+    Function fn1 =
         () -> {
           try {
             Thread.sleep(400);
@@ -105,7 +105,7 @@ public class AsyncGroupImplTest {
           executed[1] = true;
           throw new Err(new Reason1());
         };
-    Runner fn2 =
+    Function fn2 =
         () -> {
           try {
             Thread.sleep(50);
@@ -152,7 +152,7 @@ public class AsyncGroupImplTest {
     var ag = new AsyncGroupImpl();
 
     boolean[] executed = {false};
-    Runner fn =
+    Function fn =
         () -> {
           try {
             Thread.sleep(50);
@@ -188,7 +188,7 @@ public class AsyncGroupImplTest {
 
     final var mainThread = Thread.currentThread();
     boolean[] executed = {false};
-    Runner fn =
+    Function fn =
         () -> {
           try {
             Thread.sleep(500);
@@ -210,7 +210,7 @@ public class AsyncGroupImplTest {
     assertThat(errors.get(0).index).isEqualTo(123);
     assertThat(errors.get(0).name).isEqualTo("foo");
     switch (errors.get(0).err.getReason()) {
-      case AsyncGroup.RunnerInterrupted r -> {}
+      case AsyncGroup.FunctionInterrupted r -> {}
       default -> fail();
     }
     assertThat(errors.get(0).err.getCause()).isInstanceOf(InterruptedException.class);
