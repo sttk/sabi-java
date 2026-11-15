@@ -13,7 +13,10 @@ class TestCommonsTest {
   static enum Fail {
     None,
     Setup,
-    SetupFatal,
+    SetupError,
+    SetupRuntimeException,
+    CloseDsError,
+    CloseDsRuntimeException,
     CreateDataConn,
 
     PreCommit,
@@ -312,24 +315,34 @@ class TestCommonsTest {
     @Override
     public void setup(AsyncGroup ag) throws Err {
       if (this.fail == Fail.Setup) {
-        this.logger.add(String.format("SyncDataConn#setup %d failed", this.id));
+        this.logger.add(String.format("SyncDataSrc#setup %d failed", this.id));
         throw new Err("XXX");
-      } else if (this.fail == Fail.SetupFatal) {
-        this.logger.add(String.format("SyncDataConn#setup %d fatal", this.id));
-        throw new Error("setup fatal");
+      } else if (this.fail == Fail.SetupError) {
+        this.logger.add(String.format("SyncDataSrc#setup %d Error", this.id));
+        throw new Error("setup Error");
+      } else if (this.fail == Fail.SetupRuntimeException) {
+        this.logger.add(String.format("SyncDataSrc#setup %d RuntimeException", this.id));
+        throw new Error("setup RuntimeException");
       }
       this.logger.add(String.format("SyncDataSrc#setup %d", this.id));
     }
 
     @Override
     public void close() {
-      this.logger.add(String.format("SyncDataConn#close %d", this.id));
+      if (this.fail == Fail.CloseError) {
+        this.logger.add(String.format("SyncDataSrc#close %d Error", this.id));
+        throw new Error("close Error");
+      } else if (this.fail == Fail.SetupRuntimeException) {
+        this.logger.add(String.format("SyncDataSrc#close %d RuntimeException", this.id));
+        throw new Error("close RuntimeException");
+      }
+      this.logger.add(String.format("SyncDataSrc#close %d", this.id));
     }
 
     @Override
     public DataConn createDataConn() throws Err {
       if (this.fail == Fail.CreateDataConn) {
-        this.logger.add(String.format("SyncDataConn#createDataConn %d failed", this.id));
+        this.logger.add(String.format("SyncDataSrc#createDataConn %d failed", this.id));
         throw new Err("XXX");
       }
       this.logger.add(String.format("SyncDataSrc#createDataConn %d", this.id));
@@ -354,11 +367,11 @@ class TestCommonsTest {
       ag.add(
           () -> {
             if (this.fail == Fail.Setup) {
-              this.logger.add(String.format("AsyncDataConn#setup %d failed", this.id));
+              this.logger.add(String.format("AsyncDataSrc#setup %d failed", this.id));
               throw new Err("XXX");
-            } else if (this.fail == Fail.SetupFatal) {
-              this.logger.add(String.format("AsyncDataConn#setup %d fatal", this.id));
-              throw new Error("setup fatal");
+            } else if (this.fail == Fail.SetupError) {
+              this.logger.add(String.format("AsyncDataSrc#setup %d Error", this.id));
+              throw new Error("setup Error");
             }
             this.logger.add(String.format("AsyncDataSrc#setup %d", this.id));
           });
@@ -366,13 +379,13 @@ class TestCommonsTest {
 
     @Override
     public void close() {
-      this.logger.add(String.format("AsyncDataConn#close %d", this.id));
+      this.logger.add(String.format("AsyncDataSrc#close %d", this.id));
     }
 
     @Override
     public DataConn createDataConn() throws Err {
       if (this.fail == Fail.CreateDataConn) {
-        this.logger.add(String.format("AsyncDataConn#createDataConn %d failed", this.id));
+        this.logger.add(String.format("AsyncDataSrc#createDataConn %d failed", this.id));
         throw new Err("XXX");
       }
       this.logger.add(String.format("AsyncDataSrc#createDataConn %d", this.id));
