@@ -322,19 +322,19 @@ class TestCommonsTest {
         throw new Error("setup Error");
       } else if (this.fail == Fail.SetupRuntimeException) {
         this.logger.add(String.format("SyncDataSrc#setup %d RuntimeException", this.id));
-        throw new Error("setup RuntimeException");
+        throw new RuntimeException("setup RuntimeException");
       }
       this.logger.add(String.format("SyncDataSrc#setup %d", this.id));
     }
 
     @Override
     public void close() {
-      if (this.fail == Fail.CloseError) {
+      if (this.fail == Fail.CloseDsError) {
         this.logger.add(String.format("SyncDataSrc#close %d Error", this.id));
-        throw new Error("close Error");
-      } else if (this.fail == Fail.SetupRuntimeException) {
+        throw new Error("close ds Error");
+      } else if (this.fail == Fail.CloseDsRuntimeException) {
         this.logger.add(String.format("SyncDataSrc#close %d RuntimeException", this.id));
-        throw new Error("close RuntimeException");
+        throw new RuntimeException("close ds RuntimeException");
       }
       this.logger.add(String.format("SyncDataSrc#close %d", this.id));
     }
