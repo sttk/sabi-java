@@ -1,6 +1,6 @@
 package com.github.sttk.sabi;
 
-import static com.github.sttk.sabi.TestData.*;
+import static com.github.sttk.sabi.TestDoubles.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 
@@ -486,7 +486,7 @@ public class DataSrcManagerTest {
         assertThat(errors.get(0).name).isEqualTo("bar");
         assertThat(errors.get(0).err.toString())
             .isEqualTo(
-                "com.github.sttk.errs.Err { reason = java.lang.String XXX, file = TestData.java, line = 315 }");
+                "com.github.sttk.errs.Err { reason = java.lang.String XXX, file = TestDoubles.java, line = 315 }");
       } finally {
         manager.close();
       }
@@ -562,7 +562,7 @@ public class DataSrcManagerTest {
         assertThat(errors.get(0).name).isEqualTo("bar");
         assertThat(errors.get(0).err.toString())
             .isEqualTo(
-                "com.github.sttk.errs.Err { reason = java.lang.String XXX, file = TestData.java, line = 315 }");
+                "com.github.sttk.errs.Err { reason = java.lang.String XXX, file = TestDoubles.java, line = 315 }");
 
         assertThat(manager.local).isTrue();
         assertThat(manager.isAbnormal).isFalse();
@@ -714,7 +714,7 @@ public class DataSrcManagerTest {
         assertThat(errors.get(0).name).isEqualTo("bar");
         assertThat(errors.get(0).err.toString())
             .isEqualTo(
-                "com.github.sttk.errs.Err { reason = java.lang.String XXX, file = TestData.java, line = 315 }");
+                "com.github.sttk.errs.Err { reason = java.lang.String XXX, file = TestDoubles.java, line = 315 }");
       } finally {
         manager.close();
       }
@@ -790,7 +790,7 @@ public class DataSrcManagerTest {
         assertThat(errors.get(0).name).isEqualTo("bar");
         assertThat(errors.get(0).err.toString())
             .isEqualTo(
-                "com.github.sttk.errs.Err { reason = java.lang.String XXX, file = TestData.java, line = 315 }");
+                "com.github.sttk.errs.Err { reason = java.lang.String XXX, file = TestDoubles.java, line = 315 }");
 
         assertThat(manager.local).isTrue();
         assertThat(manager.isAbnormal).isFalse();

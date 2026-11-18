@@ -3,8 +3,8 @@ package com.github.sttk.sabi;
 import com.github.sttk.errs.Err;
 import java.util.List;
 
-class TestData {
-  private TestData() {}
+class TestDoubles {
+  private TestDoubles() {}
 
   static enum Fail {
     None,
