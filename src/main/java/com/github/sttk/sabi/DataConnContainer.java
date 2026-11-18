@@ -12,4 +12,8 @@ class DataConnContainer {
     this.name = name;
     this.conn = conn;
   }
+
+  static boolean isNoDataConn(DataConnContainer cont) {
+    return (cont == null || cont.conn == null);
+  }
 }

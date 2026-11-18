@@ -4,6 +4,8 @@
  */
 package com.github.sttk.sabi;
 
+import static com.github.sttk.sabi.DataSrcContainer.isNoDataSrc;
+
 import com.github.sttk.errs.Err;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -56,7 +58,7 @@ class DataSrcManager {
           }
         });
 
-    this.listUnready.removeIf(cont -> (isNoDs(cont) || Objects.equals(cont.name, name)));
+    this.listUnready.removeIf(cont -> (isNoDataSrc(cont) || Objects.equals(cont.name, name)));
 
     if (firstThrowable[0] != null) {
       if (firstThrowable[0] instanceof RuntimeException) {
@@ -73,7 +75,7 @@ class DataSrcManager {
 
     for (int i = this.listReady.size() - 1; i >= 0; i--) {
       var cont = this.listReady.get(i);
-      // if (isNoDs(cont)) continue; // impossible
+      // if (isNoDataSrc(cont)) continue; // impossible
       if (cont.local == local) {
         try {
           cont.ds.close();
@@ -102,9 +104,7 @@ class DataSrcManager {
 
     for (int i : indices.reversed()) {
       var cont = this.listUnready.get(i);
-      if (isNoDs(cont)) {
-        continue;
-      }
+      if (isNoDataSrc(cont)) continue;
       try {
         cont.ds.close();
       } catch (Throwable t) {
@@ -126,9 +126,7 @@ class DataSrcManager {
     try {
       for (int i = 0, n = this.listUnready.size(); i < n; i++) {
         var cont = this.listUnready.get(i);
-        if (isNoDs(cont)) {
-          continue;
-        }
+        if (isNoDataSrc(cont)) continue;
         ag.name = cont.name;
         ag.index = i;
         try {
@@ -155,16 +153,14 @@ class DataSrcManager {
     }
 
     if (errors.isEmpty()) {
-      this.listReady.addAll(this.listUnready.stream().filter(c -> !isNoDs(c)).toList());
+      this.listReady.addAll(this.listUnready.stream().filter(c -> !isNoDataSrc(c)).toList());
       this.listUnready.clear();
       return errors;
     }
 
     for (int i = nDone - 1; i >= 0; i--) {
       var cont = this.listUnready.get(i);
-      if (isNoDs(cont)) {
-        continue;
-      }
+      if (isNoDataSrc(cont)) continue;
       try {
         cont.ds.close();
       } catch (Throwable t) {
@@ -203,9 +199,7 @@ class DataSrcManager {
 
     for (int listIndex = 0; listIndex < numUnready; listIndex++) {
       var cont = this.listUnready.get(listIndex);
-      if (isNoDs(cont)) {
-        continue;
-      }
+      if (isNoDataSrc(cont)) continue;
       Integer orderIndex = indexMap.remove(cont.name);
       if (orderIndex != null) {
         orderedIndexes.set(orderIndex, listIndex);
@@ -225,7 +219,7 @@ class DataSrcManager {
           continue;
         }
         var cont = this.listUnready.get(listIndex);
-        // if (isNoDs(cont)) continue // impossible
+        // if (isNoDataSrc(cont)) continue // impossible
         ag.name = cont.name;
         ag.index = listIndex;
         try {
@@ -267,7 +261,7 @@ class DataSrcManager {
         continue;
       }
       var cont = this.listUnready.get(listIndex);
-      // if (isNoDs(cont)) continue // impossible
+      // if (isNoDataSrc(cont)) continue // impossible
       try {
         cont.ds.close();
       } catch (Throwable t) {
@@ -293,9 +287,5 @@ class DataSrcManager {
     for (var cont : this.listReady) {
       contMap.put(cont.name, cont);
     }
-  }
-
-  boolean isNoDs(DataSrcContainer cont) {
-    return (cont == null || cont.ds == null);
   }
 }

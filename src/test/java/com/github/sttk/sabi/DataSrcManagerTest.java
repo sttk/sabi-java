@@ -288,20 +288,6 @@ public class DataSrcManagerTest {
   @Nested
   class Utils {
     @Test
-    void testIsNoDs() {
-      var manager = new DataSrcManager(true);
-      assertThat(manager.isNoDs(null)).isTrue();
-
-      var cont0 = new DataSrcContainer(true, "foo", null);
-      assertThat(manager.isNoDs(cont0)).isTrue();
-
-      var logger = new ArrayList<String>();
-      var ds1 = new SyncDataSrc(1, logger, Fail.None);
-      var cont1 = new DataSrcContainer(true, "foo", ds1);
-      assertThat(manager.isNoDs(cont1)).isFalse();
-    }
-
-    @Test
     void copyDsReadyToMapWithAddAndSetup() {
       var logger = new ArrayList<String>();
 
@@ -415,7 +401,6 @@ public class DataSrcManagerTest {
       var logger = new ArrayList<String>();
 
       var manager = new DataSrcManager(true);
-      assertThat(manager.isNoDs(null)).isTrue();
 
       try {
         var ds1 = new SyncDataSrc(1, logger, Fail.None);
@@ -456,7 +441,6 @@ public class DataSrcManagerTest {
       var logger = new ArrayList<String>();
 
       var manager = new DataSrcManager(true);
-      assertThat(manager.isNoDs(null)).isTrue();
 
       try {
         var ds1 = new SyncDataSrc(1, logger, Fail.None);
@@ -587,7 +571,6 @@ public class DataSrcManagerTest {
       var logger = new ArrayList<String>();
 
       var manager = new DataSrcManager(true);
-      assertThat(manager.isNoDs(null)).isTrue();
 
       try {
         var ds1 = new SyncDataSrc(1, logger, Fail.None);
@@ -626,10 +609,19 @@ public class DataSrcManagerTest {
     @Test
     void testSetupWithOrderNoDs() {
       var manager = new DataSrcManager(true);
-      assertThat(manager.isNoDs(null)).isTrue();
+
+      assertThat(manager.local).isTrue();
+      assertThat(manager.isAbnormal).isFalse();
+      assertThat(manager.listUnready).hasSize(0);
+      assertThat(manager.listReady).hasSize(0);
 
       var errors = manager.setupWithOrder(List.of("foo", "bar"));
       assertThat(errors).isEmpty();
+
+      assertThat(manager.local).isTrue();
+      assertThat(manager.isAbnormal).isFalse();
+      assertThat(manager.listUnready).hasSize(0);
+      assertThat(manager.listReady).hasSize(0);
     }
 
     @Test
@@ -637,8 +629,6 @@ public class DataSrcManagerTest {
       var logger = new ArrayList<String>();
 
       var manager = new DataSrcManager(true);
-      assertThat(manager.isNoDs(null)).isTrue();
-
       try {
         var ds1 = new SyncDataSrc(1, logger, Fail.None);
         manager.add("foo", ds1);
@@ -684,8 +674,6 @@ public class DataSrcManagerTest {
       var logger = new ArrayList<String>();
 
       var manager = new DataSrcManager(true);
-      assertThat(manager.isNoDs(null)).isTrue();
-
       try {
         var ds1 = new SyncDataSrc(1, logger, Fail.None);
         manager.add("foo", ds1);
@@ -815,8 +803,6 @@ public class DataSrcManagerTest {
       var logger = new ArrayList<String>();
 
       var manager = new DataSrcManager(true);
-      assertThat(manager.isNoDs(null)).isTrue();
-
       try {
         var ds1 = new SyncDataSrc(1, logger, Fail.None);
         manager.add("foo", ds1);
@@ -856,8 +842,6 @@ public class DataSrcManagerTest {
       var logger = new ArrayList<String>();
 
       var manager = new DataSrcManager(true);
-      assertThat(manager.isNoDs(null)).isTrue();
-
       try {
         var ds1 = new SyncDataSrc(1, logger, Fail.None);
         manager.add("foo", ds1);
@@ -897,8 +881,6 @@ public class DataSrcManagerTest {
       var logger = new ArrayList<String>();
 
       var manager = new DataSrcManager(true);
-      assertThat(manager.isNoDs(null)).isTrue();
-
       try {
         var ds1 = new SyncDataSrc(1, logger, Fail.None);
         manager.add("foo", ds1);
@@ -1012,7 +994,6 @@ public class DataSrcManagerTest {
       } finally {
         manager.close();
       }
-      assertThat(manager.isNoDs(null)).isTrue();
     }
   }
 

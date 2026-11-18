@@ -14,4 +14,8 @@ class DataSrcContainer {
     this.name = name;
     this.ds = ds;
   }
+
+  static boolean isNoDataSrc(DataSrcContainer cont) {
+    return (cont == null || cont.ds == null);
+  }
 }
