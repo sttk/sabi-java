@@ -298,4 +298,97 @@ class TestDoubles {
       this.logger.add(String.format("NoCommitDataConn#close %d", this.id));
     }
   }
+
+  static class SyncDataSrc implements DataSrc {
+    int id;
+    List<String> logger;
+    Fail fail;
+
+    SyncDataSrc(int id, List<String> logger, Fail fail) {
+      logger.add(String.format("SyncDataSrc#new %d", id));
+      this.id = id;
+      this.logger = logger;
+      this.fail = fail;
+    }
+
+    @Override
+    public void setup(AsyncGroup ag) throws Err {
+      if (this.fail == Fail.Setup) {
+        this.logger.add(String.format("SyncDataSrc#setup %d failed", this.id));
+        throw new Err("XXX");
+      } else if (this.fail == Fail.SetupError) {
+        this.logger.add(String.format("SyncDataSrc#setup %d Error", this.id));
+        throw new Error("setup Error");
+      } else if (this.fail == Fail.SetupRuntimeException) {
+        this.logger.add(String.format("SyncDataSrc#setup %d RuntimeException", this.id));
+        throw new RuntimeException("setup RuntimeException");
+      }
+      this.logger.add(String.format("SyncDataSrc#setup %d", this.id));
+    }
+
+    @Override
+    public void close() {
+      if (this.fail == Fail.CloseDsError) {
+        this.logger.add(String.format("SyncDataSrc#close %d Error", this.id));
+        throw new Error("close ds Error");
+      } else if (this.fail == Fail.CloseDsRuntimeException) {
+        this.logger.add(String.format("SyncDataSrc#close %d RuntimeException", this.id));
+        throw new RuntimeException("close ds RuntimeException");
+      }
+      this.logger.add(String.format("SyncDataSrc#close %d", this.id));
+    }
+
+    @Override
+    public DataConn createDataConn() throws Err {
+      if (this.fail == Fail.CreateDataConn) {
+        this.logger.add(String.format("SyncDataSrc#createDataConn %d failed", this.id));
+        throw new Err("XXX");
+      }
+      this.logger.add(String.format("SyncDataSrc#createDataConn %d", this.id));
+      return new SyncDataConn(this.id, this.logger, this.fail);
+    }
+  }
+
+  static class AsyncDataSrc implements DataSrc {
+    int id;
+    List<String> logger;
+    Fail fail;
+
+    AsyncDataSrc(int id, List<String> logger, Fail fail) {
+      logger.add(String.format("AsyncDataSrc#new %d", id));
+      this.id = id;
+      this.logger = logger;
+      this.fail = fail;
+    }
+
+    @Override
+    public void setup(AsyncGroup ag) throws Err {
+      ag.add(
+          () -> {
+            if (this.fail == Fail.Setup) {
+              this.logger.add(String.format("AsyncDataSrc#setup %d failed", this.id));
+              throw new Err("XXX");
+            } else if (this.fail == Fail.SetupError) {
+              this.logger.add(String.format("AsyncDataSrc#setup %d Error", this.id));
+              throw new Error("setup Error");
+            }
+            this.logger.add(String.format("AsyncDataSrc#setup %d", this.id));
+          });
+    }
+
+    @Override
+    public void close() {
+      this.logger.add(String.format("AsyncDataSrc#close %d", this.id));
+    }
+
+    @Override
+    public DataConn createDataConn() throws Err {
+      if (this.fail == Fail.CreateDataConn) {
+        this.logger.add(String.format("AsyncDataSrc#createDataConn %d failed", this.id));
+        throw new Err("XXX");
+      }
+      this.logger.add(String.format("AsyncDataSrc#createDataConn %d", this.id));
+      return new AsyncDataConn(this.id, this.logger, this.fail);
+    }
+  }
 }
