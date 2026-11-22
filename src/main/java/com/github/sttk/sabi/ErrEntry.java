@@ -17,4 +17,14 @@ public final class ErrEntry {
     this.name = name;
     this.err = err;
   }
+
+  @Override
+  public String toString() {
+    var buf = new StringBuilder();
+    buf.append(this.getClass().getName());
+    buf.append("{index=" + this.index + ", ");
+    buf.append("name=" + this.name + ", ");
+    buf.append("err=" + this.err + "}");
+    return buf.toString();
+  }
 }
