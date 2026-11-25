@@ -14,6 +14,7 @@ class TestDoubles {
     CloseDsError,
     CloseDsRuntimeException,
     CreateDataConn,
+    CreateDataConnButNull,
 
     PreCommit,
     Commit,
@@ -343,6 +344,9 @@ class TestDoubles {
       if (this.fail == Fail.CreateDataConn) {
         this.logger.add(String.format("SyncDataSrc#createDataConn %d failed", this.id));
         throw new Err("XXX");
+      } else if (this.fail == Fail.CreateDataConnButNull) {
+        this.logger.add(String.format("SyncDataSrc#createDataConn %d but null", this.id));
+        return null;
       }
       this.logger.add(String.format("SyncDataSrc#createDataConn %d", this.id));
       return new SyncDataConn(this.id, this.logger, this.fail);
