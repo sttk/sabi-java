@@ -12,8 +12,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Manages global {@link DataSrc} registrations and their lifecycle for the sabi framework.
  *
  * <p>Global data sources are registered via {@link #uses(String, DataSrc)} before calling {@link
- * #setup()} or {@link #setupWithOrder(String...)}. Once setup completes, the registered global
- * data sources are inherited by subsequently created {@link DataHub} instances until the {@link
+ * #setup()} or {@link #setupWithOrder(String...)}. Once setup completes, the registered global data
+ * sources are inherited by subsequently created {@link DataHub} instances until the {@link
  * AutoCloseable} returned by setup is closed.
  */
 public final class Globals {
@@ -63,7 +63,8 @@ public final class Globals {
    * instances, prioritizing the specified setup order.
    *
    * <p>Data sources matching {@code names} are initialized first in the given order (with earlier
-   * names taking precedence if duplicates appear), followed by any remaining registered data sources.
+   * names taking precedence if duplicates appear), followed by any remaining registered data
+   * sources.
    *
    * @param names the ordered logical names of global data sources to initialize first
    * @return an {@link AutoCloseable} that closes all global data sources when closed

@@ -20,8 +20,8 @@ import java.util.List;
  * {@link #add(Task)}.
  *
  * <p>Registered {@link Task} instances are executed on virtual threads and joined when the
- * lifecycle phase completes. Any {@link Err}, {@link RuntimeException}, or {@link Throwable}
- * thrown by a task is captured and reported via {@link AsyncGroupError} and {@link ErrEntry}.
+ * lifecycle phase completes. Any {@link Err}, {@link RuntimeException}, or {@link Throwable} thrown
+ * by a task is captured and reported via {@link AsyncGroupError} and {@link ErrEntry}.
  */
 public final class AsyncGroup {
 

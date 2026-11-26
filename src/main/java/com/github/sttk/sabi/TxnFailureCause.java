@@ -7,8 +7,8 @@ package com.github.sttk.sabi;
 import com.github.sttk.errs.Err;
 
 /**
- * Represents the cause of a transaction failure for a data connection, containing state
- * information and the associated error.
+ * Represents the cause of a transaction failure for a data connection, containing state information
+ * and the associated error.
  *
  * <p>This class encapsulates the phase or status in which a transaction failure occurred (via
  * {@link TxnFailureCauseState}) and the specific {@link Err} instance detailing the failure.

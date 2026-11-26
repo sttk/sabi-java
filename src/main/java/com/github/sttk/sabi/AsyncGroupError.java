@@ -4,9 +4,7 @@
  */
 package com.github.sttk.sabi;
 
-/**
- * Represents error reasons that can occur while running tasks in an {@link AsyncGroup}.
- */
+/** Represents error reasons that can occur while running tasks in an {@link AsyncGroup}. */
 public sealed interface AsyncGroupError {
 
   /** Indicates that waiting for an asynchronous task to complete was interrupted. */
