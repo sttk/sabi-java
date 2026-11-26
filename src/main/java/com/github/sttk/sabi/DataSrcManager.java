@@ -48,6 +48,8 @@ class DataSrcManager {
             } catch (Throwable t) {
               if (firstThrowable[0] == null) {
                 firstThrowable[0] = t;
+              } else {
+                firstThrowable[0].addSuppressed(t);
               }
             }
             return true;
@@ -83,6 +85,8 @@ class DataSrcManager {
       } catch (Throwable t) {
         if (firstThrowable[0] == null) {
           firstThrowable[0] = t;
+        } else {
+          firstThrowable[0].addSuppressed(t);
         }
       }
     }
@@ -164,6 +168,8 @@ class DataSrcManager {
       } catch (Throwable t) {
         if (firstThrowable == null) {
           firstThrowable = t;
+        } else {
+          firstThrowable.addSuppressed(t);
         }
       }
     }
@@ -265,6 +271,8 @@ class DataSrcManager {
       } catch (Throwable t) {
         if (firstThrowable == null) {
           firstThrowable = t;
+        } else {
+          firstThrowable.addSuppressed(t);
         }
       }
     }

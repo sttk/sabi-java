@@ -190,12 +190,16 @@ class DataConnManager {
         ag.addErr(ag.index, ag.name, new Err(new AsyncGroupError.RuntimeExceptionOccurred(), e));
         if (firstThrowable == null) {
           firstThrowable = e;
+        } else {
+          firstThrowable.addSuppressed(e);
         }
         // don't break
       } catch (Throwable t) {
         ag.addErr(ag.index, ag.name, new Err(new AsyncGroupError.ErrorOccurred(), t));
         if (firstThrowable == null) {
           firstThrowable = t;
+        } else {
+          firstThrowable.addSuppressed(t);
         }
         // don't break
       }
@@ -252,11 +256,15 @@ class DataConnManager {
         ag.addErr(ag.index, ag.name, new Err(new AsyncGroupError.RuntimeExceptionOccurred(), e));
         if (firstThrowable == null) {
           firstThrowable = e;
+        } else {
+          firstThrowable.addSuppressed(e);
         }
       } catch (Throwable t) {
         ag.addErr(ag.index, ag.name, new Err(new AsyncGroupError.ErrorOccurred(), t));
         if (firstThrowable == null) {
           firstThrowable = t;
+        } else {
+          firstThrowable.addSuppressed(t);
         }
       }
     }
@@ -280,6 +288,8 @@ class DataConnManager {
         } catch (Throwable t) {
           if (firstThrowable == null) {
             firstThrowable = t;
+          } else {
+            firstThrowable.addSuppressed(t);
           }
         }
       }
@@ -308,6 +318,8 @@ class DataConnManager {
         } catch (Throwable t) {
           if (firstThrowable == null) {
             firstThrowable = t;
+          } else {
+            firstThrowable.addSuppressed(t);
           }
         }
       }

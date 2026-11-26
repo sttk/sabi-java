@@ -83,6 +83,8 @@ public final class AsyncGroup {
         } catch (InterruptedException e) {
           if (firstInterruption == null) {
             firstInterruption = e;
+          } else {
+            firstInterruption.addSuppressed(e);
           }
         }
       }
