@@ -73,19 +73,38 @@ public final class AsyncGroup {
   }
 
   List<ErrEntry> join() {
+    boolean interrupted = false;
     for (var ve = this.vthHead; ve != null; ve = ve.next) {
+      InterruptedException firstInterruption = null;
+      while (true) {
+        try {
+          ve.thread.join();
+          break;
+        } catch (InterruptedException e) {
+          if (firstInterruption == null) {
+            firstInterruption = e;
+          }
+        }
+      }
+      if (firstInterruption != null) {
+        interrupted = true;
+        var err = new Err(new AsyncGroupError.TaskInterrupted(), firstInterruption);
+        addErr(ve.index, ve.name, err);
+      }
+
       try {
-        ve.thread.join();
         if (ve.thrown != null) {
           throw ve.thrown;
         }
-      } catch (InterruptedException e) {
-        addErr(ve.index, ve.name, new Err(new AsyncGroupError.TaskInterrupted(), e));
       } catch (RuntimeException e) {
         addErr(ve.index, ve.name, new Err(new AsyncGroupError.RuntimeExceptionOccurred(), e));
       } catch (Throwable t) {
         addErr(ve.index, ve.name, new Err(new AsyncGroupError.ErrorOccurred(), t));
       }
+    }
+
+    if (interrupted) {
+      Thread.currentThread().interrupt();
     }
     return this.eeList;
   }

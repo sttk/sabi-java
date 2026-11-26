@@ -362,7 +362,9 @@ public class AsyncGroupTest {
     assertThat(errors.get(0).index()).isEqualTo(123);
     assertThat(errors.get(0).name()).isEqualTo("foo");
     switch (errors.get(0).err().getReason()) {
-      case AsyncGroupError.TaskInterrupted r -> {}
+      case AsyncGroupError.TaskInterrupted r -> {
+        assertThat(Thread.currentThread().isInterrupted()).isTrue();
+      }
       default -> fail();
     }
     assertThat(errors.get(0).err().getCause()).isInstanceOf(InterruptedException.class);
