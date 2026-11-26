@@ -21,7 +21,7 @@ public final class Globals {
   }
 
   public static AutoCloseable setup() throws Err {
-    if (!DATA_SRCS_FIXED.compareAndSet(false, true)) {
+    if (DATA_SRCS_FIXED.compareAndSet(false, true)) {
       var errors = DATA_SRC_MANAGER.setup();
       if (!errors.isEmpty()) {
         DATA_SRC_MANAGER.close();
@@ -31,9 +31,9 @@ public final class Globals {
     return new AutoShutdown();
   }
 
-  public static AutoCloseable setupWithOrder(List<String> names) throws Err {
-    if (!DATA_SRCS_FIXED.compareAndSet(false, true)) {
-      var errors = DATA_SRC_MANAGER.setupWithOrder(names);
+  public static AutoCloseable setupWithOrder(String... names) throws Err {
+    if (DATA_SRCS_FIXED.compareAndSet(false, true)) {
+      var errors = DATA_SRC_MANAGER.setupWithOrder(List.of(names));
       if (!errors.isEmpty()) {
         DATA_SRC_MANAGER.close();
         throw new Err(new DataHubError.FailToSetupGlobalDataSrcs(errors));
