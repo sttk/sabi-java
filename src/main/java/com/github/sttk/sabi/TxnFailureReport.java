@@ -6,13 +6,37 @@ package com.github.sttk.sabi;
 
 import com.github.sttk.errs.Err;
 
+/**
+ * Reports the failure cause and rollback outcome for a single {@link DataConn} when a transaction
+ * fails.
+ *
+ * <p>Instances are passed to {@link DataConn#onTxnFailure(AsyncGroup, java.util.List)} to provide
+ * diagnostics and help determine recovery strategies via {@link #recoveryForCommit()} and {@link
+ * #recoveryForRollback()}.
+ */
 public final class TxnFailureReport {
 
+  /** The logical name of the data connection. */
   public final String dataConnName;
+
+  /** The fully qualified class name of the data connection. */
   public final String dataConnType;
+
+  /** The cause of the transaction failure for this connection. */
   public final TxnFailureCause cause;
+
+  /** The rollback outcome for this connection. */
   public final TxnFailureRollback rollback;
 
+  /**
+   * Constructs a new {@code TxnFailureReport} with the specified connection details, cause, and
+   * rollback outcome.
+   *
+   * @param name the logical name of the data connection
+   * @param type the class name or type of the data connection
+   * @param cause the transaction failure cause
+   * @param rollback the rollback outcome
+   */
   public TxnFailureReport(
       String name, String type, TxnFailureCause cause, TxnFailureRollback rollback) {
     this.dataConnName = name;
@@ -21,6 +45,11 @@ public final class TxnFailureReport {
     this.rollback = rollback;
   }
 
+  /**
+   * Returns a string representation of this transaction failure report.
+   *
+   * @return a formatted string containing connection details, cause, and rollback outcome
+   */
   public String toString() {
     var buf = new StringBuilder("{");
     buf.append("dataConnName:").append(this.dataConnName);
@@ -34,6 +63,13 @@ public final class TxnFailureReport {
     return buf.toString();
   }
 
+  /**
+   * Determines whether this connection was a direct cause of the transaction failure.
+   *
+   * @return {@code true} if this connection caused the failure; {@code false} if the cause state is
+   *     {@link TxnFailureCauseState#NoneByCommitted} or {@link
+   *     TxnFailureCauseState#NoneByUncommitted}
+   */
   public boolean isCauseOfFailure() {
     switch (this.cause.state) {
       case NoneByCommitted:
@@ -44,6 +80,12 @@ public final class TxnFailureReport {
     }
   }
 
+  /**
+   * Determines the recommended recovery strategy if the intent is to re-attempt and complete the
+   * transaction commit.
+   *
+   * @return the recommended {@link TxnFailureRecovery} action for committing
+   */
   public TxnFailureRecovery recoveryForCommit() {
     switch (this.cause.state) {
       case NoneByUncommitted:
@@ -80,6 +122,12 @@ public final class TxnFailureReport {
     return TxnFailureRecovery.InvestigateBecauseImpossible;
   }
 
+  /**
+   * Determines the recommended recovery strategy if the intent is to cancel and roll back the
+   * transaction.
+   *
+   * @return the recommended {@link TxnFailureRecovery} action for rolling back
+   */
   public TxnFailureRecovery recoveryForRollback() {
     switch (this.cause.state) {
       case NoneByUncommitted:

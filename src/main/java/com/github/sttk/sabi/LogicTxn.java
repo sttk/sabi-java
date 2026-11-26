@@ -7,6 +7,13 @@ package com.github.sttk.sabi;
 import com.github.sttk.errs.Err;
 import java.util.ArrayList;
 
+/**
+ * Executes a sequence of {@link Logic} units within a single transaction scope.
+ *
+ * <p>A {@code LogicTxn} is started via {@link LogicRunner#beginTxn()} and completed by calling
+ * {@link #endTxn()}. If all executed logic units succeed without {@link Err}, connections are
+ * committed; otherwise, uncommitted connections are rolled back and failure reports are dispatched.
+ */
 public final class LogicTxn {
 
   private final DataHub hub;
@@ -34,6 +41,19 @@ public final class LogicTxn {
     }
   }
 
+  /**
+   * Executes the specified {@link Logic} if no prior {@link Err} has occurred and execution has not
+   * been blocked or terminated abnormally.
+   *
+   * <p>If {@code logic} throws an {@link Err}, it is recorded and the transaction will be rolled
+   * back when {@link #endTxn()} is called. If an unhandled {@link RuntimeException} or {@link
+   * Throwable} is thrown, uncommitted connections are rolled back, the {@link DataHub} is
+   * terminated abnormally, and the exception or error is rethrown.
+   *
+   * @param <D> the type of data access interface expected by the logic
+   * @param logic the logic unit to execute
+   * @return this {@code LogicTxn} instance for method chaining
+   */
   @SuppressWarnings("unchecked")
   public <D> LogicTxn run(Logic<D> logic) {
     int index = this.index;
@@ -65,6 +85,16 @@ public final class LogicTxn {
     }
   }
 
+  /**
+   * Executes the specified {@link Logic} even if a prior {@link #run(Logic)} or {@link
+   * #runForce(Logic)} call recorded an {@link Err}, provided execution has not been blocked by
+   * {@link #runOrBlock(Logic)}, setup did not fail, and the {@link DataHub} is not in an abnormal
+   * state.
+   *
+   * @param <D> the type of data access interface expected by the logic
+   * @param logic the logic unit to execute
+   * @return this {@code LogicTxn} instance for method chaining
+   */
   @SuppressWarnings("unchecked")
   public <D> LogicTxn runForce(Logic<D> logic) {
     int index = this.index;
@@ -94,6 +124,15 @@ public final class LogicTxn {
     }
   }
 
+  /**
+   * Executes the specified {@link Logic} if no prior {@link Err} has occurred, and blocks all
+   * subsequent {@link #run(Logic)}, {@link #runForce(Logic)}, and {@link #runOrBlock(Logic)} calls
+   * in this transaction if it throws an {@link Err}.
+   *
+   * @param <D> the type of data access interface expected by the logic
+   * @param logic the logic unit to execute
+   * @return this {@code LogicTxn} instance for method chaining
+   */
   @SuppressWarnings("unchecked")
   public <D> LogicTxn runOrBlock(Logic<D> logic) {
     int index = this.index;
@@ -126,6 +165,13 @@ public final class LogicTxn {
     }
   }
 
+  /**
+   * Completes this transaction by committing all connections if no errors occurred, or rolling back
+   * uncommitted connections and closing resources otherwise.
+   *
+   * @throws Err if the {@link DataHub} is in an abnormal state, local data source setup failed, one
+   *     or more logic executions failed, or committing the transaction failed
+   */
   public void endTxn() throws Err {
     if (this.hub.run.isAbnormal()) {
       throw new Err(new DataHubError.AbnormalState());

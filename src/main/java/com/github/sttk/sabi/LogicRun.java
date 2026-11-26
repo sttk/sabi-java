@@ -7,6 +7,13 @@ package com.github.sttk.sabi;
 import com.github.sttk.errs.Err;
 import java.util.ArrayList;
 
+/**
+ * Executes a sequence of {@link Logic} units in a non-transactional scope.
+ *
+ * <p>A {@code LogicRun} is started via {@link LogicRunner#start()} or {@link DataAcc#start()} and
+ * terminated by calling {@link #end()}. Logic units can be chained with {@link #run(Logic)}, {@link
+ * #runForce(Logic)}, and {@link #runOrBlock(Logic)} to control error propagation across steps.
+ */
 public final class LogicRun {
 
   private final DataHub hub;
@@ -40,6 +47,18 @@ public final class LogicRun {
     }
   }
 
+  /**
+   * Executes the specified {@link Logic} if no prior {@link Err} has occurred and execution has not
+   * been blocked or terminated abnormally.
+   *
+   * <p>If {@code logic} throws an {@link Err}, it is recorded and reported when {@link #end()} is
+   * called. If an unhandled {@link RuntimeException} or {@link Throwable} is thrown, the underlying
+   * {@link DataHub} is terminated abnormally and the exception or error is rethrown.
+   *
+   * @param <D> the type of data access interface expected by the logic
+   * @param logic the logic unit to execute
+   * @return this {@code LogicRun} instance for method chaining
+   */
   @SuppressWarnings("unchecked")
   public <D> LogicRun run(Logic<D> logic) {
     int index = this.index;
@@ -71,6 +90,16 @@ public final class LogicRun {
     }
   }
 
+  /**
+   * Executes the specified {@link Logic} even if a prior {@link #run(Logic)} or {@link
+   * #runForce(Logic)} call recorded an {@link Err}, provided execution has not been blocked by
+   * {@link #runOrBlock(Logic)}, setup did not fail, and the {@link DataHub} is not in an abnormal
+   * state.
+   *
+   * @param <D> the type of data access interface expected by the logic
+   * @param logic the logic unit to execute
+   * @return this {@code LogicRun} instance for method chaining
+   */
   @SuppressWarnings("unchecked")
   public <D> LogicRun runForce(Logic<D> logic) {
     int index = this.index;
@@ -100,6 +129,15 @@ public final class LogicRun {
     }
   }
 
+  /**
+   * Executes the specified {@link Logic} if no prior {@link Err} has occurred, and blocks all
+   * subsequent {@link #run(Logic)}, {@link #runForce(Logic)}, and {@link #runOrBlock(Logic)} calls
+   * in this chain if it throws an {@link Err}.
+   *
+   * @param <D> the type of data access interface expected by the logic
+   * @param logic the logic unit to execute
+   * @return this {@code LogicRun} instance for method chaining
+   */
   @SuppressWarnings("unchecked")
   public <D> LogicRun runOrBlock(Logic<D> logic) {
     int index = this.index;
@@ -132,6 +170,14 @@ public final class LogicRun {
     }
   }
 
+  /**
+   * Completes this {@code LogicRun} sequence, closing connections created during a top-level run
+   * and throwing an {@link Err} if setup failed, any chained logic failed, or the {@link DataHub}
+   * is in an abnormal state.
+   *
+   * @throws Err if local data source setup failed, one or more logic executions threw an {@link
+   *     Err}, or the {@link DataHub} is in an abnormal state
+   */
   public void end() throws Err {
     if (this.hub.run.isAbnormal()) {
       throw new Err(new DataHubError.AbnormalState());

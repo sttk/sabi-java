@@ -8,6 +8,21 @@ import com.github.sttk.errs.Err;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Manages asynchronous background tasks executed during data source and data connection lifecycle
+ * events.
+ *
+ * <p>An instance of {@code AsyncGroup} is passed to methods of {@link DataSrc} (such as {@link
+ * DataSrc#setup(AsyncGroup)}) and {@link DataConn} (such as {@link DataConn#preCommit(AsyncGroup)},
+ * {@link DataConn#commit(AsyncGroup)}, {@link DataConn#postCommit(AsyncGroup)}, {@link
+ * DataConn#rollback(AsyncGroup)}, and {@link DataConn#onTxnFailure(AsyncGroup, List)}).
+ * Implementations of data sources and data connections can register asynchronous operations using
+ * {@link #add(Task)}.
+ *
+ * <p>Registered {@link Task} instances are executed on virtual threads and joined when the
+ * lifecycle phase completes. Any {@link Err}, {@link RuntimeException}, or {@link Throwable}
+ * thrown by a task is captured and reported via {@link AsyncGroupError} and {@link ErrEntry}.
+ */
 public final class AsyncGroup {
 
   private List<ErrEntry> eeList = new ArrayList<>();
@@ -18,6 +33,11 @@ public final class AsyncGroup {
 
   AsyncGroup() {}
 
+  /**
+   * Adds a task to be executed asynchronously on a virtual thread within this group.
+   *
+   * @param task the {@link Task} to execute asynchronously
+   */
   public void add(Task task) {
     final int index = this.index;
     final String name = this.name;
@@ -70,8 +90,18 @@ public final class AsyncGroup {
     return this.eeList;
   }
 
+  /**
+   * Functional interface representing an asynchronous unit of work registered with an {@link
+   * AsyncGroup}.
+   */
   @FunctionalInterface
   public interface Task {
+
+    /**
+     * Executes the asynchronous task.
+     *
+     * @throws Err if an error occurs during task execution
+     */
     void execute() throws Err;
   }
 
