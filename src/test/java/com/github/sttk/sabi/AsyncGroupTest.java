@@ -369,4 +369,40 @@ public class AsyncGroupTest {
     }
     assertThat(errors.get(0).err().getCause()).isInstanceOf(InterruptedException.class);
   }
+
+  @Test
+  void testProhibitReuse() {
+    var ag = new AsyncGroup();
+    ag.add(() -> {});
+    ag.add(
+        () -> {
+          throw new Err("error");
+        });
+
+    var errors = ag.join();
+    assertThat(errors).hasSize(1);
+    assertThat(errors.get(0).err().getReason()).isEqualTo("error");
+
+    try {
+      ag.add(() -> {});
+      fail();
+    } catch (IllegalStateException e) {
+      assertThat(e.getMessage()).isEqualTo("This AsyncGroup has already been joined.");
+    }
+    try {
+      ag.add(
+          () -> {
+            throw new Err("error");
+          });
+      fail();
+    } catch (IllegalStateException e) {
+      assertThat(e.getMessage()).isEqualTo("This AsyncGroup has already been joined.");
+    }
+    try {
+      ag.join();
+      fail();
+    } catch (IllegalStateException e) {
+      assertThat(e.getMessage()).isEqualTo("This AsyncGroup has already been joined.");
+    }
+  }
 }

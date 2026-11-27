@@ -22,6 +22,9 @@ import java.util.List;
  * <p>Registered {@link Task} instances are executed on virtual threads and joined when the
  * lifecycle phase completes. Any {@link Err}, {@link RuntimeException}, or {@link Throwable} thrown
  * by a task is captured and reported via {@link AsyncGroupError} and {@link ErrEntry}.
+ *
+ * <p>An instance of this class is considered consumed after {@link #join()} is called and cannot be
+ * reused.
  */
 public final class AsyncGroup {
 
@@ -39,6 +42,10 @@ public final class AsyncGroup {
    * @param task the {@link Task} to execute asynchronously
    */
   public void add(Task task) {
+    if (eeList == null) {
+      throw new IllegalStateException("This AsyncGroup has already been joined.");
+    }
+
     final int index = this.index;
     final String name = this.name;
 
@@ -73,6 +80,10 @@ public final class AsyncGroup {
   }
 
   List<ErrEntry> join() {
+    if (eeList == null) {
+      throw new IllegalStateException("This AsyncGroup has already been joined.");
+    }
+
     boolean interrupted = false;
     for (var ve = this.vthHead; ve != null; ve = ve.next) {
       InterruptedException firstInterruption = null;
@@ -105,10 +116,15 @@ public final class AsyncGroup {
       }
     }
 
+    var errors = this.eeList;
+    this.eeList = null;
+    this.vthHead = null;
+    this.vthLast = null;
+
     if (interrupted) {
       Thread.currentThread().interrupt();
     }
-    return this.eeList;
+    return errors;
   }
 
   /**
