@@ -432,7 +432,7 @@ public class LogicTxnTest {
     @Test
     void runsIfAbnormal() {
       try (var runner = new LogicRunner(new DataHub())) {
-        runner.hub.run.localDataSrcManager.isAbnormal = true;
+        runner.hub.dataRun.localDataSrcManager.isAbnormal = true;
         runner.beginTxn().run(data -> {}).runForce(data -> {}).runOrBlock(data -> {}).endTxn();
       } catch (Err err) {
         switch (err.getReason()) {
@@ -454,13 +454,13 @@ public class LogicTxnTest {
         runner.uses("foo", new SyncDataSrc(1, logger, Fail.None));
         runner.uses("bar", new SyncDataSrc(2, logger, Fail.None));
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).hasSize(2);
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
 
         runner
             .beginTxn()
@@ -478,13 +478,13 @@ public class LogicTxnTest {
         assertThat(e.getMessage()).isEqualTo("error");
       }
 
-      assertThat(runner.hub.run.localDataSrcManager.listUnready).isEmpty();
-      assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-      assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-      assertThat(runner.hub.run.dataSrcMap).isEmpty();
-      assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-      assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-      assertThat(runner.hub.run.fixed).isTrue();
+      assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).isEmpty();
+      assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+      assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+      assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+      assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+      assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+      assertThat(runner.hub.dataRun.fixed).isTrue();
 
       assertThat(logger.stream().map(TestUtils::blackOutLineNo).toList())
           .containsExactly(
@@ -518,13 +518,13 @@ public class LogicTxnTest {
         runner.uses("foo", new SyncDataSrc(1, logger, Fail.None));
         runner.uses("bar", new SyncDataSrc(2, logger, Fail.None));
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).hasSize(2);
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
 
         runner
             .beginTxn()
@@ -542,13 +542,13 @@ public class LogicTxnTest {
         assertThat(e.getMessage()).isEqualTo("error");
       }
 
-      assertThat(runner.hub.run.localDataSrcManager.listUnready).isEmpty();
-      assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-      assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-      assertThat(runner.hub.run.dataSrcMap).isEmpty();
-      assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-      assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-      assertThat(runner.hub.run.fixed).isTrue();
+      assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).isEmpty();
+      assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+      assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+      assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+      assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+      assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+      assertThat(runner.hub.dataRun.fixed).isTrue();
 
       assertThat(logger.stream().map(TestUtils::blackOutLineNo).toList())
           .containsExactly(
@@ -582,13 +582,13 @@ public class LogicTxnTest {
         runner.uses("foo", new SyncDataSrc(1, logger, Fail.None));
         runner.uses("bar", new SyncDataSrc(2, logger, Fail.None));
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).hasSize(2);
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
 
         runner
             .beginTxn()
@@ -606,13 +606,13 @@ public class LogicTxnTest {
         assertThat(e.getMessage()).isEqualTo("error");
       }
 
-      assertThat(runner.hub.run.localDataSrcManager.listUnready).isEmpty();
-      assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-      assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-      assertThat(runner.hub.run.dataSrcMap).isEmpty();
-      assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-      assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-      assertThat(runner.hub.run.fixed).isTrue();
+      assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).isEmpty();
+      assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+      assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+      assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+      assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+      assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+      assertThat(runner.hub.dataRun.fixed).isTrue();
 
       assertThat(logger.stream().map(TestUtils::blackOutLineNo).toList())
           .containsExactly(
@@ -628,9 +628,9 @@ public class LogicTxnTest {
               "SyncDataConn#rollback 1",
               "SyncDataConn#rollback 2",
               "SyncDataConn#onTxnFailure 1",
-              "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.TestDoubles$SyncDataConn cause:{State:LogicFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.DataHubError$FailToRunLogic FailToRunLogic[errors=[ErrEntry[index=0, name=LogicTxn#runOrBlock(logic-0), err=com.github.sttk.errs.Err { reason = com.github.sttk.sabi.LogicTxnError$ErrorOccurred ErrorOccurred[], file = LogicTxn.java, line = ***, cause = java.lang.Error: error }]]], file = LogicTxn.java, line = *** }} rollback:{State:NoneByRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.TestDoubles$SyncDataConn cause:{State:LogicFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.DataHubError$FailToRunLogic FailToRunLogic[errors=[ErrEntry[index=0, name=LogicTxn#runOrBlock(logic-0), err=com.github.sttk.errs.Err { reason = com.github.sttk.sabi.LogicTxnError$ErrorOccurred ErrorOccurred[], file = LogicTxn.java, line = ***, cause = java.lang.Error: error }]]], file = LogicTxn.java, line = *** }} rollback:{State:NoneByRolledBack Err:null}}]",
+              "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.TestDoubles$SyncDataConn cause:{State:LogicFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.DataHubError$FailToRunLogic FailToRunLogic[errors=[ErrEntry[index=0, name=LogicTxn#runForce(logic-0), err=com.github.sttk.errs.Err { reason = com.github.sttk.sabi.LogicTxnError$ErrorOccurred ErrorOccurred[], file = LogicTxn.java, line = ***, cause = java.lang.Error: error }]]], file = LogicTxn.java, line = *** }} rollback:{State:NoneByRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.TestDoubles$SyncDataConn cause:{State:LogicFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.DataHubError$FailToRunLogic FailToRunLogic[errors=[ErrEntry[index=0, name=LogicTxn#runForce(logic-0), err=com.github.sttk.errs.Err { reason = com.github.sttk.sabi.LogicTxnError$ErrorOccurred ErrorOccurred[], file = LogicTxn.java, line = ***, cause = java.lang.Error: error }]]], file = LogicTxn.java, line = *** }} rollback:{State:NoneByRolledBack Err:null}}]",
               "SyncDataConn#onTxnFailure 2",
-              "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.TestDoubles$SyncDataConn cause:{State:LogicFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.DataHubError$FailToRunLogic FailToRunLogic[errors=[ErrEntry[index=0, name=LogicTxn#runOrBlock(logic-0), err=com.github.sttk.errs.Err { reason = com.github.sttk.sabi.LogicTxnError$ErrorOccurred ErrorOccurred[], file = LogicTxn.java, line = ***, cause = java.lang.Error: error }]]], file = LogicTxn.java, line = *** }} rollback:{State:NoneByRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.TestDoubles$SyncDataConn cause:{State:LogicFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.DataHubError$FailToRunLogic FailToRunLogic[errors=[ErrEntry[index=0, name=LogicTxn#runOrBlock(logic-0), err=com.github.sttk.errs.Err { reason = com.github.sttk.sabi.LogicTxnError$ErrorOccurred ErrorOccurred[], file = LogicTxn.java, line = ***, cause = java.lang.Error: error }]]], file = LogicTxn.java, line = *** }} rollback:{State:NoneByRolledBack Err:null}}]",
+              "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.TestDoubles$SyncDataConn cause:{State:LogicFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.DataHubError$FailToRunLogic FailToRunLogic[errors=[ErrEntry[index=0, name=LogicTxn#runForce(logic-0), err=com.github.sttk.errs.Err { reason = com.github.sttk.sabi.LogicTxnError$ErrorOccurred ErrorOccurred[], file = LogicTxn.java, line = ***, cause = java.lang.Error: error }]]], file = LogicTxn.java, line = *** }} rollback:{State:NoneByRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.TestDoubles$SyncDataConn cause:{State:LogicFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.DataHubError$FailToRunLogic FailToRunLogic[errors=[ErrEntry[index=0, name=LogicTxn#runForce(logic-0), err=com.github.sttk.errs.Err { reason = com.github.sttk.sabi.LogicTxnError$ErrorOccurred ErrorOccurred[], file = LogicTxn.java, line = ***, cause = java.lang.Error: error }]]], file = LogicTxn.java, line = *** }} rollback:{State:NoneByRolledBack Err:null}}]",
               "SyncDataConn#close 2",
               "SyncDataConn#close 1",
               "SyncDataSrc#close 2",
@@ -646,13 +646,13 @@ public class LogicTxnTest {
         runner.uses("foo", new SyncDataSrc(1, logger, Fail.None));
         runner.uses("bar", new SyncDataSrc(2, logger, Fail.None));
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).hasSize(2);
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
 
         runner
             .beginTxn()
@@ -670,13 +670,13 @@ public class LogicTxnTest {
         assertThat(e.getMessage()).isEqualTo("error");
       }
 
-      assertThat(runner.hub.run.localDataSrcManager.listUnready).isEmpty();
-      assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-      assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-      assertThat(runner.hub.run.dataSrcMap).isEmpty();
-      assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-      assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-      assertThat(runner.hub.run.fixed).isTrue();
+      assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).isEmpty();
+      assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+      assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+      assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+      assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+      assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+      assertThat(runner.hub.dataRun.fixed).isTrue();
 
       assertThat(logger.stream().map(TestUtils::blackOutLineNo).toList())
           .containsExactly(
@@ -692,9 +692,9 @@ public class LogicTxnTest {
               "SyncDataConn#rollback 1",
               "SyncDataConn#rollback 2",
               "SyncDataConn#onTxnFailure 1",
-              "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.TestDoubles$SyncDataConn cause:{State:LogicFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.DataHubError$FailToRunLogic FailToRunLogic[errors=[ErrEntry[index=0, name=LogicTxn#runOrBlock(logic-0), err=com.github.sttk.errs.Err { reason = com.github.sttk.sabi.LogicTxnError$RuntimeExceptionOccurred RuntimeExceptionOccurred[], file = LogicTxn.java, line = ***, cause = java.lang.RuntimeException: error }]]], file = LogicTxn.java, line = *** }} rollback:{State:NoneByRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.TestDoubles$SyncDataConn cause:{State:LogicFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.DataHubError$FailToRunLogic FailToRunLogic[errors=[ErrEntry[index=0, name=LogicTxn#runOrBlock(logic-0), err=com.github.sttk.errs.Err { reason = com.github.sttk.sabi.LogicTxnError$RuntimeExceptionOccurred RuntimeExceptionOccurred[], file = LogicTxn.java, line = ***, cause = java.lang.RuntimeException: error }]]], file = LogicTxn.java, line = *** }} rollback:{State:NoneByRolledBack Err:null}}]",
+              "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.TestDoubles$SyncDataConn cause:{State:LogicFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.DataHubError$FailToRunLogic FailToRunLogic[errors=[ErrEntry[index=0, name=LogicTxn#runForce(logic-0), err=com.github.sttk.errs.Err { reason = com.github.sttk.sabi.LogicTxnError$RuntimeExceptionOccurred RuntimeExceptionOccurred[], file = LogicTxn.java, line = ***, cause = java.lang.RuntimeException: error }]]], file = LogicTxn.java, line = *** }} rollback:{State:NoneByRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.TestDoubles$SyncDataConn cause:{State:LogicFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.DataHubError$FailToRunLogic FailToRunLogic[errors=[ErrEntry[index=0, name=LogicTxn#runForce(logic-0), err=com.github.sttk.errs.Err { reason = com.github.sttk.sabi.LogicTxnError$RuntimeExceptionOccurred RuntimeExceptionOccurred[], file = LogicTxn.java, line = ***, cause = java.lang.RuntimeException: error }]]], file = LogicTxn.java, line = *** }} rollback:{State:NoneByRolledBack Err:null}}]",
               "SyncDataConn#onTxnFailure 2",
-              "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.TestDoubles$SyncDataConn cause:{State:LogicFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.DataHubError$FailToRunLogic FailToRunLogic[errors=[ErrEntry[index=0, name=LogicTxn#runOrBlock(logic-0), err=com.github.sttk.errs.Err { reason = com.github.sttk.sabi.LogicTxnError$RuntimeExceptionOccurred RuntimeExceptionOccurred[], file = LogicTxn.java, line = ***, cause = java.lang.RuntimeException: error }]]], file = LogicTxn.java, line = *** }} rollback:{State:NoneByRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.TestDoubles$SyncDataConn cause:{State:LogicFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.DataHubError$FailToRunLogic FailToRunLogic[errors=[ErrEntry[index=0, name=LogicTxn#runOrBlock(logic-0), err=com.github.sttk.errs.Err { reason = com.github.sttk.sabi.LogicTxnError$RuntimeExceptionOccurred RuntimeExceptionOccurred[], file = LogicTxn.java, line = ***, cause = java.lang.RuntimeException: error }]]], file = LogicTxn.java, line = *** }} rollback:{State:NoneByRolledBack Err:null}}]",
+              "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.TestDoubles$SyncDataConn cause:{State:LogicFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.DataHubError$FailToRunLogic FailToRunLogic[errors=[ErrEntry[index=0, name=LogicTxn#runForce(logic-0), err=com.github.sttk.errs.Err { reason = com.github.sttk.sabi.LogicTxnError$RuntimeExceptionOccurred RuntimeExceptionOccurred[], file = LogicTxn.java, line = ***, cause = java.lang.RuntimeException: error }]]], file = LogicTxn.java, line = *** }} rollback:{State:NoneByRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.TestDoubles$SyncDataConn cause:{State:LogicFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.DataHubError$FailToRunLogic FailToRunLogic[errors=[ErrEntry[index=0, name=LogicTxn#runForce(logic-0), err=com.github.sttk.errs.Err { reason = com.github.sttk.sabi.LogicTxnError$RuntimeExceptionOccurred RuntimeExceptionOccurred[], file = LogicTxn.java, line = ***, cause = java.lang.RuntimeException: error }]]], file = LogicTxn.java, line = *** }} rollback:{State:NoneByRolledBack Err:null}}]",
               "SyncDataConn#close 2",
               "SyncDataConn#close 1",
               "SyncDataSrc#close 2",
@@ -710,13 +710,13 @@ public class LogicTxnTest {
         runner.uses("foo", new SyncDataSrc(1, logger, Fail.None));
         runner.uses("bar", new SyncDataSrc(2, logger, Fail.None));
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).hasSize(2);
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
 
         runner
             .beginTxn()
@@ -734,13 +734,13 @@ public class LogicTxnTest {
         assertThat(e.getMessage()).isEqualTo("error");
       }
 
-      assertThat(runner.hub.run.localDataSrcManager.listUnready).isEmpty();
-      assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-      assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-      assertThat(runner.hub.run.dataSrcMap).isEmpty();
-      assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-      assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-      assertThat(runner.hub.run.fixed).isTrue();
+      assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).isEmpty();
+      assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+      assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+      assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+      assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+      assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+      assertThat(runner.hub.dataRun.fixed).isTrue();
 
       assertThat(logger.stream().map(TestUtils::blackOutLineNo).toList())
           .containsExactly(
@@ -774,13 +774,13 @@ public class LogicTxnTest {
         runner.uses("foo", new SyncDataSrc(1, logger, Fail.None));
         runner.uses("bar", new SyncDataSrc(2, logger, Fail.None));
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).hasSize(2);
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
 
         runner
             .beginTxn()
@@ -798,13 +798,13 @@ public class LogicTxnTest {
         assertThat(e.getMessage()).isEqualTo("error");
       }
 
-      assertThat(runner.hub.run.localDataSrcManager.listUnready).isEmpty();
-      assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-      assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-      assertThat(runner.hub.run.dataSrcMap).isEmpty();
-      assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-      assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-      assertThat(runner.hub.run.fixed).isTrue();
+      assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).isEmpty();
+      assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+      assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+      assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+      assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+      assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+      assertThat(runner.hub.dataRun.fixed).isTrue();
 
       assertThat(logger.stream().map(TestUtils::blackOutLineNo).toList())
           .containsExactly(
@@ -838,13 +838,13 @@ public class LogicTxnTest {
         runner.uses("foo", new SyncDataSrc(1, logger, Fail.PreCommitError));
         runner.uses("bar", new SyncDataSrc(2, logger, Fail.None));
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).hasSize(2);
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
 
         runner
             .beginTxn()
@@ -861,13 +861,13 @@ public class LogicTxnTest {
         assertThat(e.getMessage()).isEqualTo("preCommit Error");
       }
 
-      assertThat(runner.hub.run.localDataSrcManager.listUnready).isEmpty();
-      assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-      assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-      assertThat(runner.hub.run.dataSrcMap).isEmpty();
-      assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-      assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-      assertThat(runner.hub.run.fixed).isTrue();
+      assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).isEmpty();
+      assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+      assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+      assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+      assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+      assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+      assertThat(runner.hub.dataRun.fixed).isTrue();
 
       assertThat(logger.stream().map(TestUtils::blackOutLineNo).toList())
           .containsExactly(
@@ -902,13 +902,13 @@ public class LogicTxnTest {
         runner.uses("foo", new SyncDataSrc(1, logger, Fail.None));
         runner.uses("bar", new SyncDataSrc(2, logger, Fail.PreCommitRuntimeException));
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).hasSize(2);
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
 
         runner
             .beginTxn()
@@ -925,13 +925,13 @@ public class LogicTxnTest {
         assertThat(e.getMessage()).isEqualTo("preCommit RuntimeException");
       }
 
-      assertThat(runner.hub.run.localDataSrcManager.listUnready).isEmpty();
-      assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-      assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-      assertThat(runner.hub.run.dataSrcMap).isEmpty();
-      assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-      assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-      assertThat(runner.hub.run.fixed).isTrue();
+      assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).isEmpty();
+      assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+      assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+      assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+      assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+      assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+      assertThat(runner.hub.dataRun.fixed).isTrue();
 
       assertThat(logger.stream().map(TestUtils::blackOutLineNo).toList())
           .containsExactly(
@@ -967,13 +967,13 @@ public class LogicTxnTest {
         runner.uses("foo", new SyncDataSrc(1, logger, Fail.CommitError));
         runner.uses("bar", new SyncDataSrc(2, logger, Fail.None));
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).hasSize(2);
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
 
         runner
             .beginTxn()
@@ -990,13 +990,13 @@ public class LogicTxnTest {
         assertThat(e.getMessage()).isEqualTo("commit Error");
       }
 
-      assertThat(runner.hub.run.localDataSrcManager.listUnready).isEmpty();
-      assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-      assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-      assertThat(runner.hub.run.dataSrcMap).isEmpty();
-      assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-      assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-      assertThat(runner.hub.run.fixed).isTrue();
+      assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).isEmpty();
+      assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+      assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+      assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+      assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+      assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+      assertThat(runner.hub.dataRun.fixed).isTrue();
 
       assertThat(logger.stream().map(TestUtils::blackOutLineNo).toList())
           .containsExactly(
@@ -1033,13 +1033,13 @@ public class LogicTxnTest {
         runner.uses("foo", new SyncDataSrc(1, logger, Fail.None));
         runner.uses("bar", new SyncDataSrc(2, logger, Fail.CommitRuntimeException));
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).hasSize(2);
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
 
         runner
             .beginTxn()
@@ -1056,13 +1056,13 @@ public class LogicTxnTest {
         assertThat(e.getMessage()).isEqualTo("commit RuntimeException");
       }
 
-      assertThat(runner.hub.run.localDataSrcManager.listUnready).isEmpty();
-      assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-      assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-      assertThat(runner.hub.run.dataSrcMap).isEmpty();
-      assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-      assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-      assertThat(runner.hub.run.fixed).isTrue();
+      assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).isEmpty();
+      assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+      assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+      assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+      assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+      assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+      assertThat(runner.hub.dataRun.fixed).isTrue();
 
       assertThat(logger.stream().map(TestUtils::blackOutLineNo).toList())
           .containsExactly(
@@ -1099,13 +1099,13 @@ public class LogicTxnTest {
         runner.uses("foo", new SyncDataSrc(1, logger, Fail.PostCommitError));
         runner.uses("bar", new SyncDataSrc(2, logger, Fail.None));
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).hasSize(2);
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
 
         runner
             .beginTxn()
@@ -1122,13 +1122,13 @@ public class LogicTxnTest {
         assertThat(e.getMessage()).isEqualTo("postCommit Error");
       }
 
-      assertThat(runner.hub.run.localDataSrcManager.listUnready).isEmpty();
-      assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-      assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-      assertThat(runner.hub.run.dataSrcMap).isEmpty();
-      assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-      assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-      assertThat(runner.hub.run.fixed).isTrue();
+      assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).isEmpty();
+      assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+      assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+      assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+      assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+      assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+      assertThat(runner.hub.dataRun.fixed).isTrue();
 
       assertThat(logger.stream().map(TestUtils::blackOutLineNo).toList())
           .containsExactly(
@@ -1166,13 +1166,13 @@ public class LogicTxnTest {
         runner.uses("foo", new SyncDataSrc(1, logger, Fail.None));
         runner.uses("bar", new SyncDataSrc(2, logger, Fail.PostCommitRuntimeException));
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).hasSize(2);
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
 
         runner
             .beginTxn()
@@ -1189,13 +1189,13 @@ public class LogicTxnTest {
         assertThat(e.getMessage()).isEqualTo("postCommit RuntimeException");
       }
 
-      assertThat(runner.hub.run.localDataSrcManager.listUnready).isEmpty();
-      assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-      assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-      assertThat(runner.hub.run.dataSrcMap).isEmpty();
-      assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-      assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-      assertThat(runner.hub.run.fixed).isTrue();
+      assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).isEmpty();
+      assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+      assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+      assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+      assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+      assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+      assertThat(runner.hub.dataRun.fixed).isTrue();
 
       assertThat(logger.stream().map(TestUtils::blackOutLineNo).toList())
           .containsExactly(
@@ -1233,13 +1233,141 @@ public class LogicTxnTest {
         runner.uses("foo", new SyncDataSrc(1, logger, Fail.RollbackError));
         runner.uses("bar", new SyncDataSrc(2, logger, Fail.RollbackError));
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).hasSize(2);
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
+
+        runner
+            .beginTxn()
+            .run(
+                (DataAcc data) -> {
+                  var conn1 = data.getDataConn("foo", SyncDataConn.class);
+                  var conn2 = data.getDataConn("bar", SyncDataConn.class);
+                  logger.add("Run the logic but failed");
+                  throw new Err("failed");
+                })
+            .endTxn();
+      } catch (Err err) {
+        fail(err);
+      } catch (Error e) {
+        assertThat(e.getMessage()).isEqualTo("rollback Error");
+      }
+
+      assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).isEmpty();
+      assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+      assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+      assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+      assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+      assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+      assertThat(runner.hub.dataRun.fixed).isTrue();
+
+      assertThat(logger.stream().map(TestUtils::blackOutLineNo).toList())
+          .containsExactly(
+              "SyncDataSrc#new 1",
+              "SyncDataSrc#new 2",
+              "SyncDataSrc#setup 1",
+              "SyncDataSrc#setup 2",
+              "SyncDataSrc#createDataConn 1",
+              "SyncDataConn#new 1",
+              "SyncDataSrc#createDataConn 2",
+              "SyncDataConn#new 2",
+              "Run the logic but failed",
+              "SyncDataConn#rollback 1 Error",
+              "SyncDataConn#rollback 2 Error",
+              "SyncDataConn#onTxnFailure 1",
+              "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.TestDoubles$SyncDataConn cause:{State:LogicFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.DataHubError$FailToRunLogic FailToRunLogic[errors=[ErrEntry[index=0, name=LogicTxn#run(logic-0), err=com.github.sttk.errs.Err { reason = java.lang.String failed, file = LogicTxnTest.java, line = *** }]]], file = LogicTxn.java, line = *** }} rollback:{State:RollbackFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.AsyncGroupError$ErrorOccurred ErrorOccurred[], file = DataConnManager.java, line = ***, cause = java.lang.Error: rollback Error }}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.TestDoubles$SyncDataConn cause:{State:LogicFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.DataHubError$FailToRunLogic FailToRunLogic[errors=[ErrEntry[index=0, name=LogicTxn#run(logic-0), err=com.github.sttk.errs.Err { reason = java.lang.String failed, file = LogicTxnTest.java, line = *** }]]], file = LogicTxn.java, line = *** }} rollback:{State:RollbackFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.AsyncGroupError$ErrorOccurred ErrorOccurred[], file = DataConnManager.java, line = ***, cause = java.lang.Error: rollback Error }}}]",
+              "SyncDataConn#onTxnFailure 2",
+              "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.TestDoubles$SyncDataConn cause:{State:LogicFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.DataHubError$FailToRunLogic FailToRunLogic[errors=[ErrEntry[index=0, name=LogicTxn#run(logic-0), err=com.github.sttk.errs.Err { reason = java.lang.String failed, file = LogicTxnTest.java, line = *** }]]], file = LogicTxn.java, line = *** }} rollback:{State:RollbackFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.AsyncGroupError$ErrorOccurred ErrorOccurred[], file = DataConnManager.java, line = ***, cause = java.lang.Error: rollback Error }}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.TestDoubles$SyncDataConn cause:{State:LogicFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.DataHubError$FailToRunLogic FailToRunLogic[errors=[ErrEntry[index=0, name=LogicTxn#run(logic-0), err=com.github.sttk.errs.Err { reason = java.lang.String failed, file = LogicTxnTest.java, line = *** }]]], file = LogicTxn.java, line = *** }} rollback:{State:RollbackFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.AsyncGroupError$ErrorOccurred ErrorOccurred[], file = DataConnManager.java, line = ***, cause = java.lang.Error: rollback Error }}}]",
+              "SyncDataConn#close 2",
+              "SyncDataConn#close 1",
+              "SyncDataSrc#close 2",
+              "SyncDataSrc#close 1");
+    }
+
+    @Test
+    void testRollbackRuntimeException() {
+      var logger = new ArrayList<String>();
+
+      var runner = new LogicRunner(new DataHub());
+      try (runner) {
+        runner.uses("foo", new SyncDataSrc(1, logger, Fail.RollbackRuntimeException));
+        runner.uses("bar", new SyncDataSrc(2, logger, Fail.RollbackRuntimeException));
+
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
+
+        runner
+            .beginTxn()
+            .run(
+                (DataAcc data) -> {
+                  var conn1 = data.getDataConn("foo", SyncDataConn.class);
+                  var conn2 = data.getDataConn("bar", SyncDataConn.class);
+                  logger.add("Run the logic but failed");
+                  throw new Err("failed");
+                })
+            .endTxn();
+      } catch (Err err) {
+        fail(err);
+      } catch (RuntimeException e) {
+        assertThat(e.getMessage()).isEqualTo("rollback RuntimeException");
+      }
+
+      assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).isEmpty();
+      assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+      assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+      assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+      assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+      assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+      assertThat(runner.hub.dataRun.fixed).isTrue();
+
+      assertThat(logger.stream().map(TestUtils::blackOutLineNo).toList())
+          .containsExactly(
+              "SyncDataSrc#new 1",
+              "SyncDataSrc#new 2",
+              "SyncDataSrc#setup 1",
+              "SyncDataSrc#setup 2",
+              "SyncDataSrc#createDataConn 1",
+              "SyncDataConn#new 1",
+              "SyncDataSrc#createDataConn 2",
+              "SyncDataConn#new 2",
+              "Run the logic but failed",
+              "SyncDataConn#rollback 1 RuntimeException",
+              "SyncDataConn#rollback 2 RuntimeException",
+              "SyncDataConn#onTxnFailure 1",
+              "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.TestDoubles$SyncDataConn cause:{State:LogicFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.DataHubError$FailToRunLogic FailToRunLogic[errors=[ErrEntry[index=0, name=LogicTxn#run(logic-0), err=com.github.sttk.errs.Err { reason = java.lang.String failed, file = LogicTxnTest.java, line = *** }]]], file = LogicTxn.java, line = *** }} rollback:{State:RollbackFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.AsyncGroupError$RuntimeExceptionOccurred RuntimeExceptionOccurred[], file = DataConnManager.java, line = ***, cause = java.lang.RuntimeException: rollback RuntimeException }}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.TestDoubles$SyncDataConn cause:{State:LogicFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.DataHubError$FailToRunLogic FailToRunLogic[errors=[ErrEntry[index=0, name=LogicTxn#run(logic-0), err=com.github.sttk.errs.Err { reason = java.lang.String failed, file = LogicTxnTest.java, line = *** }]]], file = LogicTxn.java, line = *** }} rollback:{State:RollbackFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.AsyncGroupError$RuntimeExceptionOccurred RuntimeExceptionOccurred[], file = DataConnManager.java, line = ***, cause = java.lang.RuntimeException: rollback RuntimeException }}}]",
+              "SyncDataConn#onTxnFailure 2",
+              "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.TestDoubles$SyncDataConn cause:{State:LogicFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.DataHubError$FailToRunLogic FailToRunLogic[errors=[ErrEntry[index=0, name=LogicTxn#run(logic-0), err=com.github.sttk.errs.Err { reason = java.lang.String failed, file = LogicTxnTest.java, line = *** }]]], file = LogicTxn.java, line = *** }} rollback:{State:RollbackFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.AsyncGroupError$RuntimeExceptionOccurred RuntimeExceptionOccurred[], file = DataConnManager.java, line = ***, cause = java.lang.RuntimeException: rollback RuntimeException }}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.TestDoubles$SyncDataConn cause:{State:LogicFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.DataHubError$FailToRunLogic FailToRunLogic[errors=[ErrEntry[index=0, name=LogicTxn#run(logic-0), err=com.github.sttk.errs.Err { reason = java.lang.String failed, file = LogicTxnTest.java, line = *** }]]], file = LogicTxn.java, line = *** }} rollback:{State:RollbackFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.AsyncGroupError$RuntimeExceptionOccurred RuntimeExceptionOccurred[], file = DataConnManager.java, line = ***, cause = java.lang.RuntimeException: rollback RuntimeException }}}]",
+              "SyncDataConn#close 2",
+              "SyncDataConn#close 1",
+              "SyncDataSrc#close 2",
+              "SyncDataSrc#close 1");
+    }
+
+    @Test
+    void testLogicErrorAndRollbackError() {
+      var logger = new ArrayList<String>();
+
+      var runner = new LogicRunner(new DataHub());
+      try (runner) {
+        runner.uses("foo", new SyncDataSrc(1, logger, Fail.RollbackError));
+        runner.uses("bar", new SyncDataSrc(2, logger, Fail.RollbackError));
+
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
 
         runner
             .beginTxn()
@@ -1254,16 +1382,16 @@ public class LogicTxnTest {
       } catch (Err err) {
         fail(err);
       } catch (Error e) {
-        assertThat(e.getMessage()).isEqualTo("rollback Error");
+        assertThat(e.getMessage()).isEqualTo("error");
       }
 
-      assertThat(runner.hub.run.localDataSrcManager.listUnready).isEmpty();
-      assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-      assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-      assertThat(runner.hub.run.dataSrcMap).isEmpty();
-      assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-      assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-      assertThat(runner.hub.run.fixed).isTrue();
+      assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).isEmpty();
+      assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+      assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+      assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+      assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+      assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+      assertThat(runner.hub.dataRun.fixed).isTrue();
 
       assertThat(logger.stream().map(TestUtils::blackOutLineNo).toList())
           .containsExactly(
@@ -1289,7 +1417,7 @@ public class LogicTxnTest {
     }
 
     @Test
-    void testRollbackRuntimeException() {
+    void testLogicErrorAndRollbackRuntimeException() {
       var logger = new ArrayList<String>();
 
       var runner = new LogicRunner(new DataHub());
@@ -1297,13 +1425,13 @@ public class LogicTxnTest {
         runner.uses("foo", new SyncDataSrc(1, logger, Fail.RollbackRuntimeException));
         runner.uses("bar", new SyncDataSrc(2, logger, Fail.RollbackRuntimeException));
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).hasSize(2);
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
 
         runner
             .beginTxn()
@@ -1311,23 +1439,23 @@ public class LogicTxnTest {
                 (DataAcc data) -> {
                   var conn1 = data.getDataConn("foo", SyncDataConn.class);
                   var conn2 = data.getDataConn("bar", SyncDataConn.class);
-                  logger.add("Run the logic but Error");
-                  throw new Error("error");
+                  logger.add("Run the logic but RuntimeException");
+                  throw new RuntimeException("runtime exception");
                 })
             .endTxn();
       } catch (Err err) {
         fail(err);
       } catch (RuntimeException e) {
-        assertThat(e.getMessage()).isEqualTo("rollback RuntimeException");
+        assertThat(e.getMessage()).isEqualTo("runtime exception");
       }
 
-      assertThat(runner.hub.run.localDataSrcManager.listUnready).isEmpty();
-      assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-      assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-      assertThat(runner.hub.run.dataSrcMap).isEmpty();
-      assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-      assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-      assertThat(runner.hub.run.fixed).isTrue();
+      assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).isEmpty();
+      assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+      assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+      assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+      assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+      assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+      assertThat(runner.hub.dataRun.fixed).isTrue();
 
       assertThat(logger.stream().map(TestUtils::blackOutLineNo).toList())
           .containsExactly(
@@ -1339,13 +1467,13 @@ public class LogicTxnTest {
               "SyncDataConn#new 1",
               "SyncDataSrc#createDataConn 2",
               "SyncDataConn#new 2",
-              "Run the logic but Error",
+              "Run the logic but RuntimeException",
               "SyncDataConn#rollback 1 RuntimeException",
               "SyncDataConn#rollback 2 RuntimeException",
               "SyncDataConn#onTxnFailure 1",
-              "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.TestDoubles$SyncDataConn cause:{State:LogicFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.DataHubError$FailToRunLogic FailToRunLogic[errors=[ErrEntry[index=0, name=LogicTxn#run(logic-0), err=com.github.sttk.errs.Err { reason = com.github.sttk.sabi.LogicTxnError$ErrorOccurred ErrorOccurred[], file = LogicTxn.java, line = ***, cause = java.lang.Error: error }]]], file = LogicTxn.java, line = *** }} rollback:{State:RollbackFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.AsyncGroupError$RuntimeExceptionOccurred RuntimeExceptionOccurred[], file = DataConnManager.java, line = ***, cause = java.lang.RuntimeException: rollback RuntimeException }}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.TestDoubles$SyncDataConn cause:{State:LogicFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.DataHubError$FailToRunLogic FailToRunLogic[errors=[ErrEntry[index=0, name=LogicTxn#run(logic-0), err=com.github.sttk.errs.Err { reason = com.github.sttk.sabi.LogicTxnError$ErrorOccurred ErrorOccurred[], file = LogicTxn.java, line = ***, cause = java.lang.Error: error }]]], file = LogicTxn.java, line = *** }} rollback:{State:RollbackFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.AsyncGroupError$RuntimeExceptionOccurred RuntimeExceptionOccurred[], file = DataConnManager.java, line = ***, cause = java.lang.RuntimeException: rollback RuntimeException }}}]",
+              "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.TestDoubles$SyncDataConn cause:{State:LogicFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.DataHubError$FailToRunLogic FailToRunLogic[errors=[ErrEntry[index=0, name=LogicTxn#run(logic-0), err=com.github.sttk.errs.Err { reason = com.github.sttk.sabi.LogicTxnError$RuntimeExceptionOccurred RuntimeExceptionOccurred[], file = LogicTxn.java, line = ***, cause = java.lang.RuntimeException: runtime exception }]]], file = LogicTxn.java, line = *** }} rollback:{State:RollbackFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.AsyncGroupError$RuntimeExceptionOccurred RuntimeExceptionOccurred[], file = DataConnManager.java, line = ***, cause = java.lang.RuntimeException: rollback RuntimeException }}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.TestDoubles$SyncDataConn cause:{State:LogicFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.DataHubError$FailToRunLogic FailToRunLogic[errors=[ErrEntry[index=0, name=LogicTxn#run(logic-0), err=com.github.sttk.errs.Err { reason = com.github.sttk.sabi.LogicTxnError$RuntimeExceptionOccurred RuntimeExceptionOccurred[], file = LogicTxn.java, line = ***, cause = java.lang.RuntimeException: runtime exception }]]], file = LogicTxn.java, line = *** }} rollback:{State:RollbackFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.AsyncGroupError$RuntimeExceptionOccurred RuntimeExceptionOccurred[], file = DataConnManager.java, line = ***, cause = java.lang.RuntimeException: rollback RuntimeException }}}]",
               "SyncDataConn#onTxnFailure 2",
-              "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.TestDoubles$SyncDataConn cause:{State:LogicFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.DataHubError$FailToRunLogic FailToRunLogic[errors=[ErrEntry[index=0, name=LogicTxn#run(logic-0), err=com.github.sttk.errs.Err { reason = com.github.sttk.sabi.LogicTxnError$ErrorOccurred ErrorOccurred[], file = LogicTxn.java, line = ***, cause = java.lang.Error: error }]]], file = LogicTxn.java, line = *** }} rollback:{State:RollbackFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.AsyncGroupError$RuntimeExceptionOccurred RuntimeExceptionOccurred[], file = DataConnManager.java, line = ***, cause = java.lang.RuntimeException: rollback RuntimeException }}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.TestDoubles$SyncDataConn cause:{State:LogicFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.DataHubError$FailToRunLogic FailToRunLogic[errors=[ErrEntry[index=0, name=LogicTxn#run(logic-0), err=com.github.sttk.errs.Err { reason = com.github.sttk.sabi.LogicTxnError$ErrorOccurred ErrorOccurred[], file = LogicTxn.java, line = ***, cause = java.lang.Error: error }]]], file = LogicTxn.java, line = *** }} rollback:{State:RollbackFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.AsyncGroupError$RuntimeExceptionOccurred RuntimeExceptionOccurred[], file = DataConnManager.java, line = ***, cause = java.lang.RuntimeException: rollback RuntimeException }}}]",
+              "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.TestDoubles$SyncDataConn cause:{State:LogicFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.DataHubError$FailToRunLogic FailToRunLogic[errors=[ErrEntry[index=0, name=LogicTxn#run(logic-0), err=com.github.sttk.errs.Err { reason = com.github.sttk.sabi.LogicTxnError$RuntimeExceptionOccurred RuntimeExceptionOccurred[], file = LogicTxn.java, line = ***, cause = java.lang.RuntimeException: runtime exception }]]], file = LogicTxn.java, line = *** }} rollback:{State:RollbackFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.AsyncGroupError$RuntimeExceptionOccurred RuntimeExceptionOccurred[], file = DataConnManager.java, line = ***, cause = java.lang.RuntimeException: rollback RuntimeException }}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.TestDoubles$SyncDataConn cause:{State:LogicFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.DataHubError$FailToRunLogic FailToRunLogic[errors=[ErrEntry[index=0, name=LogicTxn#run(logic-0), err=com.github.sttk.errs.Err { reason = com.github.sttk.sabi.LogicTxnError$RuntimeExceptionOccurred RuntimeExceptionOccurred[], file = LogicTxn.java, line = ***, cause = java.lang.RuntimeException: runtime exception }]]], file = LogicTxn.java, line = *** }} rollback:{State:RollbackFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.AsyncGroupError$RuntimeExceptionOccurred RuntimeExceptionOccurred[], file = DataConnManager.java, line = ***, cause = java.lang.RuntimeException: rollback RuntimeException }}}]",
               "SyncDataConn#close 2",
               "SyncDataConn#close 1",
               "SyncDataSrc#close 2",
@@ -1361,13 +1489,13 @@ public class LogicTxnTest {
         runner.uses("foo", new SyncDataSrc(1, logger, Fail.CloseError));
         runner.uses("bar", new SyncDataSrc(2, logger, Fail.CloseError));
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).hasSize(2);
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
 
         runner
             .beginTxn()
@@ -1384,13 +1512,13 @@ public class LogicTxnTest {
         assertThat(e.getMessage()).isEqualTo("close Error");
       }
 
-      assertThat(runner.hub.run.localDataSrcManager.listUnready).isEmpty();
-      assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-      assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-      assertThat(runner.hub.run.dataSrcMap).isEmpty();
-      assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-      assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-      assertThat(runner.hub.run.fixed).isTrue();
+      assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).isEmpty();
+      assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+      assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+      assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+      assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+      assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+      assertThat(runner.hub.dataRun.fixed).isTrue();
 
       assertThat(logger.stream().map(TestUtils::blackOutLineNo).toList())
           .containsExactly(
@@ -1424,13 +1552,13 @@ public class LogicTxnTest {
         runner.uses("foo", new SyncDataSrc(1, logger, Fail.CloseRuntimeException));
         runner.uses("bar", new SyncDataSrc(2, logger, Fail.CloseRuntimeException));
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).hasSize(2);
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
 
         runner
             .beginTxn()
@@ -1447,13 +1575,13 @@ public class LogicTxnTest {
         assertThat(e.getMessage()).isEqualTo("close RuntimeException");
       }
 
-      assertThat(runner.hub.run.localDataSrcManager.listUnready).isEmpty();
-      assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-      assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-      assertThat(runner.hub.run.dataSrcMap).isEmpty();
-      assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-      assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-      assertThat(runner.hub.run.fixed).isTrue();
+      assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).isEmpty();
+      assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+      assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+      assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+      assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+      assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+      assertThat(runner.hub.dataRun.fixed).isTrue();
 
       assertThat(logger.stream().map(TestUtils::blackOutLineNo).toList())
           .containsExactly(
@@ -1475,6 +1603,286 @@ public class LogicTxnTest {
               "SyncDataConn#close 2 RuntimeException",
               "SyncDataConn#close 1 RuntimeException",
               "SyncDataSrc#close 2",
+              "SyncDataSrc#close 1");
+    }
+
+    @Test
+    void testCommitFailedAndRollbackError() {
+      var logger = new ArrayList<String>();
+
+      var runner = new LogicRunner(new DataHub());
+      try (runner) {
+        runner.uses("foo", new SyncDataSrc(1, logger, Fail.Commit));
+        runner.uses("bar", new SyncDataSrc(2, logger, Fail.RollbackError));
+
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
+
+        runner
+            .beginTxn()
+            .run(
+                (DataAcc data) -> {
+                  var conn1 = data.getDataConn("foo", SyncDataConn.class);
+                  var conn2 = data.getDataConn("bar", SyncDataConn.class);
+                  logger.add("Run the logic");
+                })
+            .endTxn();
+      } catch (Err err) {
+        fail(err);
+      } catch (Error e) {
+        assertThat(e.getMessage()).isEqualTo("rollback Error");
+      }
+
+      assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).isEmpty();
+      assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+      assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+      assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+      assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+      assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+      assertThat(runner.hub.dataRun.fixed).isTrue();
+
+      assertThat(logger.stream().map(TestUtils::blackOutLineNo).toList())
+          .containsExactly(
+              "SyncDataSrc#new 1",
+              "SyncDataSrc#new 2",
+              "SyncDataSrc#setup 1",
+              "SyncDataSrc#setup 2",
+              "SyncDataSrc#createDataConn 1",
+              "SyncDataConn#new 1",
+              "SyncDataSrc#createDataConn 2",
+              "SyncDataConn#new 2",
+              "Run the logic",
+              "SyncDataConn#preCommit 1",
+              "SyncDataConn#preCommit 2",
+              "SyncDataConn#commit 1 failed",
+              "SyncDataConn#rollback 1",
+              "SyncDataConn#rollback 2 Error",
+              "SyncDataConn#onTxnFailure 1",
+              "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.TestDoubles$SyncDataConn cause:{State:CommitFailure Err:com.github.sttk.errs.Err { reason = java.lang.String ZZZ, file = TestDoubles.java, line = *** }} rollback:{State:NoneByRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.TestDoubles$SyncDataConn cause:{State:NoneByUncommitted Err:null} rollback:{State:RollbackFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.AsyncGroupError$ErrorOccurred ErrorOccurred[], file = DataConnManager.java, line = ***, cause = java.lang.Error: rollback Error }}}]",
+              "SyncDataConn#onTxnFailure 2",
+              "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.TestDoubles$SyncDataConn cause:{State:CommitFailure Err:com.github.sttk.errs.Err { reason = java.lang.String ZZZ, file = TestDoubles.java, line = *** }} rollback:{State:NoneByRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.TestDoubles$SyncDataConn cause:{State:NoneByUncommitted Err:null} rollback:{State:RollbackFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.AsyncGroupError$ErrorOccurred ErrorOccurred[], file = DataConnManager.java, line = ***, cause = java.lang.Error: rollback Error }}}]",
+              "SyncDataConn#close 2",
+              "SyncDataConn#close 1",
+              "SyncDataSrc#close 2",
+              "SyncDataSrc#close 1");
+    }
+
+    @Test
+    void testCommitFailedAndCloseError() {
+      var logger = new ArrayList<String>();
+
+      var runner = new LogicRunner(new DataHub());
+      try (runner) {
+        runner.uses("foo", new SyncDataSrc(1, logger, Fail.Commit));
+        runner.uses("bar", new SyncDataSrc(2, logger, Fail.CloseError));
+
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
+
+        runner
+            .beginTxn()
+            .run(
+                (DataAcc data) -> {
+                  var conn1 = data.getDataConn("foo", SyncDataConn.class);
+                  var conn2 = data.getDataConn("bar", SyncDataConn.class);
+                  logger.add("Run the logic");
+                })
+            .endTxn();
+      } catch (Err err) {
+        fail(err);
+      } catch (Error e) {
+        assertThat(e.getMessage()).isEqualTo("close Error");
+      }
+
+      assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).isEmpty();
+      assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+      assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+      assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+      assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+      assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+      assertThat(runner.hub.dataRun.fixed).isTrue();
+
+      assertThat(logger.stream().map(TestUtils::blackOutLineNo).toList())
+          .containsExactly(
+              "SyncDataSrc#new 1",
+              "SyncDataSrc#new 2",
+              "SyncDataSrc#setup 1",
+              "SyncDataSrc#setup 2",
+              "SyncDataSrc#createDataConn 1",
+              "SyncDataConn#new 1",
+              "SyncDataSrc#createDataConn 2",
+              "SyncDataConn#new 2",
+              "Run the logic",
+              "SyncDataConn#preCommit 1",
+              "SyncDataConn#preCommit 2",
+              "SyncDataConn#commit 1 failed",
+              "SyncDataConn#rollback 1",
+              "SyncDataConn#rollback 2",
+              "SyncDataConn#onTxnFailure 1",
+              "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.TestDoubles$SyncDataConn cause:{State:CommitFailure Err:com.github.sttk.errs.Err { reason = java.lang.String ZZZ, file = TestDoubles.java, line = *** }} rollback:{State:NoneByRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.TestDoubles$SyncDataConn cause:{State:NoneByUncommitted Err:null} rollback:{State:NoneByRolledBack Err:null}}]",
+              "SyncDataConn#onTxnFailure 2",
+              "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.TestDoubles$SyncDataConn cause:{State:CommitFailure Err:com.github.sttk.errs.Err { reason = java.lang.String ZZZ, file = TestDoubles.java, line = *** }} rollback:{State:NoneByRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.TestDoubles$SyncDataConn cause:{State:NoneByUncommitted Err:null} rollback:{State:NoneByRolledBack Err:null}}]",
+              "SyncDataConn#close 2 Error",
+              "SyncDataConn#close 1",
+              "SyncDataSrc#close 2",
+              "SyncDataSrc#close 1");
+    }
+
+    @Test
+    void testCommitErrorAndRollbackError() {
+      var logger = new ArrayList<String>();
+
+      var runner = new LogicRunner(new DataHub());
+      try (runner) {
+        runner.uses("foo", new SyncDataSrc(1, logger, Fail.CommitError));
+        runner.uses("bar", new SyncDataSrc(2, logger, Fail.RollbackError));
+
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
+
+        runner
+            .beginTxn()
+            .run(
+                (DataAcc data) -> {
+                  var conn1 = data.getDataConn("foo", SyncDataConn.class);
+                  var conn2 = data.getDataConn("bar", SyncDataConn.class);
+                  logger.add("Run the logic");
+                })
+            .endTxn();
+      } catch (Err err) {
+        fail(err);
+      } catch (Error e) {
+        assertThat(e.getMessage()).isEqualTo("commit Error");
+      }
+
+      assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).isEmpty();
+      assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+      assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+      assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+      assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+      assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+      assertThat(runner.hub.dataRun.fixed).isTrue();
+
+      assertThat(logger.stream().map(TestUtils::blackOutLineNo).toList())
+          .containsExactly(
+              "SyncDataSrc#new 1",
+              "SyncDataSrc#new 2",
+              "SyncDataSrc#setup 1",
+              "SyncDataSrc#setup 2",
+              "SyncDataSrc#createDataConn 1",
+              "SyncDataConn#new 1",
+              "SyncDataSrc#createDataConn 2",
+              "SyncDataConn#new 2",
+              "Run the logic",
+              "SyncDataConn#preCommit 1",
+              "SyncDataConn#preCommit 2",
+              "SyncDataConn#commit 1 Error",
+              "SyncDataConn#rollback 1",
+              "SyncDataConn#rollback 2 Error",
+              "SyncDataConn#onTxnFailure 1",
+              "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.TestDoubles$SyncDataConn cause:{State:CommitFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.AsyncGroupError$ErrorOccurred ErrorOccurred[], file = DataConnManager.java, line = ***, cause = java.lang.Error: commit Error }} rollback:{State:NoneByRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.TestDoubles$SyncDataConn cause:{State:NoneByUncommitted Err:null} rollback:{State:RollbackFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.AsyncGroupError$ErrorOccurred ErrorOccurred[], file = DataConnManager.java, line = ***, cause = java.lang.Error: rollback Error }}}]",
+              "SyncDataConn#onTxnFailure 2",
+              "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.TestDoubles$SyncDataConn cause:{State:CommitFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.AsyncGroupError$ErrorOccurred ErrorOccurred[], file = DataConnManager.java, line = ***, cause = java.lang.Error: commit Error }} rollback:{State:NoneByRolledBack Err:null}}, {dataConnName:bar dataConnType:com.github.sttk.sabi.TestDoubles$SyncDataConn cause:{State:NoneByUncommitted Err:null} rollback:{State:RollbackFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.AsyncGroupError$ErrorOccurred ErrorOccurred[], file = DataConnManager.java, line = ***, cause = java.lang.Error: rollback Error }}}]",
+              "SyncDataConn#close 2",
+              "SyncDataConn#close 1",
+              "SyncDataSrc#close 2",
+              "SyncDataSrc#close 1");
+    }
+
+    @Test
+    void testForgotToEndButCloseLogicRunnerAndErrors() {
+      var logger = new ArrayList<String>();
+
+      var runner = new LogicRunner(new DataHub());
+      try (runner) {
+        var ds1 = new SyncDataSrc(1, logger, Fail.CloseError);
+        runner.uses("foo", ds1);
+
+        var ds2 = new SyncDataSrc(2, logger, Fail.CloseDsError);
+        runner.uses("bar", ds2);
+
+        runner
+            .beginTxn()
+            .run(
+                (DataAcc data) -> {
+                  var conn1 = data.getDataConn("foo", SyncDataConn.class);
+                  var conn2 = data.getDataConn("bar", SyncDataConn.class);
+                  logger.add("run logic");
+                });
+      } catch (Error e) {
+        assertThat(e.getMessage()).isEqualTo("close Error");
+      }
+
+      assertThat(logger)
+          .containsExactly(
+              "SyncDataSrc#new 1",
+              "SyncDataSrc#new 2",
+              "SyncDataSrc#setup 1",
+              "SyncDataSrc#setup 2",
+              "SyncDataSrc#createDataConn 1",
+              "SyncDataConn#new 1",
+              "SyncDataSrc#createDataConn 2",
+              "SyncDataConn#new 2",
+              "run logic",
+              "SyncDataConn#close 2",
+              "SyncDataConn#close 1 Error",
+              "SyncDataSrc#close 2 Error",
+              "SyncDataSrc#close 1");
+    }
+
+    @Test
+    void testForgotToEndButCloseLogicRunnerAndRuntimeExceptions() {
+      var logger = new ArrayList<String>();
+
+      var runner = new LogicRunner(new DataHub());
+      try (runner) {
+        var ds1 = new SyncDataSrc(1, logger, Fail.None);
+        runner.uses("foo", ds1);
+
+        var ds2 = new SyncDataSrc(2, logger, Fail.CloseDsRuntimeException);
+        runner.uses("bar", ds2);
+
+        runner
+            .beginTxn()
+            .run(
+                (DataAcc data) -> {
+                  var conn1 = data.getDataConn("foo", SyncDataConn.class);
+                  var conn2 = data.getDataConn("bar", SyncDataConn.class);
+                  logger.add("run logic");
+                });
+      } catch (RuntimeException e) {
+        assertThat(e.getMessage()).isEqualTo("close ds RuntimeException");
+      }
+
+      assertThat(logger)
+          .containsExactly(
+              "SyncDataSrc#new 1",
+              "SyncDataSrc#new 2",
+              "SyncDataSrc#setup 1",
+              "SyncDataSrc#setup 2",
+              "SyncDataSrc#createDataConn 1",
+              "SyncDataConn#new 1",
+              "SyncDataSrc#createDataConn 2",
+              "SyncDataConn#new 2",
+              "run logic",
+              "SyncDataConn#close 2",
+              "SyncDataConn#close 1",
+              "SyncDataSrc#close 2 RuntimeException",
               "SyncDataSrc#close 1");
     }
   }

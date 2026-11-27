@@ -12,17 +12,30 @@ import org.junit.jupiter.api.Test;
 public class DataSrcContainerTest {
   private DataSrcContainerTest() {}
 
-  @Test
-  void testIsNoDataSrc() {
-    assertThat(DataSrcContainer.isNoDataSrc(null)).isTrue();
+  @Nested
+  class TestConstructor {
+    @Test
+    void testNameIsNull() {
+      var logger = new ArrayList<String>();
+      var ds = new SyncDataSrc(1, logger, Fail.None);
 
-    var cont = new DataSrcContainer(true, "foo", null);
-    assertThat(DataSrcContainer.isNoDataSrc(cont)).isTrue();
+      try {
+        new DataSrcContainer(true, null, ds);
+        fail();
+      } catch (NullPointerException e) {
+        assertThat(e.getMessage()).isEqualTo("name");
+      }
+    }
 
-    var logger = new ArrayList<String>();
-    var ds = new SyncDataSrc(1, logger, Fail.None);
-    cont = new DataSrcContainer(true, "foo", ds);
-    assertThat(DataSrcContainer.isNoDataSrc(cont)).isFalse();
+    @Test
+    void testDsIsNull() {
+      try {
+        new DataSrcContainer(true, "foo", null);
+        fail();
+      } catch (NullPointerException e) {
+        assertThat(e.getMessage()).isEqualTo("DataSrc");
+      }
+    }
   }
 
   @Nested
@@ -103,6 +116,40 @@ public class DataSrcContainerTest {
           }
           default -> fail(err);
         }
+      }
+    }
+
+    @Test
+    void testFailToCastAndCloseError() {
+      var logger = new ArrayList<String>();
+
+      var ds = new SyncDataSrc(1, logger, Fail.CloseError);
+      var dsCont = new DataSrcContainer(true, "foo", ds);
+
+      try {
+        dsCont.createDataConn(AsyncDataConn.class);
+        fail();
+      } catch (Err err) {
+        fail(err);
+      } catch (Error e) {
+        assertThat(e.getMessage()).isEqualTo("close Error");
+      }
+    }
+
+    @Test
+    void testFailToCastAndCloseRuntimeException() {
+      var logger = new ArrayList<String>();
+
+      var ds = new SyncDataSrc(1, logger, Fail.CloseRuntimeException);
+      var dsCont = new DataSrcContainer(true, "foo", ds);
+
+      try {
+        dsCont.createDataConn(AsyncDataConn.class);
+        fail();
+      } catch (Err err) {
+        fail(err);
+      } catch (RuntimeException e) {
+        assertThat(e.getMessage()).isEqualTo("close RuntimeException");
       }
     }
   }

@@ -24,13 +24,13 @@ public class DataAccTest {
         runner.uses("foo", new SyncDataSrc(1, logger, Fail.None));
         runner.uses("bar", new SyncDataSrc(2, logger, Fail.None));
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).hasSize(2);
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
 
         try {
           runner.txn(
@@ -50,13 +50,13 @@ public class DataAccTest {
           }
         }
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.listReady).hasSize(2);
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).hasSize(2);
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).hasSize(2);
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
       }
 
       assertThat(
@@ -73,6 +73,7 @@ public class DataAccTest {
               "SyncDataConn#new 1",
               "SyncDataSrc#createDataConn 2",
               "SyncDataConn#new 2",
+              "SyncDataConn#close 2",
               "SyncDataConn#rollback 1",
               "SyncDataConn#onTxnFailure 1",
               "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.TestDoubles$SyncDataConn cause:{State:LogicFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.DataSrcError$FailToCastCreatedDataConn FailToCastCreatedDataConn[name=bar, fromTypeName=com.github.sttk.sabi.TestDoubles$SyncDataConn, toTypeName=com.github.sttk.sabi.TestDoubles$AsyncDataConn], file = DataSrcContainer.java, line = ***, cause = java.lang.ClassCastException: com.github.sttk.sabi.TestDoubles$SyncDataConn cannot be cast to com.github.sttk.sabi.TestDoubles$AsyncDataConn }} rollback:{State:NoneByRolledBack Err:null}}]",
@@ -90,13 +91,13 @@ public class DataAccTest {
         runner.uses("foo", new SyncDataSrc(1, logger, Fail.None));
         runner.uses("bar", new SyncDataSrc(2, logger, Fail.None));
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).hasSize(2);
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
 
         runner.txn(
             (DataHub data) -> {
@@ -108,13 +109,13 @@ public class DataAccTest {
               logger.add("Run the logic");
             });
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.listReady).hasSize(2);
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).hasSize(2);
-        assertThat(runner.hub.run.dataConnManager.list).hasSize(0);
-        assertThat(runner.hub.run.dataConnManager.indexMap).hasSize(0);
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).hasSize(2);
+        assertThat(runner.hub.dataRun.dataConnManager.list).hasSize(0);
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).hasSize(0);
+        assertThat(runner.hub.dataRun.fixed).isFalse();
       } catch (Err err) {
         fail(err);
       }
@@ -151,13 +152,13 @@ public class DataAccTest {
         runner.uses("foo", new SyncDataSrc(1, logger, Fail.None));
         runner.uses("bar", new SyncDataSrc(2, logger, Fail.None));
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).hasSize(2);
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
 
         try {
           runner.txn(
@@ -179,13 +180,13 @@ public class DataAccTest {
           }
         }
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.listReady).hasSize(2);
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).hasSize(2);
-        assertThat(runner.hub.run.dataConnManager.list).hasSize(0);
-        assertThat(runner.hub.run.dataConnManager.indexMap).hasSize(0);
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).hasSize(2);
+        assertThat(runner.hub.dataRun.dataConnManager.list).hasSize(0);
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).hasSize(0);
+        assertThat(runner.hub.dataRun.fixed).isFalse();
       }
 
       assertThat(
@@ -223,13 +224,13 @@ public class DataAccTest {
         runner.uses("foo", new SyncDataSrc(1, logger, Fail.None));
         runner.uses("bar", new SyncDataSrc(2, logger, Fail.None));
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).hasSize(2);
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
 
         try {
           runner.txn(
@@ -248,13 +249,13 @@ public class DataAccTest {
           }
         }
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.listReady).hasSize(2);
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).hasSize(2);
-        assertThat(runner.hub.run.dataConnManager.list).hasSize(0);
-        assertThat(runner.hub.run.dataConnManager.indexMap).hasSize(0);
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).hasSize(2);
+        assertThat(runner.hub.dataRun.dataConnManager.list).hasSize(0);
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).hasSize(0);
+        assertThat(runner.hub.dataRun.fixed).isFalse();
       }
 
       assertThat(logger.stream().map(TestUtils::blackOutLineNo).toList())
@@ -282,13 +283,13 @@ public class DataAccTest {
         runner.uses("foo", new SyncDataSrc(1, logger, Fail.None));
         runner.uses("bar", new SyncDataSrc(2, logger, Fail.CreateDataConn));
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).hasSize(2);
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
 
         try {
           runner.txn(
@@ -307,13 +308,13 @@ public class DataAccTest {
           }
         }
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.listReady).hasSize(2);
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).hasSize(2);
-        assertThat(runner.hub.run.dataConnManager.list).hasSize(0);
-        assertThat(runner.hub.run.dataConnManager.indexMap).hasSize(0);
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).hasSize(2);
+        assertThat(runner.hub.dataRun.dataConnManager.list).hasSize(0);
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).hasSize(0);
+        assertThat(runner.hub.dataRun.fixed).isFalse();
       }
 
       assertThat(logger.stream().map(TestUtils::blackOutLineNo).toList())

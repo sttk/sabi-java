@@ -7,18 +7,23 @@ import static org.assertj.core.api.Assertions.fail;
 
 import com.github.sttk.errs.Err;
 import java.util.ArrayList;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Isolated;
 
+@Isolated
 public class GlobalsTest {
   private GlobalsTest() {}
 
   @BeforeEach
+  @AfterEach
   void reset() {
     Globals.DATA_SRC_MANAGER.close();
     Globals.DATA_SRCS_FIXED.set(false);
   }
 
+  @SuppressWarnings("try")
   @Test
   void testSetupWithNoDs() {
     assertThat(Globals.DATA_SRC_MANAGER.listUnready).isEmpty();
@@ -46,6 +51,7 @@ public class GlobalsTest {
     assertThat(Globals.DATA_SRCS_FIXED.get()).isTrue();
   }
 
+  @SuppressWarnings("try")
   @Test
   void testUsesAndSetup() {
     var logger = new ArrayList<String>();
@@ -100,6 +106,7 @@ public class GlobalsTest {
             "SyncDataSrc#close 1");
   }
 
+  @SuppressWarnings("try")
   @Test
   void testUsesAndSetupWithOrder() {
     var logger = new ArrayList<String>();
@@ -154,6 +161,7 @@ public class GlobalsTest {
             "SyncDataSrc#close 2");
   }
 
+  @SuppressWarnings("try")
   @Test
   void testUsesButAlreadyFixed() {
     var logger = new ArrayList<String>();
@@ -190,6 +198,7 @@ public class GlobalsTest {
     assertThat(Globals.DATA_SRCS_FIXED.get()).isTrue();
   }
 
+  @SuppressWarnings("try")
   @Test
   void testSetupButFailed() {
     var logger = new ArrayList<String>();
@@ -259,6 +268,7 @@ public class GlobalsTest {
             "SyncDataSrc#close 1");
   }
 
+  @SuppressWarnings("try")
   @Test
   void testSetupWithOrderButFailed() {
     var logger = new ArrayList<String>();
@@ -328,6 +338,7 @@ public class GlobalsTest {
             "SyncDataSrc#close 3");
   }
 
+  @SuppressWarnings("try")
   @Test
   void testUsingGlobalAndLocalDs() {
     var logger = new ArrayList<String>();

@@ -1,7 +1,7 @@
-// Copyright (C) 2026 Takayuki Sato. All Rights Reserved.
-// This program is free software under MIT License.
-// See the file LICENSE in this distribution for more details.
-
+/*
+ * LogicRunner.java
+ * Copyright (C) 2026 Takayuki Sato. All Rights Reserved.
+ */
 package com.github.sttk.sabi;
 
 import com.github.sttk.errs.Err;
@@ -32,7 +32,7 @@ public final class LogicRunner implements AutoCloseable {
    * @param ds the {@link DataSrc} instance to register
    */
   public void uses(String name, DataSrc ds) {
-    this.hub.run.uses(name, ds);
+    this.hub.dataRun.uses(name, ds);
   }
 
   /**
@@ -41,7 +41,7 @@ public final class LogicRunner implements AutoCloseable {
    * @param name the logical name of the data source to remove
    */
   public void disuses(String name) {
-    this.hub.run.disuses(name);
+    this.hub.dataRun.disuses(name);
   }
 
   /**
@@ -54,24 +54,37 @@ public final class LogicRunner implements AutoCloseable {
    */
   @SuppressWarnings("unchecked")
   public <D> void run(Logic<D> logic) throws Err {
-    if (this.hub.run.isAbnormal()) {
+    if (this.hub.dataRun.isAbnormal()) {
       throw new Err(new DataHubError.AbnormalState());
     }
 
-    this.hub.run.begin();
+    this.hub.dataRun.begin();
 
+    Err logicErr = null;
     try {
       logic.run((D) this.hub);
-      this.hub.run.end();
     } catch (Err err) {
-      this.hub.run.end();
-      throw err;
+      logicErr = err;
     } catch (RuntimeException e) {
-      this.hub.run.abend();
+      this.hub.dataRun.abend();
       throw e;
     } catch (Throwable t) {
-      this.hub.run.abend();
+      this.hub.dataRun.abend();
       throw Error.class.cast(t);
+    }
+
+    try {
+      this.hub.dataRun.end();
+    } catch (RuntimeException e) {
+      this.hub.dataRun.abend();
+      throw e;
+    } catch (Throwable t) {
+      this.hub.dataRun.abend();
+      throw Error.class.cast(t);
+    }
+
+    if (logicErr != null) {
+      throw logicErr;
     }
   }
 
@@ -95,54 +108,54 @@ public final class LogicRunner implements AutoCloseable {
    */
   @SuppressWarnings("unchecked")
   public <D> void txn(Logic<D> logic) throws Err {
-    if (this.hub.run.isAbnormal()) {
+    if (this.hub.dataRun.isAbnormal()) {
       throw new Err(new DataHubError.AbnormalState());
     }
 
-    this.hub.run.begin();
+    this.hub.dataRun.begin();
 
     ArrayList<TxnFailureReport.Builder> builders = null;
     try {
       logic.run((D) this.hub);
-      builders = this.hub.run.newTxnFailureReportBuilders(null);
-      this.hub.run.commit(builders);
-      this.hub.run.end();
+      builders = this.hub.dataRun.newTxnFailureReportBuilders(null);
+      this.hub.dataRun.commit(builders);
+      this.hub.dataRun.end();
     } catch (Err err) {
       if (builders == null) {
-        builders = this.hub.run.newTxnFailureReportBuilders(err);
+        builders = this.hub.dataRun.newTxnFailureReportBuilders(err);
       }
       try {
-        this.hub.run.rollback(builders);
-        this.hub.run.end();
+        this.hub.dataRun.rollback(builders);
+        this.hub.dataRun.end();
       } catch (Throwable t) {
-        this.hub.run.abend();
+        this.hub.dataRun.abend();
         throw t;
       }
       throw err;
     } catch (RuntimeException e) {
       if (builders == null) {
         var err = new Err(new LogicTxnError.RuntimeExceptionOccurred(), e);
-        builders = this.hub.run.newTxnFailureReportBuilders(err);
+        builders = this.hub.dataRun.newTxnFailureReportBuilders(err);
       }
       try {
-        this.hub.run.rollback(builders);
+        this.hub.dataRun.rollback(builders);
       } catch (Throwable t) {
-        // do nothing
+        e.addSuppressed(t);
       } finally {
-        this.hub.run.abend();
+        this.hub.dataRun.abend();
       }
       throw e;
     } catch (Throwable t) {
       if (builders == null) {
         var err = new Err(new LogicTxnError.ErrorOccurred(), t);
-        builders = this.hub.run.newTxnFailureReportBuilders(err);
+        builders = this.hub.dataRun.newTxnFailureReportBuilders(err);
       }
       try {
-        this.hub.run.rollback(builders);
+        this.hub.dataRun.rollback(builders);
       } catch (Throwable tt) {
-        // do nothing
+        t.addSuppressed(tt);
       } finally {
-        this.hub.run.abend();
+        this.hub.dataRun.abend();
       }
       throw Error.class.cast(t);
     }

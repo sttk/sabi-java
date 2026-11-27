@@ -1,7 +1,7 @@
-// Copyright (C) 2026 Takayuki Sato. All Rights Reserved.
-// This program is free software under MIT License.
-// See the file LICENSE in this distribution for more details.
-
+/*
+ * LogicRun.java
+ * Copyright (C) 2026 Takayuki Sato. All Rights Reserved.
+ */
 package com.github.sttk.sabi;
 
 import com.github.sttk.errs.Err;
@@ -22,12 +22,6 @@ public final class LogicRun {
   private LogicErrAt errAt;
   private int index;
 
-  private enum LogicErrAt {
-    Begin,
-    Run,
-    Block,
-  }
-
   LogicRun(DataHub hub, boolean nested) {
     this.hub = hub;
     this.index = 0;
@@ -36,7 +30,7 @@ public final class LogicRun {
 
     if (!nested) {
       try {
-        this.hub.run.begin();
+        this.hub.dataRun.begin();
         this.errAt = LogicErrAt.Run;
       } catch (Err err) {
         this.errors.add(new ErrEntry(0, "", err));
@@ -52,7 +46,7 @@ public final class LogicRun {
    * been blocked or terminated abnormally.
    *
    * <p>If {@code logic} throws an {@link Err}, it is recorded and reported when {@link #end()} is
-   * called. If an unhandled {@link RuntimeException} or {@link Throwable} is thrown, the underlying
+   * called. If an unhandled {@link RuntimeException} or {@link Error} is thrown, the underlying
    * {@link DataHub} is terminated abnormally and the exception or error is rethrown.
    *
    * @param <D> the type of data access interface expected by the logic
@@ -64,7 +58,7 @@ public final class LogicRun {
     int index = this.index;
     this.index++;
 
-    if (this.hub.run.isAbnormal()) {
+    if (this.hub.dataRun.isAbnormal()) {
       return this;
     }
 
@@ -77,10 +71,10 @@ public final class LogicRun {
             var name = String.format("LogicRun#run(logic-%d)", index);
             this.errors.add(new ErrEntry(index, name, err));
           } catch (RuntimeException e) {
-            this.hub.run.abend();
+            this.hub.dataRun.abend();
             throw e;
           } catch (Throwable t) {
-            this.hub.run.abend();
+            this.hub.dataRun.abend();
             throw Error.class.cast(t);
           }
         }
@@ -105,7 +99,7 @@ public final class LogicRun {
     int index = this.index;
     this.index++;
 
-    if (this.hub.run.isAbnormal()) {
+    if (this.hub.dataRun.isAbnormal()) {
       return this;
     }
 
@@ -117,10 +111,10 @@ public final class LogicRun {
           var name = String.format("LogicRun#runForce(logic-%d)", index);
           this.errors.add(new ErrEntry(index, name, err));
         } catch (RuntimeException e) {
-          this.hub.run.abend();
+          this.hub.dataRun.abend();
           throw e;
         } catch (Throwable t) {
-          this.hub.run.abend();
+          this.hub.dataRun.abend();
           throw Error.class.cast(t);
         }
         return this;
@@ -143,7 +137,7 @@ public final class LogicRun {
     int index = this.index;
     this.index++;
 
-    if (this.hub.run.isAbnormal()) {
+    if (this.hub.dataRun.isAbnormal()) {
       return this;
     }
 
@@ -157,10 +151,10 @@ public final class LogicRun {
             this.errors.add(new ErrEntry(index, name, err));
             this.errAt = LogicErrAt.Block;
           } catch (RuntimeException e) {
-            this.hub.run.abend();
+            this.hub.dataRun.abend();
             throw e;
           } catch (Throwable t) {
-            this.hub.run.abend();
+            this.hub.dataRun.abend();
             throw Error.class.cast(t);
           }
         }
@@ -179,18 +173,18 @@ public final class LogicRun {
    *     Err}, or the {@link DataHub} is in an abnormal state
    */
   public void end() throws Err {
-    if (this.hub.run.isAbnormal()) {
+    if (this.hub.dataRun.isAbnormal()) {
       throw new Err(new DataHubError.AbnormalState());
     }
 
     if (!this.nested) {
       try {
-        this.hub.run.end();
+        this.hub.dataRun.end();
       } catch (RuntimeException e) {
-        this.hub.run.abend();
+        this.hub.dataRun.abend();
         throw e;
       } catch (Throwable t) {
-        this.hub.run.abend();
+        this.hub.dataRun.abend();
         throw Error.class.cast(t);
       }
     }

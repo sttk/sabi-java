@@ -371,6 +371,49 @@ public class AsyncGroupTest {
   }
 
   @Test
+  void run_but_InterruptedExceptions_are_thrown_twice() {
+    var ag = new AsyncGroup();
+
+    final var mainThread = Thread.currentThread();
+    boolean[] executed = {false};
+    Task task =
+        () -> {
+          try {
+            Thread.sleep(250);
+          } catch (Exception e) {
+          }
+          executed[0] = true;
+          mainThread.interrupt();
+          try {
+            Thread.sleep(250);
+          } catch (Exception e) {
+          }
+          mainThread.interrupt();
+        };
+
+    ag.index = 123;
+    ag.name = "foo";
+    ag.add(task);
+    assertThat(executed[0]).isFalse();
+
+    var errors = ag.join();
+    assertThat(errors).hasSize(1);
+
+    assertThat(executed[0]).isTrue();
+    assertThat(errors).hasSize(1);
+
+    assertThat(errors.get(0).index()).isEqualTo(123);
+    assertThat(errors.get(0).name()).isEqualTo("foo");
+    switch (errors.get(0).err().getReason()) {
+      case AsyncGroupError.TaskInterrupted r -> {
+        assertThat(Thread.currentThread().isInterrupted()).isTrue();
+      }
+      default -> fail();
+    }
+    assertThat(errors.get(0).err().getCause()).isInstanceOf(InterruptedException.class);
+  }
+
+  @Test
   void testProhibitReuse() {
     var ag = new AsyncGroup();
     ag.add(() -> {});

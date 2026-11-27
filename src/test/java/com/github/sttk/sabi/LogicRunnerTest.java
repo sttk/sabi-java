@@ -2,6 +2,7 @@ package com.github.sttk.sabi;
 
 import static com.github.sttk.sabi.TestDoubles.*;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.assertj.core.api.Assertions.fail;
 
 import com.github.sttk.errs.Err;
@@ -18,13 +19,13 @@ public class LogicRunnerTest {
     void testNew() {
       var hub = new DataHub();
       try (var runner = new LogicRunner(hub)) {
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
       }
     }
 
@@ -36,27 +37,27 @@ public class LogicRunnerTest {
         runner.uses("foo", new SyncDataSrc(1, logger, Fail.None));
         runner.uses("bar", new SyncDataSrc(2, logger, Fail.None));
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).hasSize(2);
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
 
         try {
-          runner.hub.run.begin();
+          runner.hub.dataRun.begin();
         } catch (Exception e) {
           fail(e);
         }
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.listReady).hasSize(2);
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).hasSize(2);
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isTrue();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).hasSize(2);
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isTrue();
       }
     }
 
@@ -67,37 +68,37 @@ public class LogicRunnerTest {
       try (var runner = new LogicRunner(new DataHub())) {
         runner.uses("foo", new SyncDataSrc(1, logger, Fail.None));
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).hasSize(1);
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).hasSize(1);
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
 
         try {
-          runner.hub.run.begin();
+          runner.hub.dataRun.begin();
         } catch (Exception e) {
           fail(e);
         }
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.listReady).hasSize(1);
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).hasSize(1);
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isTrue();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).hasSize(1);
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).hasSize(1);
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isTrue();
 
         runner.uses("bar", new SyncDataSrc(2, logger, Fail.None));
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.listReady).hasSize(1);
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).hasSize(1);
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isTrue();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).hasSize(1);
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).hasSize(1);
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isTrue();
       }
     }
 
@@ -109,33 +110,33 @@ public class LogicRunnerTest {
         runner.uses("foo", new SyncDataSrc(1, logger, Fail.None));
         runner.uses("bar", new SyncDataSrc(2, logger, Fail.None));
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).hasSize(2);
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
 
         runner.disuses("foo");
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).hasSize(1);
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).hasSize(1);
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
 
         runner.disuses("bar");
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).hasSize(0);
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).hasSize(0);
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
       }
     }
 
@@ -147,100 +148,100 @@ public class LogicRunnerTest {
         runner.uses("foo", new SyncDataSrc(1, logger, Fail.None));
         runner.uses("bar", new SyncDataSrc(2, logger, Fail.None));
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).hasSize(2);
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
 
         runner.disuses("foo");
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).hasSize(1);
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).hasSize(1);
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
 
         runner.disuses("bar");
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).hasSize(0);
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).hasSize(0);
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
 
         runner.uses("foo", new SyncDataSrc(1, logger, Fail.None));
         runner.uses("bar", new SyncDataSrc(2, logger, Fail.None));
 
         try {
-          runner.hub.run.begin();
+          runner.hub.dataRun.begin();
         } catch (Exception e) {
           fail(e);
         }
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.listReady).hasSize(2);
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).hasSize(2);
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isTrue();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).hasSize(2);
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isTrue();
 
         runner.uses("baz", new SyncDataSrc(3, logger, Fail.None));
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.listReady).hasSize(2);
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).hasSize(2);
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isTrue();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).hasSize(2);
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isTrue();
 
         runner.disuses("bar");
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.listReady).hasSize(2);
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).hasSize(2);
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isTrue();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).hasSize(2);
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isTrue();
 
-        runner.hub.run.end();
+        runner.hub.dataRun.end();
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.listReady).hasSize(2);
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).hasSize(2);
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).hasSize(2);
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
 
         runner.disuses("bar");
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.listReady).hasSize(1);
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).hasSize(1);
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).hasSize(1);
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).hasSize(1);
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
 
         runner.disuses("foo");
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).hasSize(0);
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).hasSize(0);
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
       }
     }
   }
@@ -257,13 +258,13 @@ public class LogicRunnerTest {
               logger.add("Run the logic");
             });
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
       } catch (Err e) {
         fail(e);
       }
@@ -279,13 +280,13 @@ public class LogicRunnerTest {
         runner.uses("foo", new SyncDataSrc(1, logger, Fail.None));
         runner.uses("bar", new SyncDataSrc(2, logger, Fail.None));
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).hasSize(2);
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
 
         runner.run(
             (DataAcc data) -> {
@@ -294,13 +295,13 @@ public class LogicRunnerTest {
               logger.add("Run the logic");
             });
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.listReady).hasSize(2);
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).hasSize(2);
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).hasSize(2);
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
       } catch (Err err) {
         fail(err);
       }
@@ -331,13 +332,13 @@ public class LogicRunnerTest {
         runner.uses("bar", new SyncDataSrc(2, logger, Fail.Setup));
         runner.uses("baz", new SyncDataSrc(3, logger, Fail.None));
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).hasSize(3);
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).hasSize(3);
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
 
         runner.run(
             data -> {
@@ -403,7 +404,7 @@ public class LogicRunnerTest {
     @Test
     void testRunIfAbnormal() {
       try (var runner = new LogicRunner(new DataHub())) {
-        runner.hub.run.localDataSrcManager.isAbnormal = true;
+        runner.hub.dataRun.localDataSrcManager.isAbnormal = true;
         runner.run(data -> {});
       } catch (Err err) {
         switch (err.getReason()) {
@@ -497,13 +498,13 @@ public class LogicRunnerTest {
               logger.add("Run the logic");
             });
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
       } catch (Err err) {
         fail(err);
       }
@@ -519,13 +520,13 @@ public class LogicRunnerTest {
         runner.uses("foo", new SyncDataSrc(1, logger, Fail.None));
         runner.uses("bar", new SyncDataSrc(2, logger, Fail.None));
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).hasSize(2);
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
 
         runner.txn(
             (DataAcc data) -> {
@@ -534,13 +535,13 @@ public class LogicRunnerTest {
               logger.add("Run the logic");
             });
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.listReady).hasSize(2);
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).hasSize(2);
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).hasSize(2);
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
       } catch (Err err) {
         fail(err);
       }
@@ -577,13 +578,13 @@ public class LogicRunnerTest {
         runner.uses("bar", new SyncDataSrc(2, logger, Fail.Setup));
         runner.uses("baz", new SyncDataSrc(3, logger, Fail.None));
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).hasSize(3);
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).hasSize(3);
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
 
         runner.txn(
             (DataAcc data) -> {
@@ -915,13 +916,13 @@ public class LogicRunnerTest {
         runner.uses("foo", new SyncDataSrc(1, logger, Fail.None));
         runner.uses("bar", new SyncDataSrc(2, logger, Fail.None));
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).hasSize(2);
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).hasSize(2);
-        assertThat(runner.hub.run.dataConnManager.indexMap).hasSize(2);
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).hasSize(2);
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).hasSize(2);
+        assertThat(runner.hub.dataRun.fixed).isFalse();
 
         runner.txn(
             (DataAcc data) -> {
@@ -930,13 +931,13 @@ public class LogicRunnerTest {
               logger.add("Run the logic");
             });
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.listReady).hasSize(2);
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).hasSize(2);
-        assertThat(runner.hub.run.dataConnManager.list).hasSize(2);
-        assertThat(runner.hub.run.dataConnManager.indexMap).hasSize(2);
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).hasSize(2);
+        assertThat(runner.hub.dataRun.dataConnManager.list).hasSize(2);
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).hasSize(2);
+        assertThat(runner.hub.dataRun.fixed).isFalse();
       } catch (Err err) {
         fail(err);
       }
@@ -967,7 +968,7 @@ public class LogicRunnerTest {
     @Test
     void testRunIfIsAbnormal() {
       try (var runner = new LogicRunner(new DataHub())) {
-        runner.hub.run.localDataSrcManager.isAbnormal = true;
+        runner.hub.dataRun.localDataSrcManager.isAbnormal = true;
         runner.txn(data -> {});
       } catch (Err err) {
         switch (err.getReason()) {
@@ -1060,13 +1061,13 @@ public class LogicRunnerTest {
         runner.uses("foo", new SyncDataSrc(1, logger, Fail.None));
         runner.uses("bar", new SyncDataSrc(2, logger, Fail.None));
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).hasSize(2);
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
 
         runner.run(
             (DataAcc data) -> {
@@ -1079,13 +1080,13 @@ public class LogicRunnerTest {
         fail(err);
       } catch (Error e) {
         assertThat(e.getMessage()).isEqualTo("error");
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isTrue();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isTrue();
       }
 
       assertThat(logger)
@@ -1114,13 +1115,13 @@ public class LogicRunnerTest {
         runner.uses("foo", new SyncDataSrc(1, logger, Fail.None));
         runner.uses("bar", new SyncDataSrc(2, logger, Fail.None));
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).hasSize(2);
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
 
         runner.run(
             (DataAcc data) -> {
@@ -1133,13 +1134,13 @@ public class LogicRunnerTest {
         fail(err);
       } catch (RuntimeException e) {
         assertThat(e.getMessage()).isEqualTo("error");
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isTrue();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isTrue();
       }
 
       assertThat(logger)
@@ -1168,13 +1169,13 @@ public class LogicRunnerTest {
         runner.uses("foo", new SyncDataSrc(1, logger, Fail.None));
         runner.uses("bar", new SyncDataSrc(2, logger, Fail.CloseError));
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).hasSize(2);
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
 
         runner.run(
             (DataAcc data) -> {
@@ -1186,13 +1187,13 @@ public class LogicRunnerTest {
         fail(err);
       } catch (Error e) {
         assertThat(e.getMessage()).isEqualTo("close Error");
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isTrue();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isTrue();
       }
 
       assertThat(logger)
@@ -1221,13 +1222,13 @@ public class LogicRunnerTest {
         runner.uses("foo", new SyncDataSrc(1, logger, Fail.None));
         runner.uses("bar", new SyncDataSrc(2, logger, Fail.CloseRuntimeException));
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).hasSize(2);
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
 
         runner.run(
             (DataAcc data) -> {
@@ -1239,13 +1240,13 @@ public class LogicRunnerTest {
         fail(err);
       } catch (RuntimeException e) {
         assertThat(e.getMessage()).isEqualTo("close RuntimeException");
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isTrue();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isTrue();
       }
 
       assertThat(logger)
@@ -1274,13 +1275,13 @@ public class LogicRunnerTest {
         runner.uses("foo", new SyncDataSrc(1, logger, Fail.None));
         runner.uses("bar", new SyncDataSrc(2, logger, Fail.None));
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).hasSize(2);
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
 
         runner.txn(
             (DataAcc data) -> {
@@ -1293,13 +1294,13 @@ public class LogicRunnerTest {
         fail(err);
       } catch (Error e) {
         assertThat(e.getMessage()).isEqualTo("error");
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isTrue();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isTrue();
       }
 
       assertThat(logger.stream().map(TestUtils::blackOutLineNo).toList())
@@ -1334,13 +1335,13 @@ public class LogicRunnerTest {
         runner.uses("foo", new SyncDataSrc(1, logger, Fail.None));
         runner.uses("bar", new SyncDataSrc(2, logger, Fail.None));
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).hasSize(2);
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
 
         runner.txn(
             (DataAcc data) -> {
@@ -1353,13 +1354,13 @@ public class LogicRunnerTest {
         fail(err);
       } catch (RuntimeException e) {
         assertThat(e.getMessage()).isEqualTo("error");
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isTrue();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isTrue();
       }
 
       assertThat(logger.stream().map(TestUtils::blackOutLineNo).toList())
@@ -1394,13 +1395,13 @@ public class LogicRunnerTest {
         runner.uses("foo", new SyncDataSrc(1, logger, Fail.PreCommitError));
         runner.uses("bar", new SyncDataSrc(2, logger, Fail.None));
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).hasSize(2);
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
 
         runner.txn(
             (DataAcc data) -> {
@@ -1412,13 +1413,13 @@ public class LogicRunnerTest {
         fail(err);
       } catch (Error e) {
         assertThat(e.getMessage()).isEqualTo("preCommit Error");
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isTrue();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isTrue();
       }
 
       assertThat(logger.stream().map(TestUtils::blackOutLineNo).toList())
@@ -1454,13 +1455,13 @@ public class LogicRunnerTest {
         runner.uses("foo", new SyncDataSrc(1, logger, Fail.None));
         runner.uses("bar", new SyncDataSrc(2, logger, Fail.PreCommitRuntimeException));
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).hasSize(2);
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
 
         runner.txn(
             (DataAcc data) -> {
@@ -1472,13 +1473,13 @@ public class LogicRunnerTest {
         fail(err);
       } catch (RuntimeException e) {
         assertThat(e.getMessage()).isEqualTo("preCommit RuntimeException");
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isTrue();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isTrue();
       }
 
       assertThat(logger.stream().map(TestUtils::blackOutLineNo).toList())
@@ -1515,13 +1516,13 @@ public class LogicRunnerTest {
         runner.uses("foo", new SyncDataSrc(1, logger, Fail.CommitError));
         runner.uses("bar", new SyncDataSrc(2, logger, Fail.None));
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).hasSize(2);
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
 
         runner.txn(
             (DataAcc data) -> {
@@ -1533,13 +1534,13 @@ public class LogicRunnerTest {
         fail(err);
       } catch (Error e) {
         assertThat(e.getMessage()).isEqualTo("commit Error");
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isTrue();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isTrue();
       }
 
       assertThat(logger.stream().map(TestUtils::blackOutLineNo).toList())
@@ -1577,13 +1578,13 @@ public class LogicRunnerTest {
         runner.uses("foo", new SyncDataSrc(1, logger, Fail.CommitRuntimeException));
         runner.uses("bar", new SyncDataSrc(2, logger, Fail.None));
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).hasSize(2);
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
 
         runner.txn(
             (DataAcc data) -> {
@@ -1595,13 +1596,13 @@ public class LogicRunnerTest {
         fail(err);
       } catch (RuntimeException e) {
         assertThat(e.getMessage()).isEqualTo("commit RuntimeException");
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isTrue();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isTrue();
       }
 
       assertThat(logger.stream().map(TestUtils::blackOutLineNo).toList())
@@ -1639,13 +1640,13 @@ public class LogicRunnerTest {
         runner.uses("foo", new SyncDataSrc(1, logger, Fail.PostCommitError));
         runner.uses("bar", new SyncDataSrc(2, logger, Fail.None));
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).hasSize(2);
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
 
         runner.txn(
             (DataAcc data) -> {
@@ -1657,13 +1658,13 @@ public class LogicRunnerTest {
         fail(err);
       } catch (Error e) {
         assertThat(e.getMessage()).isEqualTo("postCommit Error");
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isTrue();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isTrue();
       }
 
       assertThat(logger.stream().map(TestUtils::blackOutLineNo).toList())
@@ -1702,13 +1703,13 @@ public class LogicRunnerTest {
         runner.uses("foo", new SyncDataSrc(1, logger, Fail.None));
         runner.uses("bar", new SyncDataSrc(2, logger, Fail.PostCommitRuntimeException));
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).hasSize(2);
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
 
         runner.txn(
             (DataAcc data) -> {
@@ -1720,13 +1721,13 @@ public class LogicRunnerTest {
         fail(err);
       } catch (RuntimeException e) {
         assertThat(e.getMessage()).isEqualTo("postCommit RuntimeException");
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isTrue();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isTrue();
       }
 
       assertThat(logger.stream().map(TestUtils::blackOutLineNo).toList())
@@ -1765,13 +1766,13 @@ public class LogicRunnerTest {
         runner.uses("foo", new SyncDataSrc(1, logger, Fail.RollbackError));
         runner.uses("bar", new SyncDataSrc(2, logger, Fail.RollbackError));
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).hasSize(2);
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
 
         runner.txn(
             (DataAcc data) -> {
@@ -1784,13 +1785,13 @@ public class LogicRunnerTest {
         fail(err);
       } catch (Error e) {
         assertThat(e.getMessage()).isEqualTo("rollback Error");
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isTrue();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isTrue();
       }
 
       assertThat(logger.stream().map(TestUtils::blackOutLineNo).toList())
@@ -1825,13 +1826,13 @@ public class LogicRunnerTest {
         runner.uses("foo", new SyncDataSrc(1, logger, Fail.RollbackRuntimeException));
         runner.uses("bar", new SyncDataSrc(2, logger, Fail.RollbackRuntimeException));
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).hasSize(2);
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
 
         runner.txn(
             (DataAcc data) -> {
@@ -1844,13 +1845,13 @@ public class LogicRunnerTest {
         fail(err);
       } catch (RuntimeException e) {
         assertThat(e.getMessage()).isEqualTo("rollback RuntimeException");
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isTrue();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isTrue();
       }
 
       assertThat(logger.stream().map(TestUtils::blackOutLineNo).toList())
@@ -1885,13 +1886,13 @@ public class LogicRunnerTest {
         runner.uses("foo", new SyncDataSrc(1, logger, Fail.CloseError));
         runner.uses("bar", new SyncDataSrc(2, logger, Fail.CloseError));
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).hasSize(2);
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
 
         runner.txn(
             (DataAcc data) -> {
@@ -1903,13 +1904,13 @@ public class LogicRunnerTest {
         fail(err);
       } catch (Error e) {
         assertThat(e.getMessage()).isEqualTo("close Error");
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isTrue();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isTrue();
       }
 
       assertThat(logger)
@@ -1944,13 +1945,13 @@ public class LogicRunnerTest {
         runner.uses("foo", new SyncDataSrc(1, logger, Fail.CloseRuntimeException));
         runner.uses("bar", new SyncDataSrc(2, logger, Fail.CloseRuntimeException));
 
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).hasSize(2);
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isFalse();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).hasSize(2);
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isFalse();
 
         runner.txn(
             (DataAcc data) -> {
@@ -1962,13 +1963,13 @@ public class LogicRunnerTest {
         fail(err);
       } catch (RuntimeException e) {
         assertThat(e.getMessage()).isEqualTo("close RuntimeException");
-        assertThat(runner.hub.run.localDataSrcManager.listUnready).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.listReady).isEmpty();
-        assertThat(runner.hub.run.localDataSrcManager.local).isTrue();
-        assertThat(runner.hub.run.dataSrcMap).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.list).isEmpty();
-        assertThat(runner.hub.run.dataConnManager.indexMap).isEmpty();
-        assertThat(runner.hub.run.fixed).isTrue();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listUnready).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.listReady).isEmpty();
+        assertThat(runner.hub.dataRun.localDataSrcManager.local).isTrue();
+        assertThat(runner.hub.dataRun.dataSrcMap).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.list).isEmpty();
+        assertThat(runner.hub.dataRun.dataConnManager.indexMap).isEmpty();
+        assertThat(runner.hub.dataRun.fixed).isTrue();
       }
 
       assertThat(logger)
@@ -1992,6 +1993,124 @@ public class LogicRunnerTest {
               "SyncDataConn#close 1 RuntimeException",
               "SyncDataSrc#close 2",
               "SyncDataSrc#close 1");
+    }
+
+    // Covers `e.addSuppressed(t)` in `catch (RuntimeException e)`
+    @Test
+    void testRollbackFailureIsSuppressed_RuntimeException() {
+      var logger = new ArrayList<String>();
+
+      var runner = new LogicRunner(new DataHub());
+      runner.uses("foo", new SyncDataSrc(1, logger, Fail.RollbackRuntimeException));
+
+      var thrown =
+          catchThrowable(
+              () ->
+                  runner.txn(
+                      (DataAcc da) -> {
+                        da.getDataConn("foo", SyncDataConn.class);
+                        throw new RuntimeException("logic RuntimeException");
+                      }));
+
+      assertThat(thrown)
+          .isExactlyInstanceOf(RuntimeException.class)
+          .hasMessage("logic RuntimeException");
+      assertThat(thrown.getSuppressed()).hasSize(1);
+      assertThat(thrown.getSuppressed()[0])
+          .isExactlyInstanceOf(RuntimeException.class)
+          .hasMessage("rollback RuntimeException");
+
+      assertThat(runner.hub.dataRun.isAbnormal()).isTrue();
+      assertThat(logger)
+          .containsExactly(
+              "SyncDataSrc#new 1",
+              "SyncDataSrc#setup 1",
+              "SyncDataSrc#createDataConn 1",
+              "SyncDataConn#new 1",
+              "SyncDataConn#rollback 1 RuntimeException",
+              "SyncDataConn#onTxnFailure 1",
+              "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.TestDoubles$SyncDataConn cause:{State:LogicFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.LogicTxnError$RuntimeExceptionOccurred RuntimeExceptionOccurred[], file = LogicRunner.java, line = 137, cause = java.lang.RuntimeException: logic RuntimeException }} rollback:{State:RollbackFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.AsyncGroupError$RuntimeExceptionOccurred RuntimeExceptionOccurred[], file = DataConnManager.java, line = 255, cause = java.lang.RuntimeException: rollback RuntimeException }}}]",
+              "SyncDataConn#close 1",
+              "SyncDataSrc#close 1");
+    }
+
+    @Test
+    void testRollbackFailureIsSuppressed_Error() {
+      var logger = new ArrayList<String>();
+
+      var runner = new LogicRunner(new DataHub());
+      runner.uses("foo", new SyncDataSrc(1, logger, Fail.RollbackError));
+
+      var thrown =
+          catchThrowable(
+              () ->
+                  runner.txn(
+                      (DataAcc da) -> {
+                        da.getDataConn("foo", SyncDataConn.class);
+                        throw new Error("logic Error");
+                      }));
+
+      assertThat(thrown).isExactlyInstanceOf(Error.class).hasMessage("logic Error");
+      assertThat(thrown.getSuppressed()).hasSize(1);
+      assertThat(thrown.getSuppressed()[0])
+          .isExactlyInstanceOf(Error.class)
+          .hasMessage("rollback Error");
+
+      assertThat(runner.hub.dataRun.isAbnormal()).isTrue();
+      assertThat(logger)
+          .containsExactly(
+              "SyncDataSrc#new 1",
+              "SyncDataSrc#setup 1",
+              "SyncDataSrc#createDataConn 1",
+              "SyncDataConn#new 1",
+              "SyncDataConn#rollback 1 Error",
+              "SyncDataConn#onTxnFailure 1",
+              "TxnFailureReports=[{dataConnName:foo dataConnType:com.github.sttk.sabi.TestDoubles$SyncDataConn cause:{State:LogicFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.LogicTxnError$ErrorOccurred ErrorOccurred[], file = LogicRunner.java, line = 150, cause = java.lang.Error: logic Error }} rollback:{State:RollbackFailure Err:com.github.sttk.errs.Err { reason = com.github.sttk.sabi.AsyncGroupError$ErrorOccurred ErrorOccurred[], file = DataConnManager.java, line = 262, cause = java.lang.Error: rollback Error }}}]",
+              "SyncDataConn#close 1",
+              "SyncDataSrc#close 1");
+    }
+
+    @Test
+    void testRunLogicErrorAndDsCloseError() {
+      var logger = new ArrayList<String>();
+
+      var runner = new LogicRunner(new DataHub());
+      try (runner) {
+        runner.uses("foo", new SyncDataSrc(1, logger, Fail.CloseDsError));
+        runner.run(
+            data -> {
+              throw new Error("logic error");
+            });
+      } catch (Err err) {
+        fail(err);
+      } catch (Error e) {
+        assertThat(e.getMessage()).isEqualTo("logic error");
+      }
+
+      assertThat(logger)
+          .containsExactly("SyncDataSrc#new 1", "SyncDataSrc#setup 1", "SyncDataSrc#close 1 Error");
+    }
+
+    @Test
+    void testRunLogicErrorAndDsCloseRuntimeException() {
+      var logger = new ArrayList<String>();
+
+      var runner = new LogicRunner(new DataHub());
+      try (runner) {
+        runner.uses("foo", new SyncDataSrc(1, logger, Fail.CloseDsRuntimeException));
+        runner.txn(
+            data -> {
+              throw new Error("logic error");
+            });
+      } catch (Err err) {
+        fail(err);
+      } catch (Error e) {
+        assertThat(e.getMessage()).isEqualTo("logic error");
+      }
+
+      assertThat(logger)
+          .containsExactly(
+              "SyncDataSrc#new 1", "SyncDataSrc#setup 1", "SyncDataSrc#close 1 RuntimeException");
     }
   }
 }

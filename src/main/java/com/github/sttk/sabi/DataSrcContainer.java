@@ -12,6 +12,9 @@ class DataSrcContainer {
   final DataSrc ds;
 
   DataSrcContainer(boolean local, String name, DataSrc ds) {
+    if (name == null) throw new NullPointerException("name");
+    if (ds == null) throw new NullPointerException("DataSrc");
+
     this.local = local;
     this.name = name;
     this.ds = ds;
@@ -21,7 +24,7 @@ class DataSrcContainer {
     DataConn dc;
     try {
       dc = this.ds.createDataConn();
-    } catch (Exception e) {
+    } catch (Err e) {
       throw new Err(new DataSrcError.FailToCreateDataConn(name, cls.getName()), e);
     }
     if (dc == null) {
@@ -30,14 +33,17 @@ class DataSrcContainer {
 
     try {
       return cls.cast(dc);
-    } catch (Exception e) {
+    } catch (ClassCastException e) {
       var fromType = dc.getClass().getName();
       var toType = cls.getName();
-      throw new Err(new DataSrcError.FailToCastCreatedDataConn(name, fromType, toType), e);
+      var err = new Err(new DataSrcError.FailToCastCreatedDataConn(name, fromType, toType), e);
+      try {
+        dc.close();
+      } catch (RuntimeException | Error ee) {
+        ee.addSuppressed(err);
+        throw ee;
+      }
+      throw err;
     }
-  }
-
-  static boolean isNoDataSrc(DataSrcContainer cont) {
-    return (cont == null || cont.ds == null);
   }
 }

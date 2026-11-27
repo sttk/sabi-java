@@ -8,7 +8,6 @@ import static org.assertj.core.api.Assertions.fail;
 import com.github.sttk.errs.Err;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -54,7 +53,7 @@ public class DataConnManagerTest {
     }
 
     @Test
-    void testNewAndAdd() {
+    void testGetOrAdd() {
       var logger = new ArrayList<String>();
 
       var manager = new DataConnManager();
@@ -64,16 +63,26 @@ public class DataConnManagerTest {
       assertThat(manager.orderedNames).isEmpty();
       assertThat(manager.committed).isFalse();
 
-      var conn1 = new SyncDataConn(1, logger, Fail.None);
-      manager.add(new DataConnContainer("foo", conn1));
+      final var conn1 = new SyncDataConn(1, logger, Fail.None);
+      try {
+        var c = manager.getOrAdd("foo", SyncDataConn.class, () -> conn1);
+        assertThat(c).isEqualTo(conn1);
+      } catch (Err err) {
+        fail(err);
+      }
 
       assertThat(manager.list).hasSize(1);
       assertThat(manager.list.get(0).conn).isEqualTo(conn1);
       assertThat(manager.indexMap).hasSize(1);
       assertThat(manager.indexMap.get("foo")).isEqualTo(0);
 
-      var conn2 = new AsyncDataConn(2, logger, Fail.None);
-      manager.add(new DataConnContainer("bar", conn2));
+      final var conn2 = new AsyncDataConn(2, logger, Fail.None);
+      try {
+        var c = manager.getOrAdd("bar", AsyncDataConn.class, () -> conn2);
+        assertThat(c).isEqualTo(conn2);
+      } catch (Err err) {
+        fail(err);
+      }
 
       assertThat(manager.list).hasSize(2);
       assertThat(manager.list.get(0).conn).isEqualTo(conn1);
@@ -84,7 +93,7 @@ public class DataConnManagerTest {
     }
 
     @Test
-    void testNewAndAddWhenOverlappingName() {
+    void testGetOrAddButNameAlreadyExist() {
       var logger = new ArrayList<String>();
 
       var manager = new DataConnManager();
@@ -93,8 +102,13 @@ public class DataConnManagerTest {
       assertThat(manager.orderedNames).isEmpty();
       assertThat(manager.committed).isFalse();
 
-      var conn1 = new SyncDataConn(1, logger, Fail.None);
-      manager.add(new DataConnContainer("foo", conn1));
+      final var conn1 = new SyncDataConn(1, logger, Fail.None);
+      try {
+        var c = manager.getOrAdd("foo", SyncDataConn.class, () -> conn1);
+        assertThat(c).isEqualTo(conn1);
+      } catch (Err err) {
+        fail(err);
+      }
 
       assertThat(manager.list).hasSize(1);
       assertThat(manager.list.get(0).conn).isEqualTo(conn1);
@@ -103,8 +117,13 @@ public class DataConnManagerTest {
       assertThat(manager.orderedNames).isEmpty();
       assertThat(manager.committed).isFalse();
 
-      var conn2 = new AsyncDataConn(2, logger, Fail.None);
-      manager.add(new DataConnContainer("foo", conn2));
+      final var conn2 = new SyncDataConn(2, logger, Fail.None);
+      try {
+        var c = manager.getOrAdd("foo", SyncDataConn.class, () -> conn2);
+        assertThat(c).isEqualTo(conn1);
+      } catch (Err err) {
+        fail(err);
+      }
 
       assertThat(manager.list).hasSize(1);
       assertThat(manager.list.get(0).conn).isEqualTo(conn1);
@@ -115,7 +134,7 @@ public class DataConnManagerTest {
     }
 
     @Test
-    void testWithCommitOrderAndAdd() {
+    void testWithCommitOrderAndGetOrAdd() {
       var logger = new ArrayList<String>();
 
       var manager = new DataConnManager(List.of("bar", "baz", "foo"));
@@ -132,7 +151,12 @@ public class DataConnManagerTest {
       assertThat(manager.committed).isFalse();
 
       var conn1 = new SyncDataConn(1, logger, Fail.None);
-      manager.add(new DataConnContainer("foo", conn1));
+      try {
+        var c = manager.getOrAdd("foo", SyncDataConn.class, () -> conn1);
+        assertThat(c).isEqualTo(conn1);
+      } catch (Err err) {
+        fail(err);
+      }
 
       assertThat(manager.list).hasSize(3);
       assertThat(manager.list.get(0).conn).isNull();
@@ -146,7 +170,12 @@ public class DataConnManagerTest {
       assertThat(manager.committed).isFalse();
 
       var conn2 = new AsyncDataConn(2, logger, Fail.None);
-      manager.add(new DataConnContainer("bar", conn2));
+      try {
+        var c = manager.getOrAdd("bar", AsyncDataConn.class, () -> conn2);
+        assertThat(c).isEqualTo(conn2);
+      } catch (Err err) {
+        fail(err);
+      }
 
       assertThat(manager.list).hasSize(3);
       assertThat(manager.list.get(0).conn).isEqualTo(conn2);
@@ -160,7 +189,12 @@ public class DataConnManagerTest {
       assertThat(manager.committed).isFalse();
 
       var conn3 = new AsyncDataConn(3, logger, Fail.None);
-      manager.add(new DataConnContainer("qux", conn3));
+      try {
+        var c = manager.getOrAdd("qux", AsyncDataConn.class, () -> conn3);
+        assertThat(c).isEqualTo(conn3);
+      } catch (Err err) {
+        fail(err);
+      }
 
       assertThat(manager.list).hasSize(4);
       assertThat(manager.list.get(0).conn).isEqualTo(conn2);
@@ -177,7 +211,7 @@ public class DataConnManagerTest {
     }
 
     @Test
-    void testWithCommitOrderAndAddWhenOverlappingName() {
+    void testWithCommitOrderAndGetOrAddWhenNameAlreadyExists() {
       var logger = new ArrayList<String>();
 
       var manager = new DataConnManager(List.of("bar", "baz", "foo"));
@@ -194,7 +228,12 @@ public class DataConnManagerTest {
       assertThat(manager.committed).isFalse();
 
       var conn1 = new SyncDataConn(1, logger, Fail.None);
-      manager.add(new DataConnContainer("foo", conn1));
+      try {
+        var c = manager.getOrAdd("foo", SyncDataConn.class, () -> conn1);
+        assertThat(c).isEqualTo(conn1);
+      } catch (Err err) {
+        fail(err);
+      }
 
       assertThat(manager.list).hasSize(3);
       assertThat(manager.list.get(0).conn).isNull();
@@ -208,7 +247,12 @@ public class DataConnManagerTest {
       assertThat(manager.committed).isFalse();
 
       var conn2 = new SyncDataConn(2, logger, Fail.None);
-      manager.add(new DataConnContainer("foo", conn2));
+      try {
+        var c = manager.getOrAdd("foo", SyncDataConn.class, () -> conn2);
+        assertThat(c).isEqualTo(conn1);
+      } catch (Err err) {
+        fail(err);
+      }
 
       assertThat(manager.list).hasSize(3);
       assertThat(manager.list.get(0).conn).isNull();
@@ -221,60 +265,24 @@ public class DataConnManagerTest {
       assertThat(manager.orderedNames).containsExactly("bar", "baz", "foo");
       assertThat(manager.committed).isFalse();
     }
-  }
-
-  @Nested
-  class Utils {
-    @Test
-    void testFindByNameAndCastButNone() {
-      var manager = new DataConnManager();
-
-      try {
-        assertThat(manager.findByNameAndCast("foo", SyncDataConn.class)).isNull();
-        assertThat(manager.findByNameAndCast("bar", AsyncDataConn.class)).isNull();
-      } catch (Exception e) {
-        fail(e);
-      }
-    }
 
     @Test
-    void testFindByNameAndCastAndFound() {
+    void testGetOrAddButFailToCast() {
       var logger = new ArrayList<String>();
 
       var manager = new DataConnManager();
 
       var conn1 = new SyncDataConn(1, logger, Fail.None);
-      var cont1 = new DataConnContainer("foo", conn1);
-      manager.add(cont1);
-
-      var conn2 = new AsyncDataConn(2, logger, Fail.None);
-      var cont2 = new DataConnContainer("bar", conn2);
-      manager.add(cont2);
-
       try {
-        assertThat(manager.findByNameAndCast("foo", SyncDataConn.class)).isEqualTo(conn1);
-        assertThat(manager.findByNameAndCast("bar", AsyncDataConn.class)).isEqualTo(conn2);
-      } catch (Exception e) {
-        fail(e);
+        var c = manager.getOrAdd("foo", SyncDataConn.class, () -> conn1);
+        assertThat(c).isEqualTo(conn1);
+      } catch (Err err) {
+        fail(err);
       }
-    }
-
-    @Test
-    void testFindByNameAndCastButFailToCast() {
-      var logger = new ArrayList<String>();
-
-      var manager = new DataConnManager();
-
-      var conn1 = new SyncDataConn(1, logger, Fail.None);
-      var cont1 = new DataConnContainer("foo", conn1);
-      manager.add(cont1);
 
       var conn2 = new AsyncDataConn(2, logger, Fail.None);
-      var cont2 = new DataConnContainer("bar", conn2);
-      manager.add(cont2);
-
       try {
-        manager.findByNameAndCast("foo", AsyncDataConn.class);
+        manager.getOrAdd("foo", AsyncDataConn.class, () -> conn2);
         fail();
       } catch (Err err) {
         switch (err.getReason()) {
@@ -282,26 +290,16 @@ public class DataConnManagerTest {
             assertThat(r.name()).isEqualTo("foo");
             assertThat(r.fromTypeName()).isEqualTo(SyncDataConn.class.getName());
             assertThat(r.toTypeName()).isEqualTo(AsyncDataConn.class.getName());
-          }
-          default -> fail(err);
-        }
-      }
-
-      try {
-        manager.findByNameAndCast("bar", SyncDataConn.class);
-        fail();
-      } catch (Err err) {
-        switch (err.getReason()) {
-          case DataConnError.FailToCastDataConn r -> {
-            assertThat(r.name()).isEqualTo("bar");
-            assertThat(r.fromTypeName()).isEqualTo(AsyncDataConn.class.getName());
-            assertThat(r.toTypeName()).isEqualTo(SyncDataConn.class.getName());
+            assertThat(err.getCause()).isInstanceOf(ClassCastException.class);
           }
           default -> fail(err);
         }
       }
     }
+  }
 
+  @Nested
+  class Utils {
     @Test
     void testNewTxnFailureReportBuildersWithNoLogicErr() {
       var logger = new ArrayList<String>();
@@ -311,21 +309,29 @@ public class DataConnManagerTest {
       var list = manager.newTxnFailureReportBuilders(null);
       assertThat(list).isEmpty();
 
-      var reports = list.stream().map(b -> b.build()).collect(Collectors.toList());
+      var reports = list.stream().map(b -> b.build()).toList();
       assertThat(reports).isEmpty();
 
       //
 
       var conn1 = new SyncDataConn(1, logger, Fail.None);
-      manager.add(new DataConnContainer("foo", conn1));
+      try {
+        manager.getOrAdd("foo", SyncDataConn.class, () -> conn1);
+      } catch (Err err) {
+        fail(err);
+      }
 
       var conn2 = new SyncDataConn(2, logger, Fail.None);
-      manager.add(new DataConnContainer("bar", conn2));
+      try {
+        manager.getOrAdd("bar", SyncDataConn.class, () -> conn2);
+      } catch (Err err) {
+        fail(err);
+      }
 
       list = manager.newTxnFailureReportBuilders(null);
       assertThat(list).hasSize(2);
 
-      reports = list.stream().map(b -> b.build()).collect(Collectors.toList());
+      reports = list.stream().map(b -> b.build()).toList();
       assertThat(reports.get(0).dataConnName).isEqualTo("foo");
       assertThat(reports.get(0).dataConnType).isEqualTo(SyncDataConn.class.getName());
       assertThat(reports.get(0).cause.state).isEqualTo(TxnFailureCauseState.NoneByUncommitted);
@@ -350,15 +356,23 @@ public class DataConnManagerTest {
       //
 
       var conn1 = new SyncDataConn(1, logger, Fail.None);
-      manager.add(new DataConnContainer("foo", conn1));
+      try {
+        manager.getOrAdd("foo", SyncDataConn.class, () -> conn1);
+      } catch (Err e) {
+        fail(e);
+      }
 
       var conn2 = new SyncDataConn(2, logger, Fail.None);
-      manager.add(new DataConnContainer("bar", conn2));
+      try {
+        manager.getOrAdd("bar", SyncDataConn.class, () -> conn2);
+      } catch (Err e) {
+        fail(e);
+      }
 
       list = manager.newTxnFailureReportBuilders(err);
       assertThat(list).hasSize(2);
 
-      var reports = list.stream().map(b -> b.build()).collect(Collectors.toList());
+      var reports = list.stream().map(b -> b.build()).toList();
       assertThat(reports.get(0).dataConnName).isEqualTo("foo");
       assertThat(reports.get(0).dataConnType).isEqualTo(SyncDataConn.class.getName());
       assertThat(reports.get(0).cause.state).isEqualTo(TxnFailureCauseState.LogicFailure);
@@ -376,17 +390,29 @@ public class DataConnManagerTest {
       var manager = new DataConnManager();
 
       var conn1 = new SyncDataConn(1, logger, Fail.None);
-      manager.add(new DataConnContainer("foo", conn1));
+      try {
+        manager.getOrAdd("foo", SyncDataConn.class, () -> conn1);
+      } catch (Err err) {
+        fail(err);
+      }
 
-      manager.add(new DataConnContainer("bar", null));
+      try {
+        manager.getOrAdd("bar", SyncDataConn.class, () -> null);
+      } catch (Err err) {
+        fail(err);
+      }
 
       var conn3 = new SyncDataConn(3, logger, Fail.None);
-      manager.add(new DataConnContainer("baz", conn3));
+      try {
+        manager.getOrAdd("baz", SyncDataConn.class, () -> conn3);
+      } catch (Err err) {
+        fail(err);
+      }
 
       var list = manager.newTxnFailureReportBuilders(null);
       assertThat(list).hasSize(2);
 
-      var reports = list.stream().map(b -> b.build()).collect(Collectors.toList());
+      var reports = list.stream().map(b -> b.build()).toList();
       assertThat(reports.get(0).dataConnName).isEqualTo("foo");
       assertThat(reports.get(0).dataConnType).isEqualTo(SyncDataConn.class.getName());
       assertThat(reports.get(0).cause.state).isEqualTo(TxnFailureCauseState.NoneByUncommitted);
@@ -407,10 +433,18 @@ public class DataConnManagerTest {
       var manager = new DataConnManager();
       try {
         var conn1 = new SyncDataConn(1, logger, Fail.None);
-        manager.add(new DataConnContainer("foo", conn1));
+        try {
+          manager.getOrAdd("foo", SyncDataConn.class, () -> conn1);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var conn2 = new AsyncDataConn(2, logger, Fail.None);
-        manager.add(new DataConnContainer("bar", conn2));
+        try {
+          manager.getOrAdd("bar", AsyncDataConn.class, () -> conn2);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var builders = manager.newTxnFailureReportBuilders(null);
 
@@ -452,10 +486,18 @@ public class DataConnManagerTest {
       var manager = new DataConnManager();
       try {
         var conn1 = new SyncDataConn(1, logger, Fail.PreCommit);
-        manager.add(new DataConnContainer("foo", conn1));
+        try {
+          manager.getOrAdd("foo", SyncDataConn.class, () -> conn1);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var conn2 = new AsyncDataConn(2, logger, Fail.PreCommit);
-        manager.add(new DataConnContainer("bar", conn2));
+        try {
+          manager.getOrAdd("bar", AsyncDataConn.class, () -> conn2);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var builders = manager.newTxnFailureReportBuilders(null);
 
@@ -508,10 +550,18 @@ public class DataConnManagerTest {
       var manager = new DataConnManager();
       try {
         var conn1 = new AsyncDataConn(1, logger, Fail.PreCommit);
-        manager.add(new DataConnContainer("foo", conn1));
+        try {
+          manager.getOrAdd("foo", AsyncDataConn.class, () -> conn1);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var conn2 = new SyncDataConn(2, logger, Fail.PreCommit);
-        manager.add(new DataConnContainer("bar", conn2));
+        try {
+          manager.getOrAdd("bar", SyncDataConn.class, () -> conn2);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var builders = manager.newTxnFailureReportBuilders(null);
 
@@ -569,10 +619,18 @@ public class DataConnManagerTest {
       var manager = new DataConnManager();
       try {
         var conn1 = new SyncDataConn(1, logger, Fail.None);
-        manager.add(new DataConnContainer("foo", conn1));
+        try {
+          manager.getOrAdd("foo", SyncDataConn.class, () -> conn1);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var conn2 = new AsyncDataConn(2, logger, Fail.PreCommit);
-        manager.add(new DataConnContainer("bar", conn2));
+        try {
+          manager.getOrAdd("bar", AsyncDataConn.class, () -> conn2);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var builders = manager.newTxnFailureReportBuilders(null);
 
@@ -627,10 +685,18 @@ public class DataConnManagerTest {
       var manager = new DataConnManager();
       try {
         var conn1 = new SyncDataConn(1, logger, Fail.Commit);
-        manager.add(new DataConnContainer("foo", conn1));
+        try {
+          manager.getOrAdd("foo", SyncDataConn.class, () -> conn1);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var conn2 = new AsyncDataConn(2, logger, Fail.Commit);
-        manager.add(new DataConnContainer("bar", conn2));
+        try {
+          manager.getOrAdd("bar", AsyncDataConn.class, () -> conn2);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var builders = manager.newTxnFailureReportBuilders(null);
 
@@ -685,10 +751,18 @@ public class DataConnManagerTest {
       var manager = new DataConnManager();
       try {
         var conn1 = new AsyncDataConn(1, logger, Fail.Commit);
-        manager.add(new DataConnContainer("foo", conn1));
+        try {
+          manager.getOrAdd("foo", AsyncDataConn.class, () -> conn1);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var conn2 = new SyncDataConn(2, logger, Fail.Commit);
-        manager.add(new DataConnContainer("bar", conn2));
+        try {
+          manager.getOrAdd("bar", SyncDataConn.class, () -> conn2);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var builders = manager.newTxnFailureReportBuilders(null);
 
@@ -748,10 +822,18 @@ public class DataConnManagerTest {
       var manager = new DataConnManager();
       try {
         var conn1 = new SyncDataConn(1, logger, Fail.None);
-        manager.add(new DataConnContainer("foo", conn1));
+        try {
+          manager.getOrAdd("foo", SyncDataConn.class, () -> conn1);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var conn2 = new AsyncDataConn(2, logger, Fail.Commit);
-        manager.add(new DataConnContainer("bar", conn2));
+        try {
+          manager.getOrAdd("bar", AsyncDataConn.class, () -> conn2);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var builders = manager.newTxnFailureReportBuilders(null);
 
@@ -806,10 +888,18 @@ public class DataConnManagerTest {
       var manager = new DataConnManager();
       try {
         var conn1 = new SyncDataConn(1, logger, Fail.PostCommit);
-        manager.add(new DataConnContainer("foo", conn1));
+        try {
+          manager.getOrAdd("foo", SyncDataConn.class, () -> conn1);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var conn2 = new AsyncDataConn(2, logger, Fail.PostCommit);
-        manager.add(new DataConnContainer("bar", conn2));
+        try {
+          manager.getOrAdd("bar", AsyncDataConn.class, () -> conn2);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var builders = manager.newTxnFailureReportBuilders(null);
 
@@ -869,10 +959,18 @@ public class DataConnManagerTest {
       var manager = new DataConnManager();
       try {
         var conn1 = new AsyncDataConn(2, logger, Fail.PostCommit);
-        manager.add(new DataConnContainer("bar", conn1));
+        try {
+          manager.getOrAdd("bar", AsyncDataConn.class, () -> conn1);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var conn2 = new SyncDataConn(1, logger, Fail.PostCommit);
-        manager.add(new DataConnContainer("foo", conn2));
+        try {
+          manager.getOrAdd("foo", SyncDataConn.class, () -> conn2);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var builders = manager.newTxnFailureReportBuilders(null);
 
@@ -932,10 +1030,18 @@ public class DataConnManagerTest {
       var manager = new DataConnManager();
       try {
         var conn1 = new SyncDataConn(1, logger, Fail.None);
-        manager.add(new DataConnContainer("foo", conn1));
+        try {
+          manager.getOrAdd("foo", SyncDataConn.class, () -> conn1);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var conn2 = new AsyncDataConn(2, logger, Fail.PostCommit);
-        manager.add(new DataConnContainer("bar", conn2));
+        try {
+          manager.getOrAdd("bar", AsyncDataConn.class, () -> conn2);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var builders = manager.newTxnFailureReportBuilders(null);
 
@@ -991,13 +1097,25 @@ public class DataConnManagerTest {
       var manager = new DataConnManager();
       try {
         var conn1 = new SyncDataConn(1, logger, Fail.None);
-        manager.add(new DataConnContainer("foo", conn1));
+        try {
+          manager.getOrAdd("foo", SyncDataConn.class, () -> conn1);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var conn2 = new AsyncDataConn(2, logger, Fail.PostCommit);
-        manager.add(new DataConnContainer("bar", conn2));
+        try {
+          manager.getOrAdd("bar", AsyncDataConn.class, () -> conn2);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var conn3 = new NoCommitDataConn(3, logger);
-        manager.add(new DataConnContainer("baz", conn3));
+        try {
+          manager.getOrAdd("baz", NoCommitDataConn.class, () -> conn3);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var builders = manager.newTxnFailureReportBuilders(null);
 
@@ -1062,10 +1180,18 @@ public class DataConnManagerTest {
       var manager = new DataConnManager();
       try {
         var conn1 = new SyncDataConn(1, logger, Fail.Commit);
-        manager.add(new DataConnContainer("foo", conn1));
+        try {
+          manager.getOrAdd("foo", SyncDataConn.class, () -> conn1);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var conn2 = new AsyncDataConn(2, logger, Fail.Rollback);
-        manager.add(new DataConnContainer("bar", conn2));
+        try {
+          manager.getOrAdd("bar", AsyncDataConn.class, () -> conn2);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var builders = manager.newTxnFailureReportBuilders(null);
 
@@ -1120,10 +1246,18 @@ public class DataConnManagerTest {
       var manager = new DataConnManager();
       try {
         var conn1 = new SyncDataConn(1, logger, Fail.Rollback);
-        manager.add(new DataConnContainer("foo", conn1));
+        try {
+          manager.getOrAdd("foo", SyncDataConn.class, () -> conn1);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var conn2 = new AsyncDataConn(2, logger, Fail.Commit);
-        manager.add(new DataConnContainer("bar", conn2));
+        try {
+          manager.getOrAdd("bar", AsyncDataConn.class, () -> conn2);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var builders = manager.newTxnFailureReportBuilders(null);
 
@@ -1178,10 +1312,18 @@ public class DataConnManagerTest {
       var manager = new DataConnManager();
       try {
         var conn1 = new SyncDataConn(1, logger, Fail.PreCommitBecomeCommitted);
-        manager.add(new DataConnContainer("foo", conn1));
+        try {
+          manager.getOrAdd("foo", SyncDataConn.class, () -> conn1);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var conn2 = new AsyncDataConn(2, logger, Fail.PreCommitBecomeCommitted);
-        manager.add(new DataConnContainer("bar", conn2));
+        try {
+          manager.getOrAdd("bar", AsyncDataConn.class, () -> conn2);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var builders = manager.newTxnFailureReportBuilders(null);
 
@@ -1221,10 +1363,18 @@ public class DataConnManagerTest {
       var manager = new DataConnManager();
       try {
         var conn1 = new SyncDataConn(1, logger, Fail.PreCommitBecomeCommitted);
-        manager.add(new DataConnContainer("foo", conn1));
+        try {
+          manager.getOrAdd("foo", SyncDataConn.class, () -> conn1);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var conn2 = new AsyncDataConn(2, logger, Fail.Commit);
-        manager.add(new DataConnContainer("bar", conn2));
+        try {
+          manager.getOrAdd("bar", AsyncDataConn.class, () -> conn2);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var builders = manager.newTxnFailureReportBuilders(null);
 
@@ -1278,13 +1428,25 @@ public class DataConnManagerTest {
       var manager = new DataConnManager(List.of("bar", "baz", "foo"));
       try {
         var conn1 = new SyncDataConn(1, logger, Fail.None);
-        manager.add(new DataConnContainer("foo", conn1));
+        try {
+          manager.getOrAdd("foo", SyncDataConn.class, () -> conn1);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var conn2 = new AsyncDataConn(2, logger, Fail.None);
-        manager.add(new DataConnContainer("bar", conn2));
+        try {
+          manager.getOrAdd("bar", AsyncDataConn.class, () -> conn2);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var conn3 = new SyncDataConn(3, logger, Fail.None);
-        manager.add(new DataConnContainer("qux", conn3));
+        try {
+          manager.getOrAdd("qux", SyncDataConn.class, () -> conn3);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var builders = manager.newTxnFailureReportBuilders(null);
 
@@ -1337,10 +1499,18 @@ public class DataConnManagerTest {
       var manager = new DataConnManager();
       try {
         var conn1 = new SyncDataConn(1, logger, Fail.None);
-        manager.add(new DataConnContainer("foo", conn1));
+        try {
+          manager.getOrAdd("foo", SyncDataConn.class, () -> conn1);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var conn2 = new AsyncDataConn(2, logger, Fail.None);
-        manager.add(new DataConnContainer("bar", conn2));
+        try {
+          manager.getOrAdd("bar", AsyncDataConn.class, () -> conn2);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var builders = manager.newTxnFailureReportBuilders(null);
 
@@ -1376,10 +1546,14 @@ public class DataConnManagerTest {
       var manager = new DataConnManager();
       try {
         var conn1 = new AsyncDataConn(1, logger, Fail.None);
-        manager.add(new DataConnContainer("foo", conn1));
+        try {
+          manager.getOrAdd("foo", AsyncDataConn.class, () -> conn1);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var conn2 = new SyncDataConn(2, logger, Fail.None);
-        manager.add(new DataConnContainer("bar", conn2));
+        manager.getOrAdd("bar", SyncDataConn.class, () -> conn2);
 
         var builders = manager.newTxnFailureReportBuilders(null);
 
@@ -1415,10 +1589,18 @@ public class DataConnManagerTest {
       var manager = new DataConnManager();
       try {
         var conn1 = new SyncDataConn(1, logger, Fail.None);
-        manager.add(new DataConnContainer("foo", conn1));
+        try {
+          manager.getOrAdd("foo", SyncDataConn.class, () -> conn1);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var conn2 = new AsyncDataConn(2, logger, Fail.None);
-        manager.add(new DataConnContainer("bar", conn2));
+        try {
+          manager.getOrAdd("bar", AsyncDataConn.class, () -> conn2);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var builders = manager.newTxnFailureReportBuilders(null);
 
@@ -1454,10 +1636,18 @@ public class DataConnManagerTest {
       var manager = new DataConnManager();
       try {
         var conn1 = new SyncDataConn(1, logger, Fail.Rollback);
-        manager.add(new DataConnContainer("foo", conn1));
+        try {
+          manager.getOrAdd("foo", SyncDataConn.class, () -> conn1);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var conn2 = new AsyncDataConn(2, logger, Fail.None);
-        manager.add(new DataConnContainer("bar", conn2));
+        try {
+          manager.getOrAdd("bar", AsyncDataConn.class, () -> conn2);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var builders = manager.newTxnFailureReportBuilders(null);
 
@@ -1497,13 +1687,22 @@ public class DataConnManagerTest {
       var manager = new DataConnManager();
       try {
         var conn1 = new SyncDataConn(1, logger, Fail.PreCommitError);
-        manager.add(new DataConnContainer("foo", conn1));
+        try {
+          manager.getOrAdd("foo", SyncDataConn.class, () -> conn1);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var conn2 = new SyncDataConn(2, logger, Fail.None);
-        manager.add(new DataConnContainer("bar", conn2));
+        try {
+          manager.getOrAdd("bar", SyncDataConn.class, () -> conn2);
+        } catch (Err err) {
+          fail(err);
+        }
 
         builders = manager.newTxnFailureReportBuilders(null);
         manager.commit(builders);
+        fail();
       } catch (Err err) {
         fail(err);
       } catch (Error e) {
@@ -1542,13 +1741,22 @@ public class DataConnManagerTest {
       var manager = new DataConnManager();
       try {
         var conn1 = new SyncDataConn(1, logger, Fail.None);
-        manager.add(new DataConnContainer("foo", conn1));
+        try {
+          manager.getOrAdd("foo", SyncDataConn.class, () -> conn1);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var conn2 = new SyncDataConn(2, logger, Fail.PreCommitRuntimeException);
-        manager.add(new DataConnContainer("bar", conn2));
+        try {
+          manager.getOrAdd("bar", SyncDataConn.class, () -> conn2);
+        } catch (Err err) {
+          fail(err);
+        }
 
         builders = manager.newTxnFailureReportBuilders(null);
         manager.commit(builders);
+        fail();
       } catch (Err err) {
         fail(err);
       } catch (RuntimeException e) {
@@ -1588,14 +1796,23 @@ public class DataConnManagerTest {
       var manager = new DataConnManager();
       try {
         var conn1 = new SyncDataConn(1, logger, Fail.CommitError);
-        manager.add(new DataConnContainer("foo", conn1));
+        try {
+          manager.getOrAdd("foo", SyncDataConn.class, () -> conn1);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var conn2 = new SyncDataConn(2, logger, Fail.None);
-        manager.add(new DataConnContainer("bar", conn2));
+        try {
+          manager.getOrAdd("bar", SyncDataConn.class, () -> conn2);
+        } catch (Err err) {
+          fail(err);
+        }
 
         builders = manager.newTxnFailureReportBuilders(null);
 
         manager.commit(builders);
+        fail();
       } catch (Err err) {
         fail(err);
       } catch (Error e) {
@@ -1636,13 +1853,22 @@ public class DataConnManagerTest {
       var manager = new DataConnManager();
       try {
         var conn1 = new SyncDataConn(1, logger, Fail.None);
-        manager.add(new DataConnContainer("foo", conn1));
+        try {
+          manager.getOrAdd("foo", SyncDataConn.class, () -> conn1);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var conn2 = new SyncDataConn(2, logger, Fail.CommitRuntimeException);
-        manager.add(new DataConnContainer("bar", conn2));
+        try {
+          manager.getOrAdd("bar", SyncDataConn.class, () -> conn2);
+        } catch (Err err) {
+          fail(err);
+        }
 
         builders = manager.newTxnFailureReportBuilders(null);
         manager.commit(builders);
+        fail();
       } catch (Err err) {
         fail(err);
       } catch (RuntimeException e) {
@@ -1683,13 +1909,22 @@ public class DataConnManagerTest {
       var manager = new DataConnManager();
       try {
         var conn1 = new SyncDataConn(1, logger, Fail.PostCommitError);
-        manager.add(new DataConnContainer("foo", conn1));
+        try {
+          manager.getOrAdd("foo", SyncDataConn.class, () -> conn1);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var conn2 = new SyncDataConn(2, logger, Fail.PostCommitError);
-        manager.add(new DataConnContainer("bar", conn2));
+        try {
+          manager.getOrAdd("bar", SyncDataConn.class, () -> conn2);
+        } catch (Err err) {
+          fail(err);
+        }
 
         builders = manager.newTxnFailureReportBuilders(null);
         manager.commit(builders);
+        fail();
       } catch (Err err) {
         fail(err);
       } catch (Error e) {
@@ -1731,13 +1966,22 @@ public class DataConnManagerTest {
       var manager = new DataConnManager();
       try {
         var conn1 = new SyncDataConn(1, logger, Fail.PostCommitRuntimeException);
-        manager.add(new DataConnContainer("foo", conn1));
+        try {
+          manager.getOrAdd("foo", SyncDataConn.class, () -> conn1);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var conn2 = new SyncDataConn(2, logger, Fail.PostCommitRuntimeException);
-        manager.add(new DataConnContainer("bar", conn2));
+        try {
+          manager.getOrAdd("bar", SyncDataConn.class, () -> conn2);
+        } catch (Err err) {
+          fail(err);
+        }
 
         builders = manager.newTxnFailureReportBuilders(null);
         manager.commit(builders);
+        fail();
       } catch (Err err) {
         fail(err);
       } catch (RuntimeException e) {
@@ -1777,10 +2021,18 @@ public class DataConnManagerTest {
       var manager = new DataConnManager();
       try {
         var conn1 = new SyncDataConn(1, logger, Fail.RollbackError);
-        manager.add(new DataConnContainer("foo", conn1));
+        try {
+          manager.getOrAdd("foo", SyncDataConn.class, () -> conn1);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var conn2 = new SyncDataConn(2, logger, Fail.RollbackError);
-        manager.add(new DataConnContainer("bar", conn2));
+        try {
+          manager.getOrAdd("bar", SyncDataConn.class, () -> conn2);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var builders = manager.newTxnFailureReportBuilders(null);
 
@@ -1818,10 +2070,18 @@ public class DataConnManagerTest {
       var manager = new DataConnManager();
       try {
         var conn1 = new SyncDataConn(1, logger, Fail.RollbackRuntimeException);
-        manager.add(new DataConnContainer("foo", conn1));
+        try {
+          manager.getOrAdd("foo", SyncDataConn.class, () -> conn1);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var conn2 = new SyncDataConn(2, logger, Fail.RollbackRuntimeException);
-        manager.add(new DataConnContainer("bar", conn2));
+        try {
+          manager.getOrAdd("bar", SyncDataConn.class, () -> conn2);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var builders = manager.newTxnFailureReportBuilders(null);
 
@@ -1859,14 +2119,23 @@ public class DataConnManagerTest {
       var manager = new DataConnManager();
       try {
         var conn1 = new SyncDataConn(1, logger, Fail.OnTxnFailureError);
-        manager.add(new DataConnContainer("foo", conn1));
+        try {
+          manager.getOrAdd("foo", SyncDataConn.class, () -> conn1);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var conn2 = new SyncDataConn(2, logger, Fail.OnTxnFailureError);
-        manager.add(new DataConnContainer("bar", conn2));
+        try {
+          manager.getOrAdd("bar", SyncDataConn.class, () -> conn2);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var builders = manager.newTxnFailureReportBuilders(null);
 
         manager.rollback(builders);
+        fail();
       } catch (Error e) {
         assertThat(e.getMessage()).isEqualTo("onTxnFailure Error");
       } finally {
@@ -1893,10 +2162,18 @@ public class DataConnManagerTest {
       var manager = new DataConnManager();
       try {
         var conn1 = new SyncDataConn(1, logger, Fail.None);
-        manager.add(new DataConnContainer("foo", conn1));
+        try {
+          manager.getOrAdd("foo", SyncDataConn.class, () -> conn1);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var conn2 = new SyncDataConn(2, logger, Fail.OnTxnFailureRuntimeException);
-        manager.add(new DataConnContainer("bar", conn2));
+        try {
+          manager.getOrAdd("bar", SyncDataConn.class, () -> conn2);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var builders = manager.newTxnFailureReportBuilders(null);
 
@@ -1931,11 +2208,21 @@ public class DataConnManagerTest {
       var manager = new DataConnManager();
       try {
         var conn1 = new SyncDataConn(1, logger, Fail.CloseError);
-        manager.add(new DataConnContainer("foo", conn1));
+        try {
+          manager.getOrAdd("foo", SyncDataConn.class, () -> conn1);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var conn2 = new SyncDataConn(2, logger, Fail.CloseError);
-        manager.add(new DataConnContainer("bar", conn2));
+        try {
+          manager.getOrAdd("bar", SyncDataConn.class, () -> conn2);
+        } catch (Err err) {
+          fail(err);
+        }
+
         manager.close();
+        fail();
       } catch (Error e) {
         assertThat(e.getMessage()).isEqualTo("close Error");
       } finally {
@@ -1958,13 +2245,22 @@ public class DataConnManagerTest {
       var manager = new DataConnManager();
       try {
         var conn1 = new SyncDataConn(1, logger, Fail.None);
-        manager.add(new DataConnContainer("foo", conn1));
+        try {
+          manager.getOrAdd("foo", SyncDataConn.class, () -> conn1);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var conn2 = new SyncDataConn(2, logger, Fail.CloseRuntimeException);
-        manager.add(new DataConnContainer("bar", conn2));
+        try {
+          manager.getOrAdd("bar", SyncDataConn.class, () -> conn2);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var builders = manager.newTxnFailureReportBuilders(null);
         manager.close();
+        fail();
       } catch (Exception e) {
         assertThat(e.getMessage()).isEqualTo("close RuntimeException");
       } finally {
@@ -1987,10 +2283,19 @@ public class DataConnManagerTest {
       var manager = new DataConnManager();
       try {
         var conn1 = new SyncDataConn(1, logger, Fail.CloseError);
-        manager.add(new DataConnContainer("foo", conn1));
+        try {
+          manager.getOrAdd("foo", SyncDataConn.class, () -> conn1);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var conn2 = new SyncDataConn(2, logger, Fail.CloseError);
-        manager.add(new DataConnContainer("bar", conn2));
+        try {
+          manager.getOrAdd("bar", SyncDataConn.class, () -> conn2);
+        } catch (Err err) {
+          fail(err);
+        }
+
         manager.abend();
       } catch (Exception e) {
         fail(e);
@@ -2012,10 +2317,18 @@ public class DataConnManagerTest {
       var manager = new DataConnManager(List.of("bar", "baz", "foo"));
       try {
         var conn1 = new SyncDataConn(1, logger, Fail.None);
-        manager.add(new DataConnContainer("foo", conn1));
+        try {
+          manager.getOrAdd("foo", SyncDataConn.class, () -> conn1);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var conn2 = new SyncDataConn(2, logger, Fail.CloseRuntimeException);
-        manager.add(new DataConnContainer("bar", conn2));
+        try {
+          manager.getOrAdd("bar", SyncDataConn.class, () -> conn2);
+        } catch (Err err) {
+          fail(err);
+        }
 
         var builders = manager.newTxnFailureReportBuilders(null);
         manager.abend();
@@ -2066,6 +2379,7 @@ public class DataConnManagerTest {
         conn.onTxnFailure(ag, reports);
         conn.close();
       } catch (Exception e) {
+        fail(e);
       }
     }
   }

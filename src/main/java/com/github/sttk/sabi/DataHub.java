@@ -1,7 +1,7 @@
-// Copyright (C) 2024-2026 Takayuki Sato. All Rights Reserved.
-// This program is free software under MIT License.
-// See the file LICENSE in this distribution for more details.
-
+/*
+ * DataHub.java
+ * Copyright (C) 2024-2026 Takayuki Sato. All Rights Reserved.
+ */
 package com.github.sttk.sabi;
 
 import com.github.sttk.errs.Err;
@@ -18,30 +18,33 @@ import java.util.List;
  */
 public class DataHub implements DataAcc, AutoCloseable {
 
-  final DataRun run;
+  final DataRun dataRun;
 
   /** Constructs a new {@code DataHub} inheriting ready global data sources. */
   public DataHub() {
-    this.run = new DataRun();
+    this.dataRun = new DataRun();
   }
 
   /**
    * Constructs a new {@code DataHub} with a predefined order for managing named data connections.
    *
-   * <p>When data connections are committed or closed, connections matching {@code names} follow the
-   * specified ordering (or reverse order when closing). If duplicate names are provided, earlier
-   * entries take precedence.
+   * <p>When data connections are committed, those whose names appear in {@code names} are processed
+   * in that order, followed by any other connections in the order they were obtained. When data
+   * connections are closed, the order is reversed. If {@code names} contains duplicates, only the
+   * first occurrence of each name is used and the rest are ignored.
    *
-   * @param names the ordered logical names of data connections
+   * @param names the ordered logical names of data connections; neither the array nor its elements
+   *     may be {@code null}
+   * @throws NullPointerException if {@code names} or any of its elements is {@code null}
    */
   public DataHub(String... names) {
-    this.run = new DataRun(List.of(names));
+    this.dataRun = new DataRun(List.of(names));
   }
 
   /** Closes all managed data connections and local data sources held by this {@code DataHub}. */
   @Override
   public void close() {
-    this.run.close();
+    this.dataRun.close();
   }
 
   /**
@@ -57,7 +60,7 @@ public class DataHub implements DataAcc, AutoCloseable {
    */
   @Override
   public final <C extends DataConn> C getDataConn(String name, Class<C> cls) throws Err {
-    return this.run.getDataConn(name, cls);
+    return this.dataRun.getDataConn(name, cls);
   }
 
   /**

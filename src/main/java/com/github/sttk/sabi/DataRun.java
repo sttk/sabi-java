@@ -4,8 +4,6 @@
  */
 package com.github.sttk.sabi;
 
-import static com.github.sttk.sabi.DataSrcContainer.isNoDataSrc;
-
 import com.github.sttk.errs.Err;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -55,14 +53,45 @@ final class DataRun {
     if (this.fixed) {
       return;
     }
-    this.dataSrcMap.remove(name);
-    this.localDataSrcManager.remove(name);
+
+    try {
+      this.localDataSrcManager.remove(name);
+    } finally {
+      this.dataSrcMap.computeIfPresent(
+          name,
+          (nm, cont) -> {
+            return cont.local ? Globals.DATA_SRC_MANAGER.getReadyDs(name) : cont;
+          });
+    }
   }
 
   void close() {
-    this.dataConnManager.close();
-    this.dataSrcMap.clear();
-    this.localDataSrcManager.close();
+    Throwable firstThrowable = null;
+    try {
+      this.dataConnManager.close();
+    } catch (Throwable t) {
+      firstThrowable = t;
+    }
+
+    try {
+      this.localDataSrcManager.close();
+    } catch (Throwable t) {
+      if (firstThrowable == null) {
+        firstThrowable = t;
+      } else {
+        firstThrowable.addSuppressed(t);
+      }
+    } finally {
+      this.dataSrcMap.clear();
+    }
+
+    if (firstThrowable != null) {
+      if (firstThrowable instanceof RuntimeException) {
+        throw RuntimeException.class.cast(firstThrowable);
+      } else {
+        throw Error.class.cast(firstThrowable);
+      }
+    }
   }
 
   void begin() throws Err {
@@ -90,31 +119,38 @@ final class DataRun {
   }
 
   void end() {
-    this.dataConnManager.close();
-    this.fixed = false;
+    try {
+      this.dataConnManager.close();
+      this.fixed = false;
+    } catch (Throwable t) {
+      this.dataConnManager.abend();
+      throw t;
+    }
   }
 
   void abend() {
     this.localDataSrcManager.isAbnormal = true;
     this.dataConnManager.abend();
     this.dataSrcMap.clear();
-    this.localDataSrcManager.close();
+    try {
+      this.localDataSrcManager.close();
+    } catch (Throwable t) {
+      // no throw
+    }
   }
 
   <C extends DataConn> C getDataConn(String name, Class<C> cls) throws Err {
-    C dc = this.dataConnManager.findByNameAndCast(name, cls);
-    if (dc != null) {
-      return dc;
-    }
+    final var dsMap = this.dataSrcMap;
 
-    var dsCont = this.dataSrcMap.get(name);
-    if (isNoDataSrc(dsCont)) {
-      throw new Err(new DataHubError.NoDataSrcToCreateDataConn(name, cls.getName()));
-    }
-
-    dc = dsCont.createDataConn(cls);
-    var dcCont = new DataConnContainer(name, dc);
-    this.dataConnManager.add(dcCont);
-    return dc;
+    return this.dataConnManager.getOrAdd(
+        name,
+        cls,
+        () -> {
+          var dsCont = dsMap.get(name);
+          if (dsCont == null) {
+            throw new Err(new DataHubError.NoDataSrcToCreateDataConn(name, cls.getName()));
+          }
+          return dsCont.createDataConn(cls);
+        });
   }
 }

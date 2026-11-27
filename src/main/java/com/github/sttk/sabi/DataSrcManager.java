@@ -4,12 +4,11 @@
  */
 package com.github.sttk.sabi;
 
-import static com.github.sttk.sabi.DataSrcContainer.isNoDataSrc;
-
 import com.github.sttk.errs.Err;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -17,8 +16,12 @@ import java.util.stream.IntStream;
 
 class DataSrcManager {
 
-  final ArrayList<DataSrcContainer> listUnready; // Elements whose .ds is null are possible.
-  final ArrayList<DataSrcContainer> listReady; // Elements whose .ds is null are impossible.
+  // Elements can be null, have a null .ds, or have duplicate names.
+  final ArrayList<DataSrcContainer> listUnready;
+
+  // Elements cannot be null, cannot have a null .ds, and cannot have duplicate names.
+  final ArrayList<DataSrcContainer> listReady;
+
   final boolean local;
   boolean isAbnormal;
 
@@ -37,7 +40,6 @@ class DataSrcManager {
   }
 
   void remove(String name) {
-    final boolean local = this.local;
     final Throwable[] firstThrowable = new Throwable[] {null};
 
     this.listReady.removeIf(
@@ -58,7 +60,7 @@ class DataSrcManager {
           }
         });
 
-    this.listUnready.removeIf(cont -> (isNoDataSrc(cont) || Objects.equals(cont.name, name)));
+    this.listUnready.removeIf(cont -> (cont == null || Objects.equals(cont.name, name)));
 
     if (firstThrowable[0] != null) {
       if (firstThrowable[0] instanceof RuntimeException) {
@@ -72,13 +74,9 @@ class DataSrcManager {
   void close() {
     final Throwable[] firstThrowable = new Throwable[1];
 
-    final var closedList = new ArrayList<DataSrcContainer>(this.listReady.size());
-    this.listReady.removeIf(
-        cont -> {
-          // if (isNoDataSrc(cont)) continue; // impossible
-          closedList.add(cont);
-          return true;
-        });
+    final var closedList = new ArrayList<DataSrcContainer>(this.listReady);
+    this.listReady.clear();
+
     for (var cont : closedList.reversed()) {
       try {
         cont.ds.close();
@@ -101,15 +99,25 @@ class DataSrcManager {
     }
   }
 
-  private void closeOnFatal(List<Integer> indices) {
+  private void closeOnFatal(List<Integer> indices, Throwable alreadyThrown) {
     this.isAbnormal = true;
 
-    for (int i : indices.reversed()) {
+    for (Integer i : indices.reversed()) {
+      if (i == null) continue;
       var cont = this.listUnready.get(i);
-      if (isNoDataSrc(cont)) continue;
+      if (cont == null) continue;
       try {
         cont.ds.close();
       } catch (Throwable t) {
+        alreadyThrown.addSuppressed(t);
+      }
+    }
+
+    for (var cont : this.listReady.reversed()) {
+      try {
+        cont.ds.close();
+      } catch (Throwable t) {
+        alreadyThrown.addSuppressed(t);
       }
     }
 
@@ -125,10 +133,19 @@ class DataSrcManager {
     Throwable firstThrowable = null;
     var ag = new AsyncGroup();
 
+    var dedupSet = new HashSet<String>();
+    for (var cont : this.listReady) {
+      dedupSet.add(cont.name);
+    }
+
     try {
       for (int i = 0, n = this.listUnready.size(); i < n; i++) {
         var cont = this.listUnready.get(i);
-        if (isNoDataSrc(cont)) continue;
+        if (cont == null) continue;
+        if (!dedupSet.add(cont.name)) {
+          this.listUnready.set(i, null);
+          continue;
+        }
         ag.name = cont.name;
         ag.index = i;
         try {
@@ -146,7 +163,7 @@ class DataSrcManager {
     var errors = ag.join();
 
     if (firstThrowable != null) {
-      this.closeOnFatal(IntStream.range(0, nDone).boxed().toList());
+      this.closeOnFatal(IntStream.range(0, nDone).boxed().toList(), firstThrowable);
       if (firstThrowable instanceof RuntimeException) {
         throw RuntimeException.class.cast(firstThrowable);
       } else {
@@ -155,14 +172,14 @@ class DataSrcManager {
     }
 
     if (errors.isEmpty()) {
-      this.listReady.addAll(this.listUnready.stream().filter(c -> !isNoDataSrc(c)).toList());
+      this.listReady.addAll(this.listUnready.stream().filter(cont -> cont != null).toList());
       this.listUnready.clear();
       return errors;
     }
 
     for (int i = nDone - 1; i >= 0; i--) {
       var cont = this.listUnready.get(i);
-      if (isNoDataSrc(cont)) continue;
+      if (cont == null) continue;
       try {
         cont.ds.close();
       } catch (Throwable t) {
@@ -175,7 +192,7 @@ class DataSrcManager {
     }
 
     if (firstThrowable != null) {
-      this.closeOnFatal(Collections.emptyList());
+      this.closeOnFatal(Collections.emptyList(), firstThrowable);
       if (firstThrowable instanceof RuntimeException) {
         throw RuntimeException.class.cast(firstThrowable);
       } else {
@@ -191,19 +208,29 @@ class DataSrcManager {
       return Collections.emptyList();
     }
 
-    var indexMap = new HashMap<String, Integer>(names.size());
-    // Using rev because earlier ones take precedence when names overlap
-    for (int n = names.size(), i = n - 1; i >= 0; i--) {
-      indexMap.put(names.get(i), i);
+    var orderedNames = names.stream().distinct().toList();
+    var orderedIndexes = new ArrayList<Integer>(orderedNames.size());
+    var indexMap = new HashMap<String, Integer>(orderedNames.size());
+    for (int i = 0; i < orderedNames.size(); i++) {
+      orderedIndexes.add(null);
+      indexMap.put(orderedNames.get(i), i);
     }
 
     int numUnready = this.listUnready.size();
-    var orderedIndexes = new ArrayList<Integer>(Collections.nCopies(names.size(), null));
     orderedIndexes.ensureCapacity(numUnready);
+
+    var dedupSet = new HashSet<String>();
+    for (var cont : this.listReady) {
+      dedupSet.add(cont.name);
+    }
 
     for (int listIndex = 0; listIndex < numUnready; listIndex++) {
       var cont = this.listUnready.get(listIndex);
-      if (isNoDataSrc(cont)) continue;
+      if (cont == null) continue;
+      if (!dedupSet.add(cont.name)) {
+        this.listUnready.set(listIndex, null);
+        continue;
+      }
       Integer orderIndex = indexMap.remove(cont.name);
       if (orderIndex != null) {
         orderedIndexes.set(orderIndex, listIndex);
@@ -223,7 +250,7 @@ class DataSrcManager {
           continue;
         }
         var cont = this.listUnready.get(listIndex);
-        // if (isNoDataSrc(cont)) continue // impossible
+        // if (cont == null) continue // impossible
         ag.name = cont.name;
         ag.index = listIndex;
         try {
@@ -240,7 +267,7 @@ class DataSrcManager {
     var errors = ag.join();
 
     if (firstThrowable != null) {
-      this.closeOnFatal(orderedIndexes.subList(0, nDone));
+      this.closeOnFatal(orderedIndexes.subList(0, nDone), firstThrowable);
       if (firstThrowable instanceof RuntimeException) {
         throw RuntimeException.class.cast(firstThrowable);
       } else {
@@ -265,7 +292,7 @@ class DataSrcManager {
         continue;
       }
       var cont = this.listUnready.get(listIndex);
-      // if (isNoDataSrc(cont)) continue // impossible
+      // if (cont == null) continue // impossible
       try {
         cont.ds.close();
       } catch (Throwable t) {
@@ -278,7 +305,7 @@ class DataSrcManager {
     }
 
     if (firstThrowable != null) {
-      this.closeOnFatal(Collections.emptyList());
+      this.closeOnFatal(Collections.emptyList(), firstThrowable);
       if (firstThrowable instanceof RuntimeException) {
         throw RuntimeException.class.cast(firstThrowable);
       } else {
@@ -293,5 +320,14 @@ class DataSrcManager {
     for (var cont : this.listReady) {
       contMap.put(cont.name, cont);
     }
+  }
+
+  DataSrcContainer getReadyDs(String name) {
+    for (var cont : this.listReady) {
+      if (Objects.equals(cont.name, name)) {
+        return cont;
+      }
+    }
+    return null;
   }
 }

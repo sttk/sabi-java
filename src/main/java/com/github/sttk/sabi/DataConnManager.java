@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 class DataConnManager {
-  final ArrayList<DataConnContainer> list;
+  final List<DataConnContainer> list;
   final Map<String, Integer> indexMap;
   final List<String> orderedNames;
   boolean committed;
@@ -26,58 +26,57 @@ class DataConnManager {
   }
 
   DataConnManager(List<String> names) {
-    this.orderedNames = Collections.unmodifiableList(names);
-    this.list = new ArrayList<>(names.size());
-    this.indexMap = new HashMap<>(names.size());
+    this.orderedNames = names.stream().distinct().toList();
+    this.list = new ArrayList<>(orderedNames.size());
+    this.indexMap = new HashMap<>(orderedNames.size());
+    refillContainersByOrderedNames();
+  }
 
-    // Because earlier ones take precedence when names overlap
-    for (int i = names.size() - 1; i >= 0; i--) {
-      this.indexMap.put(names.get(i), i);
-      this.list.add(new DataConnContainer(names.get(i), null));
+  private void refillContainersByOrderedNames() {
+    for (int i = 0; i < this.orderedNames.size(); i++) {
+      var name = this.orderedNames.get(i);
+      this.indexMap.put(name, i);
+      this.list.add(new DataConnContainer(name, null));
     }
   }
 
-  void add(DataConnContainer cont) {
-    var idx = this.indexMap.get(cont.name);
+  <C extends DataConn> C getOrAdd(String name, Class<C> cls, DataConnSupplier<? extends C> supplier)
+      throws Err {
+    var idx = this.indexMap.get(name);
     if (idx != null) {
-      // Because earlier ones take precedence when names overlap
-      if (this.list.get(idx).conn == null) {
+      var cont = this.list.get(idx);
+      if (!isNoDataConn(cont)) {
+        try {
+          return cls.cast(cont.conn);
+        } catch (ClassCastException e) {
+          var fromType = cont.conn.getClass().getName();
+          var toType = cls.getName();
+          throw new Err(new DataConnError.FailToCastDataConn(name, fromType, toType), e);
+        }
+      } else {
+        C conn = supplier.supply();
+        cont = new DataConnContainer(name, conn);
         this.list.set(idx, cont);
+        return conn;
       }
-    } else {
-      this.indexMap.put(cont.name, this.list.size());
-      this.list.add(cont);
-    }
-  }
-
-  <C extends DataConn> C findByNameAndCast(String name, Class<C> cls) throws Err {
-    var index = this.indexMap.get(name);
-    if (index == null) {
-      return null;
-    }
-    var cont = this.list.get(index);
-    if (isNoDataConn(cont)) {
-      return null;
     }
 
-    try {
-      return cls.cast(cont.conn);
-    } catch (Exception e) {
-      var fromType = cont.conn.getClass().getName();
-      var toType = cls.getName();
-      throw new Err(new DataConnError.FailToCastDataConn(name, fromType, toType), e);
-    }
+    C conn = supplier.supply();
+    var cont = new DataConnContainer(name, conn);
+    this.indexMap.put(name, this.list.size());
+    this.list.add(cont);
+    return conn;
   }
 
   ArrayList<TxnFailureReport.Builder> newTxnFailureReportBuilders(Err logicErr) {
-    var list = new ArrayList<TxnFailureReport.Builder>(this.list.size());
+    var lst = new ArrayList<TxnFailureReport.Builder>(this.list.size());
     for (var cont : this.list) {
-      if (cont.conn == null) {
+      if (isNoDataConn(cont)) {
         continue;
       }
-      list.add(new TxnFailureReport.Builder(cont.name, cont.conn.getClass(), logicErr));
+      lst.add(new TxnFailureReport.Builder(cont.name, cont.conn.getClass(), logicErr));
     }
-    return list;
+    return lst;
   }
 
   void commit(List<TxnFailureReport.Builder> builders) throws Err {
@@ -86,7 +85,7 @@ class DataConnManager {
     var ag = new AsyncGroup();
     int iRep = 0;
     for (var cont : this.list) {
-      if (cont.conn == null) {
+      if (isNoDataConn(cont)) {
         continue;
       }
       ag.name = cont.name;
@@ -129,7 +128,7 @@ class DataConnManager {
     ag = new AsyncGroup();
     iRep = 0;
     for (var cont : this.list) {
-      if (cont.conn == null) {
+      if (isNoDataConn(cont)) {
         continue;
       }
       ag.name = cont.name;
@@ -175,7 +174,7 @@ class DataConnManager {
     ag = new AsyncGroup();
     iRep = 0;
     for (var cont : this.list) {
-      if (cont.conn == null) {
+      if (isNoDataConn(cont)) {
         continue;
       }
       ag.name = cont.name;
@@ -230,7 +229,7 @@ class DataConnManager {
     var ag = new AsyncGroup();
     int iRep = 0;
     for (var cont : this.list) {
-      if (cont.conn == null) {
+      if (isNoDataConn(cont)) {
         continue;
       }
       ag.name = cont.name;
@@ -282,7 +281,7 @@ class DataConnManager {
 
     ag = new AsyncGroup();
     for (var cont : this.list) {
-      if (cont.conn != null) {
+      if (!isNoDataConn(cont)) {
         try {
           cont.conn.onTxnFailure(ag, reports);
         } catch (Throwable t) {
@@ -312,7 +311,7 @@ class DataConnManager {
 
     for (int i = this.list.size() - 1; i >= 0; i--) {
       var cont = this.list.get(i);
-      if (cont.conn != null) {
+      if (!isNoDataConn(cont)) {
         try {
           cont.conn.close();
         } catch (Throwable t) {
@@ -325,12 +324,7 @@ class DataConnManager {
       }
     }
     this.list.clear();
-
-    for (int i = 0, n = this.orderedNames.size(); i < n; i++) {
-      var name = this.orderedNames.get(i);
-      this.indexMap.put(name, i);
-      this.list.add(new DataConnContainer(name, null));
-    }
+    refillContainersByOrderedNames();
 
     this.committed = false;
 
@@ -346,7 +340,7 @@ class DataConnManager {
   void abend() {
     for (int i = this.list.size() - 1; i >= 0; i--) {
       var cont = this.list.get(i);
-      if (cont.conn != null) {
+      if (!isNoDataConn(cont)) {
         try {
           cont.conn.abend();
         } catch (Throwable e) {
@@ -358,5 +352,10 @@ class DataConnManager {
 
     this.indexMap.clear();
     this.committed = false;
+  }
+
+  @FunctionalInterface
+  interface DataConnSupplier<C extends DataConn> {
+    C supply() throws Err;
   }
 }

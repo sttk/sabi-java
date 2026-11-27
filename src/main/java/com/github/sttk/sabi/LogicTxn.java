@@ -1,7 +1,7 @@
-// Copyright (C) 2026 Takayuki Sato. All Rights Reserved.
-// This program is free software under MIT License.
-// See the file LICENSE in this distribution for more details.
-
+/*
+ * LogicTxn.java
+ * Copyright (C) 2026 Takayuki Sato. All Rights Reserved.
+ */
 package com.github.sttk.sabi;
 
 import com.github.sttk.errs.Err;
@@ -21,19 +21,13 @@ public final class LogicTxn {
   private LogicErrAt errAt;
   private int index;
 
-  private enum LogicErrAt {
-    Begin,
-    Run,
-    Block,
-  }
-
   LogicTxn(DataHub hub) {
     this.hub = hub;
     this.index = 0;
     this.errors = new ArrayList<>();
 
     try {
-      this.hub.run.begin();
+      this.hub.dataRun.begin();
       this.errAt = LogicErrAt.Run;
     } catch (Err err) {
       this.errors.add(new ErrEntry(0, "", err));
@@ -47,8 +41,8 @@ public final class LogicTxn {
    *
    * <p>If {@code logic} throws an {@link Err}, it is recorded and the transaction will be rolled
    * back when {@link #endTxn()} is called. If an unhandled {@link RuntimeException} or {@link
-   * Throwable} is thrown, uncommitted connections are rolled back, the {@link DataHub} is
-   * terminated abnormally, and the exception or error is rethrown.
+   * Error} is thrown, uncommitted connections are rolled back, the {@link DataHub} is terminated
+   * abnormally, and the exception or error is rethrown.
    *
    * @param <D> the type of data access interface expected by the logic
    * @param logic the logic unit to execute
@@ -59,7 +53,7 @@ public final class LogicTxn {
     int index = this.index;
     this.index++;
 
-    if (this.hub.run.isAbnormal()) {
+    if (this.hub.dataRun.isAbnormal()) {
       return this;
     }
 
@@ -100,7 +94,7 @@ public final class LogicTxn {
     int index = this.index;
     this.index++;
 
-    if (this.hub.run.isAbnormal()) {
+    if (this.hub.dataRun.isAbnormal()) {
       return this;
     }
 
@@ -112,10 +106,10 @@ public final class LogicTxn {
           var name = String.format("LogicTxn#runForce(logic-%d)", index);
           this.errors.add(new ErrEntry(index, name, err));
         } catch (RuntimeException e) {
-          endInFatal(e, index, "runOrBlock");
+          endInFatal(e, index, "runForce");
           throw e;
         } catch (Throwable t) {
-          endInFatal(Error.class.cast(t), index, "runOrBlock");
+          endInFatal(Error.class.cast(t), index, "runForce");
           throw t;
         }
         return this;
@@ -138,7 +132,7 @@ public final class LogicTxn {
     int index = this.index;
     this.index++;
 
-    if (this.hub.run.isAbnormal()) {
+    if (this.hub.dataRun.isAbnormal()) {
       return this;
     }
 
@@ -173,51 +167,71 @@ public final class LogicTxn {
    *     or more logic executions failed, or committing the transaction failed
    */
   public void endTxn() throws Err {
-    if (this.hub.run.isAbnormal()) {
+    if (this.hub.dataRun.isAbnormal()) {
       throw new Err(new DataHubError.AbnormalState());
     }
 
     try {
       switch (this.errAt) {
         case Begin:
-          this.hub.run.end();
+          this.hub.dataRun.end();
           throw this.errors.get(0).err();
         case Run:
           if (this.errors.isEmpty()) {
-            var builders = this.hub.run.newTxnFailureReportBuilders(null);
+            var builders = this.hub.dataRun.newTxnFailureReportBuilders(null);
+            Throwable firstThrowable = null;
             try {
-              this.hub.run.commit(builders);
-              this.hub.run.end();
-            } catch (Err err) {
-              this.hub.run.rollback(builders);
-              this.hub.run.end();
-              throw err;
+              this.hub.dataRun.commit(builders);
             } catch (Throwable t) {
-              this.hub.run.rollback(builders);
-              throw t;
+              firstThrowable = t;
+            }
+            if (firstThrowable != null) {
+              try {
+                this.hub.dataRun.rollback(builders);
+              } catch (Throwable t) {
+                if (firstThrowable instanceof Err) {
+                  t.addSuppressed(firstThrowable);
+                  firstThrowable = t;
+                } else {
+                  firstThrowable.addSuppressed(t);
+                }
+              }
+            }
+            if (firstThrowable == null) {
+              this.hub.dataRun.end();
+            } else if (firstThrowable instanceof Err) {
+              try {
+                this.hub.dataRun.end();
+              } catch (Throwable t) {
+                t.addSuppressed(firstThrowable);
+                firstThrowable = t;
+              }
+              throw firstThrowable;
+            } else {
+              throw firstThrowable;
             }
           } else {
             var logicErr = new Err(new DataHubError.FailToRunLogic(this.errors));
-            var builders = this.hub.run.newTxnFailureReportBuilders(logicErr);
-            this.hub.run.rollback(builders);
-            this.hub.run.end();
+            var builders = this.hub.dataRun.newTxnFailureReportBuilders(logicErr);
+            this.hub.dataRun.rollback(builders);
+            this.hub.dataRun.end();
             throw logicErr;
           }
           return;
         default: // Block
           var logicErr = new Err(new DataHubError.FailToRunLogic(this.errors));
-          var builders = this.hub.run.newTxnFailureReportBuilders(logicErr);
-          this.hub.run.rollback(builders);
-          this.hub.run.end();
+          var builders = this.hub.dataRun.newTxnFailureReportBuilders(logicErr);
+          this.hub.dataRun.rollback(builders);
+          this.hub.dataRun.end();
           throw logicErr;
       }
     } catch (Err err) {
       throw err;
     } catch (RuntimeException e) {
-      this.hub.run.abend();
+      this.hub.dataRun.abend();
       throw e;
     } catch (Throwable t) {
-      this.hub.run.abend();
+      this.hub.dataRun.abend();
       throw Error.class.cast(t);
     }
   }
@@ -229,10 +243,12 @@ public final class LogicTxn {
       this.errors.add(new ErrEntry(index, name, err));
 
       var logicErr = new Err(new DataHubError.FailToRunLogic(this.errors));
-      var builders = this.hub.run.newTxnFailureReportBuilders(logicErr);
-      this.hub.run.rollback(builders);
+      var builders = this.hub.dataRun.newTxnFailureReportBuilders(logicErr);
+      this.hub.dataRun.rollback(builders);
+    } catch (Throwable t) {
+      e.addSuppressed(t);
     } finally {
-      this.hub.run.abend();
+      this.hub.dataRun.abend();
     }
   }
 
@@ -243,10 +259,12 @@ public final class LogicTxn {
       this.errors.add(new ErrEntry(index, name, err));
 
       var logicErr = new Err(new DataHubError.FailToRunLogic(this.errors));
-      var builders = this.hub.run.newTxnFailureReportBuilders(logicErr);
-      this.hub.run.rollback(builders);
+      var builders = this.hub.dataRun.newTxnFailureReportBuilders(logicErr);
+      this.hub.dataRun.rollback(builders);
+    } catch (Throwable t) {
+      e.addSuppressed(t);
     } finally {
-      this.hub.run.abend();
+      this.hub.dataRun.abend();
     }
   }
 }
