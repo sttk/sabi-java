@@ -150,6 +150,18 @@
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>3.4.2</version>
+        <configuration>
+          <archive>
+            <manifestEntries>
+              <Sealed>true</Sealed>
+            </manifestEntries>
+          </archive>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <version>3.6.0-M1</version>
       </plugin>
@@ -199,7 +211,7 @@
     <profile>
       <id>trace</id>
       <properties>
-        <argLine>-agentlib:native-image-agent=config-output-dir=target/native-trace</argLine>
+        <argLine>--add-opens java.base/java.lang=ALL-UNNAMED -agentlib:native-image-agent=config-output-dir=target/native-trace</argLine>
       </properties>
     </profile>
     <profile>

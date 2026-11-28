@@ -1,19 +1,12 @@
-package com.github.sttk.sabi.internal;
+package com.github.sttk.sabi;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.github.sttk.errs.Err;
-import com.github.sttk.sabi.AsyncGroup;
-import com.github.sttk.sabi.DataConn;
-import com.github.sttk.sabi.TxnFailureCause;
-import com.github.sttk.sabi.TxnFailureCauseState;
-import com.github.sttk.sabi.TxnFailureRecovery;
-import com.github.sttk.sabi.TxnFailureRollback;
-import com.github.sttk.sabi.TxnFailureRollbackState;
 import org.junit.jupiter.api.Test;
 
-public class TxnFailureReportBuilderTest {
-  private TxnFailureReportBuilderTest() {}
+public class TxnFailureReportTest {
+  private TxnFailureReportTest() {}
 
   static class AbcDataConn implements DataConn {
     @Override
@@ -32,8 +25,8 @@ public class TxnFailureReportBuilderTest {
   }
 
   @Test
-  void testBuilder() {
-    var builder = new TxnFailureReportBuilder("foo", AbcDataConn.class);
+  void testBuilderWithNoLogicErr() {
+    var builder = new TxnFailureReport.Builder("foo", AbcDataConn.class, null);
     assertThat(builder.dataConnName).isEqualTo("foo");
     assertThat(builder.dataConnClass).isEqualTo(AbcDataConn.class);
     assertThat(builder.cause.state).isEqualTo(TxnFailureCauseState.NoneByUncommitted);
@@ -44,7 +37,7 @@ public class TxnFailureReportBuilderTest {
     var report = builder.build();
     assertThat(report.dataConnName).isEqualTo("foo");
     assertThat(report.dataConnType)
-        .isEqualTo("com.github.sttk.sabi.internal.TxnFailureReportBuilderTest$AbcDataConn");
+        .isEqualTo("com.github.sttk.sabi.TxnFailureReportTest$AbcDataConn");
     assertThat(report.cause.state).isEqualTo(TxnFailureCauseState.NoneByUncommitted);
     assertThat(report.cause.err).isNull();
     assertThat(report.rollback.state).isEqualTo(TxnFailureRollbackState.NoneByNotRolledBack);
@@ -57,7 +50,42 @@ public class TxnFailureReportBuilderTest {
     report = builder.build();
     assertThat(report.dataConnName).isEqualTo("foo");
     assertThat(report.dataConnType)
-        .isEqualTo("com.github.sttk.sabi.internal.TxnFailureReportBuilderTest$AbcDataConn");
+        .isEqualTo("com.github.sttk.sabi.TxnFailureReportTest$AbcDataConn");
+    assertThat(report.cause.state).isEqualTo(TxnFailureCauseState.CommitFailure);
+    assertThat(report.cause.err.getReason()).isEqualTo("fail");
+    assertThat(report.rollback.state).isEqualTo(TxnFailureRollbackState.RollbackFailure);
+    assertThat(report.rollback.err.getReason()).isEqualTo("x");
+  }
+
+  @Test
+  void testBuilderWithLogicErr() {
+    var err = new Err("logic error");
+
+    var builder = new TxnFailureReport.Builder("foo", AbcDataConn.class, err);
+    assertThat(builder.dataConnName).isEqualTo("foo");
+    assertThat(builder.dataConnClass).isEqualTo(AbcDataConn.class);
+    assertThat(builder.cause.state).isEqualTo(TxnFailureCauseState.LogicFailure);
+    assertThat(builder.cause.err).isEqualTo(err);
+    assertThat(builder.rollback.state).isEqualTo(TxnFailureRollbackState.NoneByNotRolledBack);
+    assertThat(builder.rollback.err).isNull();
+
+    var report = builder.build();
+    assertThat(report.dataConnName).isEqualTo("foo");
+    assertThat(report.dataConnType)
+        .isEqualTo("com.github.sttk.sabi.TxnFailureReportTest$AbcDataConn");
+    assertThat(report.cause.state).isEqualTo(TxnFailureCauseState.LogicFailure);
+    assertThat(builder.cause.err).isEqualTo(err);
+    assertThat(report.rollback.state).isEqualTo(TxnFailureRollbackState.NoneByNotRolledBack);
+    assertThat(report.rollback.err).isNull();
+
+    builder.cause = new TxnFailureCause(TxnFailureCauseState.CommitFailure, new Err("fail"));
+    builder.rollback =
+        new TxnFailureRollback(TxnFailureRollbackState.RollbackFailure, new Err("x"));
+
+    report = builder.build();
+    assertThat(report.dataConnName).isEqualTo("foo");
+    assertThat(report.dataConnType)
+        .isEqualTo("com.github.sttk.sabi.TxnFailureReportTest$AbcDataConn");
     assertThat(report.cause.state).isEqualTo(TxnFailureCauseState.CommitFailure);
     assertThat(report.cause.err.getReason()).isEqualTo("fail");
     assertThat(report.rollback.state).isEqualTo(TxnFailureRollbackState.RollbackFailure);
@@ -66,7 +94,7 @@ public class TxnFailureReportBuilderTest {
 
   @Test
   void testIsCauseOfFailure() {
-    var builder = new TxnFailureReportBuilder("foo", AbcDataConn.class);
+    var builder = new TxnFailureReport.Builder("foo", AbcDataConn.class, null);
     assertThat(builder.dataConnName).isEqualTo("foo");
     assertThat(builder.dataConnClass).isEqualTo(AbcDataConn.class);
     assertThat(builder.cause.state).isEqualTo(TxnFailureCauseState.NoneByUncommitted);
@@ -88,6 +116,11 @@ public class TxnFailureReportBuilderTest {
     assertThat(report.cause.state).isEqualTo(TxnFailureCauseState.LogicFailure);
     assertThat(report.isCauseOfFailure()).isTrue();
 
+    builder.cause = new TxnFailureCause(TxnFailureCauseState.PreCommitFailure, new Err("fail"));
+    report = builder.build();
+    assertThat(report.cause.state).isEqualTo(TxnFailureCauseState.PreCommitFailure);
+    assertThat(report.isCauseOfFailure()).isTrue();
+
     builder.cause = new TxnFailureCause(TxnFailureCauseState.CommitFailure, new Err("fail"));
     report = builder.build();
     assertThat(report.cause.state).isEqualTo(TxnFailureCauseState.CommitFailure);
@@ -101,7 +134,7 @@ public class TxnFailureReportBuilderTest {
 
   @Test
   void testRecoveryForCommit() {
-    var builder = new TxnFailureReportBuilder("foo", AbcDataConn.class);
+    var builder = new TxnFailureReport.Builder("foo", AbcDataConn.class, null);
     assertThat(builder.dataConnName).isEqualTo("foo");
     assertThat(builder.dataConnClass).isEqualTo(AbcDataConn.class);
 
@@ -175,6 +208,30 @@ public class TxnFailureReportBuilderTest {
           .isEqualTo(TxnFailureRecovery.ResolveCauseAndInconsistency);
     }
 
+    builder.cause = new TxnFailureCause(TxnFailureCauseState.PreCommitFailure, null);
+    {
+      builder.rollback = new TxnFailureRollback(TxnFailureRollbackState.NoneByNotRolledBack, null);
+      var report = builder.build();
+      assertThat(report.cause.state).isEqualTo(TxnFailureCauseState.PreCommitFailure);
+      assertThat(report.rollback.state).isEqualTo(TxnFailureRollbackState.NoneByNotRolledBack);
+      assertThat(report.recoveryForCommit())
+          .isEqualTo(TxnFailureRecovery.InvestigateBecauseImpossible);
+
+      builder.rollback = new TxnFailureRollback(TxnFailureRollbackState.NoneByRolledBack, null);
+      report = builder.build();
+      assertThat(report.cause.state).isEqualTo(TxnFailureCauseState.PreCommitFailure);
+      assertThat(report.rollback.state).isEqualTo(TxnFailureRollbackState.NoneByRolledBack);
+      assertThat(report.recoveryForCommit())
+          .isEqualTo(TxnFailureRecovery.ResolveCauseThenRerunLogicAndCommit);
+
+      builder.rollback = new TxnFailureRollback(TxnFailureRollbackState.RollbackFailure, null);
+      report = builder.build();
+      assertThat(report.cause.state).isEqualTo(TxnFailureCauseState.PreCommitFailure);
+      assertThat(report.rollback.state).isEqualTo(TxnFailureRollbackState.RollbackFailure);
+      assertThat(report.recoveryForCommit())
+          .isEqualTo(TxnFailureRecovery.ResolveCauseAndInconsistency);
+    }
+
     builder.cause = new TxnFailureCause(TxnFailureCauseState.CommitFailure, null);
     {
       builder.rollback = new TxnFailureRollback(TxnFailureRollbackState.NoneByNotRolledBack, null);
@@ -226,7 +283,7 @@ public class TxnFailureReportBuilderTest {
 
   @Test
   void testRecoveryForRollback() {
-    var builder = new TxnFailureReportBuilder("foo", AbcDataConn.class);
+    var builder = new TxnFailureReport.Builder("foo", AbcDataConn.class, null);
     assertThat(builder.dataConnName).isEqualTo("foo");
     assertThat(builder.dataConnClass).isEqualTo(AbcDataConn.class);
 
@@ -294,6 +351,29 @@ public class TxnFailureReportBuilderTest {
       builder.rollback = new TxnFailureRollback(TxnFailureRollbackState.RollbackFailure, null);
       report = builder.build();
       assertThat(report.cause.state).isEqualTo(TxnFailureCauseState.LogicFailure);
+      assertThat(report.rollback.state).isEqualTo(TxnFailureRollbackState.RollbackFailure);
+      assertThat(report.recoveryForRollback())
+          .isEqualTo(TxnFailureRecovery.ResolveCauseAndInconsistency);
+    }
+
+    builder.cause = new TxnFailureCause(TxnFailureCauseState.PreCommitFailure, null);
+    {
+      builder.rollback = new TxnFailureRollback(TxnFailureRollbackState.NoneByNotRolledBack, null);
+      var report = builder.build();
+      assertThat(report.cause.state).isEqualTo(TxnFailureCauseState.PreCommitFailure);
+      assertThat(report.rollback.state).isEqualTo(TxnFailureRollbackState.NoneByNotRolledBack);
+      assertThat(report.recoveryForRollback())
+          .isEqualTo(TxnFailureRecovery.InvestigateBecauseImpossible);
+
+      builder.rollback = new TxnFailureRollback(TxnFailureRollbackState.NoneByRolledBack, null);
+      report = builder.build();
+      assertThat(report.cause.state).isEqualTo(TxnFailureCauseState.PreCommitFailure);
+      assertThat(report.rollback.state).isEqualTo(TxnFailureRollbackState.NoneByRolledBack);
+      assertThat(report.recoveryForRollback()).isEqualTo(TxnFailureRecovery.NoActionRequired);
+
+      builder.rollback = new TxnFailureRollback(TxnFailureRollbackState.RollbackFailure, null);
+      report = builder.build();
+      assertThat(report.cause.state).isEqualTo(TxnFailureCauseState.PreCommitFailure);
       assertThat(report.rollback.state).isEqualTo(TxnFailureRollbackState.RollbackFailure);
       assertThat(report.recoveryForRollback())
           .isEqualTo(TxnFailureRecovery.ResolveCauseAndInconsistency);
@@ -348,7 +428,7 @@ public class TxnFailureReportBuilderTest {
 
   @Test
   void testToString() {
-    var builder = new TxnFailureReportBuilder("foo", AbcDataConn.class);
+    var builder = new TxnFailureReport.Builder("foo", AbcDataConn.class, null);
     assertThat(builder.dataConnName).isEqualTo("foo");
     assertThat(builder.dataConnClass).isEqualTo(AbcDataConn.class);
 
@@ -358,19 +438,19 @@ public class TxnFailureReportBuilderTest {
       var report = builder.build();
       assertThat(report.toString())
           .isEqualTo(
-              "{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.TxnFailureReportBuilderTest$AbcDataConn cause:{State:NoneByUncommitted Err:null} rollback:{State:NoneByNotRolledBack Err:null}}");
+              "{dataConnName:foo dataConnType:com.github.sttk.sabi.TxnFailureReportTest$AbcDataConn cause:{State:NoneByUncommitted Err:null} rollback:{State:NoneByNotRolledBack Err:null}}");
 
       builder.rollback = new TxnFailureRollback(TxnFailureRollbackState.NoneByRolledBack, null);
       report = builder.build();
       assertThat(report.toString())
           .isEqualTo(
-              "{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.TxnFailureReportBuilderTest$AbcDataConn cause:{State:NoneByUncommitted Err:null} rollback:{State:NoneByRolledBack Err:null}}");
+              "{dataConnName:foo dataConnType:com.github.sttk.sabi.TxnFailureReportTest$AbcDataConn cause:{State:NoneByUncommitted Err:null} rollback:{State:NoneByRolledBack Err:null}}");
 
       builder.rollback = new TxnFailureRollback(TxnFailureRollbackState.RollbackFailure, null);
       report = builder.build();
       assertThat(report.toString())
           .isEqualTo(
-              "{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.TxnFailureReportBuilderTest$AbcDataConn cause:{State:NoneByUncommitted Err:null} rollback:{State:RollbackFailure Err:null}}");
+              "{dataConnName:foo dataConnType:com.github.sttk.sabi.TxnFailureReportTest$AbcDataConn cause:{State:NoneByUncommitted Err:null} rollback:{State:RollbackFailure Err:null}}");
     }
 
     builder.cause = new TxnFailureCause(TxnFailureCauseState.NoneByCommitted, null);
@@ -379,19 +459,19 @@ public class TxnFailureReportBuilderTest {
       var report = builder.build();
       assertThat(report.toString())
           .isEqualTo(
-              "{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.TxnFailureReportBuilderTest$AbcDataConn cause:{State:NoneByCommitted Err:null} rollback:{State:NoneByNotRolledBack Err:null}}");
+              "{dataConnName:foo dataConnType:com.github.sttk.sabi.TxnFailureReportTest$AbcDataConn cause:{State:NoneByCommitted Err:null} rollback:{State:NoneByNotRolledBack Err:null}}");
 
       builder.rollback = new TxnFailureRollback(TxnFailureRollbackState.NoneByRolledBack, null);
       report = builder.build();
       assertThat(report.toString())
           .isEqualTo(
-              "{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.TxnFailureReportBuilderTest$AbcDataConn cause:{State:NoneByCommitted Err:null} rollback:{State:NoneByRolledBack Err:null}}");
+              "{dataConnName:foo dataConnType:com.github.sttk.sabi.TxnFailureReportTest$AbcDataConn cause:{State:NoneByCommitted Err:null} rollback:{State:NoneByRolledBack Err:null}}");
 
       builder.rollback = new TxnFailureRollback(TxnFailureRollbackState.RollbackFailure, null);
       report = builder.build();
       assertThat(report.toString())
           .isEqualTo(
-              "{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.TxnFailureReportBuilderTest$AbcDataConn cause:{State:NoneByCommitted Err:null} rollback:{State:RollbackFailure Err:null}}");
+              "{dataConnName:foo dataConnType:com.github.sttk.sabi.TxnFailureReportTest$AbcDataConn cause:{State:NoneByCommitted Err:null} rollback:{State:RollbackFailure Err:null}}");
     }
 
     builder.cause = new TxnFailureCause(TxnFailureCauseState.LogicFailure, null);
@@ -400,19 +480,19 @@ public class TxnFailureReportBuilderTest {
       var report = builder.build();
       assertThat(report.toString())
           .isEqualTo(
-              "{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.TxnFailureReportBuilderTest$AbcDataConn cause:{State:LogicFailure Err:null} rollback:{State:NoneByNotRolledBack Err:null}}");
+              "{dataConnName:foo dataConnType:com.github.sttk.sabi.TxnFailureReportTest$AbcDataConn cause:{State:LogicFailure Err:null} rollback:{State:NoneByNotRolledBack Err:null}}");
 
       builder.rollback = new TxnFailureRollback(TxnFailureRollbackState.NoneByRolledBack, null);
       report = builder.build();
       assertThat(report.toString())
           .isEqualTo(
-              "{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.TxnFailureReportBuilderTest$AbcDataConn cause:{State:LogicFailure Err:null} rollback:{State:NoneByRolledBack Err:null}}");
+              "{dataConnName:foo dataConnType:com.github.sttk.sabi.TxnFailureReportTest$AbcDataConn cause:{State:LogicFailure Err:null} rollback:{State:NoneByRolledBack Err:null}}");
 
       builder.rollback = new TxnFailureRollback(TxnFailureRollbackState.RollbackFailure, null);
       report = builder.build();
       assertThat(report.toString())
           .isEqualTo(
-              "{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.TxnFailureReportBuilderTest$AbcDataConn cause:{State:LogicFailure Err:null} rollback:{State:RollbackFailure Err:null}}");
+              "{dataConnName:foo dataConnType:com.github.sttk.sabi.TxnFailureReportTest$AbcDataConn cause:{State:LogicFailure Err:null} rollback:{State:RollbackFailure Err:null}}");
     }
 
     builder.cause = new TxnFailureCause(TxnFailureCauseState.CommitFailure, null);
@@ -421,19 +501,19 @@ public class TxnFailureReportBuilderTest {
       var report = builder.build();
       assertThat(report.toString())
           .isEqualTo(
-              "{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.TxnFailureReportBuilderTest$AbcDataConn cause:{State:CommitFailure Err:null} rollback:{State:NoneByNotRolledBack Err:null}}");
+              "{dataConnName:foo dataConnType:com.github.sttk.sabi.TxnFailureReportTest$AbcDataConn cause:{State:CommitFailure Err:null} rollback:{State:NoneByNotRolledBack Err:null}}");
 
       builder.rollback = new TxnFailureRollback(TxnFailureRollbackState.NoneByRolledBack, null);
       report = builder.build();
       assertThat(report.toString())
           .isEqualTo(
-              "{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.TxnFailureReportBuilderTest$AbcDataConn cause:{State:CommitFailure Err:null} rollback:{State:NoneByRolledBack Err:null}}");
+              "{dataConnName:foo dataConnType:com.github.sttk.sabi.TxnFailureReportTest$AbcDataConn cause:{State:CommitFailure Err:null} rollback:{State:NoneByRolledBack Err:null}}");
 
       builder.rollback = new TxnFailureRollback(TxnFailureRollbackState.RollbackFailure, null);
       report = builder.build();
       assertThat(report.toString())
           .isEqualTo(
-              "{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.TxnFailureReportBuilderTest$AbcDataConn cause:{State:CommitFailure Err:null} rollback:{State:RollbackFailure Err:null}}");
+              "{dataConnName:foo dataConnType:com.github.sttk.sabi.TxnFailureReportTest$AbcDataConn cause:{State:CommitFailure Err:null} rollback:{State:RollbackFailure Err:null}}");
     }
 
     builder.cause = new TxnFailureCause(TxnFailureCauseState.PostCommitFailure, null);
@@ -442,19 +522,19 @@ public class TxnFailureReportBuilderTest {
       var report = builder.build();
       assertThat(report.toString())
           .isEqualTo(
-              "{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.TxnFailureReportBuilderTest$AbcDataConn cause:{State:PostCommitFailure Err:null} rollback:{State:NoneByNotRolledBack Err:null}}");
+              "{dataConnName:foo dataConnType:com.github.sttk.sabi.TxnFailureReportTest$AbcDataConn cause:{State:PostCommitFailure Err:null} rollback:{State:NoneByNotRolledBack Err:null}}");
 
       builder.rollback = new TxnFailureRollback(TxnFailureRollbackState.NoneByRolledBack, null);
       report = builder.build();
       assertThat(report.toString())
           .isEqualTo(
-              "{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.TxnFailureReportBuilderTest$AbcDataConn cause:{State:PostCommitFailure Err:null} rollback:{State:NoneByRolledBack Err:null}}");
+              "{dataConnName:foo dataConnType:com.github.sttk.sabi.TxnFailureReportTest$AbcDataConn cause:{State:PostCommitFailure Err:null} rollback:{State:NoneByRolledBack Err:null}}");
 
       builder.rollback = new TxnFailureRollback(TxnFailureRollbackState.RollbackFailure, null);
       report = builder.build();
       assertThat(report.toString())
           .isEqualTo(
-              "{dataConnName:foo dataConnType:com.github.sttk.sabi.internal.TxnFailureReportBuilderTest$AbcDataConn cause:{State:PostCommitFailure Err:null} rollback:{State:RollbackFailure Err:null}}");
+              "{dataConnName:foo dataConnType:com.github.sttk.sabi.TxnFailureReportTest$AbcDataConn cause:{State:PostCommitFailure Err:null} rollback:{State:RollbackFailure Err:null}}");
     }
   }
 }

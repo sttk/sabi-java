@@ -4,27 +4,28 @@
  */
 package com.github.sttk.sabi;
 
+import com.github.sttk.errs.Err;
+
 /**
- * Contains transaction failure diagnostic information and rollback status for a specific data
- * connection.
+ * Reports the failure cause and rollback outcome for a single {@link DataConn} when a transaction
+ * fails.
  *
- * <p>Instances of this class are created during transaction failure processing in {@link DataHub}
- * and passed to {@link DataConn#onTxnFailure(AsyncGroup, java.util.List)}. It details the
- * connection's name, type, failure cause ({@link TxnFailureCause}), and rollback status ({@link
- * TxnFailureRollback}), and provides methods to determine recommended recovery strategies.
+ * <p>Instances are passed to {@link DataConn#onTxnFailure(AsyncGroup, java.util.List)} to provide
+ * diagnostics and help determine recovery strategies via {@link #recoveryForCommit()} and {@link
+ * #recoveryForRollback()}.
  */
-public class TxnFailureReport {
+public final class TxnFailureReport {
 
   /** The logical name of the data connection. */
   public final String dataConnName;
 
-  /** The class name or type of the data connection. */
+  /** The fully qualified class name of the data connection. */
   public final String dataConnType;
 
-  /** The cause of the transaction failure associated with this connection. */
+  /** The cause of the transaction failure for this connection. */
   public final TxnFailureCause cause;
 
-  /** The rollback outcome associated with this connection. */
+  /** The rollback outcome for this connection. */
   public final TxnFailureRollback rollback;
 
   /**
@@ -66,7 +67,8 @@ public class TxnFailureReport {
    * Determines whether this connection was a direct cause of the transaction failure.
    *
    * @return {@code true} if this connection caused the failure; {@code false} if the cause state is
-   *     {@code NoneByCommitted} or {@code NoneByUncommitted}
+   *     {@link TxnFailureCauseState#NoneByCommitted} or {@link
+   *     TxnFailureCauseState#NoneByUncommitted}
    */
   public boolean isCauseOfFailure() {
     switch (this.cause.state) {
@@ -101,13 +103,7 @@ public class TxnFailureReport {
         }
         break;
       case LogicFailure:
-        switch (this.rollback.state) {
-          case NoneByRolledBack:
-            return TxnFailureRecovery.ResolveCauseThenRerunLogicAndCommit;
-          case RollbackFailure:
-            return TxnFailureRecovery.ResolveCauseAndInconsistency;
-        }
-        break;
+      case PreCommitFailure:
       case CommitFailure:
         switch (this.rollback.state) {
           case NoneByRolledBack:
@@ -116,7 +112,7 @@ public class TxnFailureReport {
             return TxnFailureRecovery.ResolveCauseAndInconsistency;
         }
         break;
-      case PostCommitFailure:
+      default: // case PostCommitFailure:
         switch (this.rollback.state) {
           case NoneByNotRolledBack:
             return TxnFailureRecovery.ResolveCauseThenRerunPostCommit;
@@ -149,13 +145,7 @@ public class TxnFailureReport {
         }
         break;
       case LogicFailure:
-        switch (this.rollback.state) {
-          case NoneByRolledBack:
-            return TxnFailureRecovery.NoActionRequired;
-          case RollbackFailure:
-            return TxnFailureRecovery.ResolveCauseAndInconsistency;
-        }
-        break;
+      case PreCommitFailure:
       case CommitFailure:
         switch (this.rollback.state) {
           case NoneByRolledBack:
@@ -164,7 +154,7 @@ public class TxnFailureReport {
             return TxnFailureRecovery.ResolveCauseAndInconsistency;
         }
         break;
-      case PostCommitFailure:
+      default: // case PostCommitFailure:
         switch (this.rollback.state) {
           case NoneByNotRolledBack:
             return TxnFailureRecovery.ManualRollbackRequired;
@@ -172,5 +162,28 @@ public class TxnFailureReport {
         break;
     }
     return TxnFailureRecovery.InvestigateBecauseImpossible;
+  }
+
+  static class Builder {
+    String dataConnName;
+    Class<? extends DataConn> dataConnClass;
+    TxnFailureCause cause;
+    TxnFailureRollback rollback;
+
+    Builder(String name, Class<? extends DataConn> cls, Err logicErr) {
+      this.dataConnName = name;
+      this.dataConnClass = cls;
+      if (logicErr == null) {
+        this.cause = new TxnFailureCause(TxnFailureCauseState.NoneByUncommitted, null);
+      } else {
+        this.cause = new TxnFailureCause(TxnFailureCauseState.LogicFailure, logicErr);
+      }
+      this.rollback = new TxnFailureRollback(TxnFailureRollbackState.NoneByNotRolledBack, null);
+    }
+
+    TxnFailureReport build() {
+      return new TxnFailureReport(
+          this.dataConnName, this.dataConnClass.getName(), this.cause, this.rollback);
+    }
   }
 }

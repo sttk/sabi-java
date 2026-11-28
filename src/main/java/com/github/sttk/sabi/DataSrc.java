@@ -7,36 +7,34 @@ package com.github.sttk.sabi;
 import com.github.sttk.errs.Err;
 
 /**
- * Represents a data source corresponding to an external data resource, serving as a factory for
- * data connections or as a connection pool.
+ * Represents a data source corresponding to an external resource, serving as a factory for {@link
+ * DataConn} instances or managing a connection pool.
  *
- * <p>Implementations encapsulate connection management, pool configuration, and resource allocation
- * for specific data stores or external services (such as relational databases, HTTP clients, or
- * caching services). Data sources can be registered globally via {@link Sabi#uses(String, DataSrc)}
- * or bound locally to a {@link DataHub}.
+ * <p>Implementations encapsulate resource initialization, connection creation, and cleanup for
+ * external systems such as relational databases, caches, or messaging services. Data sources can be
+ * registered globally via {@link Globals#uses(String, DataSrc)} or locally via {@link
+ * LogicRunner#uses(String, DataSrc)}.
  */
 public interface DataSrc {
 
   /**
-   * Sets up this data source.
+   * Sets up this data source before connections are created from it.
    *
-   * <p>This method is invoked during application startup or hub setup to prepare connections or
-   * connection pools. Asynchronous setup background tasks can be registered using the provided
-   * {@link AsyncGroup}.
+   * <p>Asynchronous setup tasks may be registered with the provided {@link AsyncGroup}.
    *
-   * @param ag the asynchronous group for registering background tasks
-   * @throws Err if setting up the data source fails
+   * @param ag the asynchronous group for registering background setup tasks
+   * @throws Err if setting up this data source fails
    */
   void setup(AsyncGroup ag) throws Err;
 
-  /** Closes this data source and disposes of any allocated resources or connection pools. */
+  /** Closes this data source and releases any resources or connection pools it manages. */
   void close();
 
   /**
-   * Creates a new {@link DataConn} instance associated with this data source.
+   * Creates a new {@link DataConn} instance backed by this data source.
    *
-   * @return a new, initialized {@link DataConn} connection instance
-   * @throws Err if creating or establishing the data connection fails
+   * @return a newly created {@link DataConn}
+   * @throws Err if creating the data connection fails
    */
   DataConn createDataConn() throws Err;
 }

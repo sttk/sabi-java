@@ -7,12 +7,11 @@ package com.github.sttk.sabi;
 import com.github.sttk.errs.Err;
 
 /**
- * Provides access to named {@link DataConn} data connection instances.
+ * Provides access to named {@link DataConn} instances and nested logic execution within a data
+ * access scope.
  *
- * <p>This interface defines the contract for retrieving managed data connections registered under
- * specific names within a data access scope (such as a {@link DataHub}). Application business logic
- * uses this interface to obtain connection objects required to perform database or external service
- * operations.
+ * <p>Application logic uses this interface (or a custom interface extending it) to retrieve managed
+ * data connections and to invoke sub-logic units within the same execution context.
  */
 public interface DataAcc {
 
@@ -20,16 +19,32 @@ public interface DataAcc {
    * Retrieves a data connection associated with the specified data source name and casts it to the
    * requested connection class type.
    *
-   * <p>If a connection for the given {@code name} has already been created within the current
-   * transaction or execution scope, that connection instance is returned. Otherwise, a new
-   * connection is created via the corresponding registered data source.
+   * <p>If a connection for the given {@code name} already exists in the current execution scope,
+   * that connection instance is returned. Otherwise, a new connection is created from the
+   * corresponding registered {@link DataSrc}.
    *
    * @param <C> the expected type of {@link DataConn}
    * @param name the registered logical name of the data source
    * @param cls the {@link Class} representing the target connection type {@code C}
    * @return the data connection instance associated with the specified name
-   * @throws Err if no data source with the specified name is found, if creating the connection
-   *     fails or yields null, or if the connection cannot be cast to the target type
+   * @throws Err if no data source is registered for {@code name}, if creating the connection fails
+   *     or returns {@code null}, or if the connection cannot be cast to {@code cls}
    */
   <C extends DataConn> C getDataConn(String name, Class<C> cls) throws Err;
+
+  /**
+   * Executes the specified {@link Logic} within the current data access context.
+   *
+   * @param <D> the type of data access interface expected by the logic
+   * @param logic the logic unit to execute
+   * @throws Err if an error occurs while executing {@code logic}
+   */
+  <D> void run(Logic<D> logic) throws Err;
+
+  /**
+   * Starts a sequential {@link LogicRun} chain within the current data access context.
+   *
+   * @return a new {@link LogicRun} instance for chaining logic executions
+   */
+  LogicRun start();
 }

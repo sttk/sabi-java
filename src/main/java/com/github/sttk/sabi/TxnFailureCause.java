@@ -7,13 +7,13 @@ package com.github.sttk.sabi;
 import com.github.sttk.errs.Err;
 
 /**
- * Represents the cause of a transaction failure, containing state information and the associated
- * error.
+ * Represents the cause of a transaction failure for a data connection, containing state information
+ * and the associated error.
  *
  * <p>This class encapsulates the phase or status in which a transaction failure occurred (via
  * {@link TxnFailureCauseState}) and the specific {@link Err} instance detailing the failure.
  */
-public class TxnFailureCause {
+public final class TxnFailureCause {
 
   /** The transaction failure cause state indicating the phase or status of the failure. */
   public final TxnFailureCauseState state;
@@ -25,7 +25,7 @@ public class TxnFailureCause {
    * Constructs a new {@code TxnFailureCause} with the specified failure state and error.
    *
    * @param state the transaction failure cause state
-   * @param err the error associated with the failure
+   * @param err the error associated with the failure, or {@code null}
    */
   public TxnFailureCause(TxnFailureCauseState state, Err err) {
     this.state = state;

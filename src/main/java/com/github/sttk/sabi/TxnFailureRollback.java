@@ -12,7 +12,7 @@ import com.github.sttk.errs.Err;
  * <p>This class encapsulates the state of the rollback (via {@link TxnFailureRollbackState}) and
  * any error ({@link Err}) encountered when attempting to roll back the connection.
  */
-public class TxnFailureRollback {
+public final class TxnFailureRollback {
 
   /** The transaction failure rollback state indicating the outcome of the rollback. */
   public final TxnFailureRollbackState state;
