@@ -241,10 +241,11 @@ This framework supports JDK 21 or later.
 
 ### Actually checked JDK versions:
 
-- Oracle GraalVM 25.0.1+8.1 (build 25.0.1+8-LTS-jvmci-b01)
+- Oracle GraalVM 25.0.4+7.1 (build 25.0.4+7-LTS-jvmci-b01)
 - Oracle GraalVM 24.0.2+11.1 (build 24.0.2+11-jvmci-b01)
 - Oracle GraalVM 23.0.2+7.1 (build 23.0.2+7-jvmci-b01)
-- Oracle GraalVM 21.0.9+7.1 (build 21.0.9+7-LTS-jvmci-23.1-b79)
+- Oracle GraalVM 22.0.2+9.1 (build 22.0.2+9-jvmci-b01)
+- Oracle GraalVM 21.0.12+7.1 (build 21.0.12+7-LTS-jvmci-23.1-b96) 
 
 ## License
 
